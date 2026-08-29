@@ -1,28 +1,30 @@
 {
   "status": "ok",
-  "finished_at": "2026-08-29 17:26 UTC",
-  "videos": 0,
+  "finished_at": "2026-08-29 17:31 UTC",
+  "videos": 1,
   "scheduled": 1,
   "runs": [
     {
-      "factory": "mx",
-      "label": "Mexico / Espanol",
-      "videos": 0,
+      "factory": "us",
+      "label": "US / English",
+      "videos": 1,
       "scheduled": 1,
-      "titles": [],
+      "titles": [
+        "An entire American colony vanished and left one word behind"
+      ],
       "calendar": [
         [
-          "2026-08-30 12:00",
-          "El lugar de Oaxaca que llamaban la puerta al inframundo -> outdoorboysm (tiktok_business)"
+          "2026-08-30 09:00",
+          "An entire American colony vanished and left one word behind -> user675045657555 (tiktok_business)"
         ]
       ],
       "warnings": [
-        "1 video(s) for 15 channel(s) - none this round for 14: outdoorboysl (tiktok_business), user675045657555 (tiktok_business), user77564676798945476447 (tiktok_business), outdoorboysi (tiktok_business), outdoorboyso (tiktok_business), outdoorboysd (tiktok_business).... They lead the next run."
+        "1 video(s) for 15 channel(s) - none this round for 14: outdoorboysl (tiktok_business), outdoorboysm (tiktok_business), user77564676798945476447 (tiktok_business), outdoorboysi (tiktok_business), outdoorboyso (tiktok_business), outdoorboysd (tiktok_business).... They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
       "status": "ok",
-      "seconds": 14.026249170303345
+      "seconds": 198.1907444000244
     }
   ],
   "run_url": "",
