@@ -76,6 +76,7 @@ installer/              Inno Setup script for the Windows installer
 .github/workflows/      build.yml, videos.yml, and the schedule heartbeat
 docs/HUONG-DAN.md       full setup walkthrough, Vietnamese
 docs/PLANLY.md          the publishing model in detail, Vietnamese
+docs/PENDING.md         what is still open across the older projects, Vietnamese
 ```
 
 ## Running locally
@@ -186,3 +187,4 @@ Four surfaces, all written by the same run:
   but a glance is cheap.
 - Full walkthrough in Vietnamese: [docs/HUONG-DAN.md](docs/HUONG-DAN.md).
   Publishing model in detail: [docs/PLANLY.md](docs/PLANLY.md).
+  Open threads from the older projects: [docs/PENDING.md](docs/PENDING.md).
