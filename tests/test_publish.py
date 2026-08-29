@@ -288,7 +288,9 @@ class Publish(FactoryOutput):
         for folder in self.folders[2:]:
             (self.factory / "output" / folder / "meta.json").unlink()
         result = self.run_publish(dry_run=False)
-        self.assertTrue(any("nothing left for" in w for w in result.warnings))
+        self.assertTrue(any("none this round" in w for w in result.warnings))
+        # The idle ones are not dropped, they are first in line next time.
+        self.assertTrue(any("lead the next run" in w for w in result.warnings))
         self.assertEqual(result.scheduled, 2)
 
     def test_no_channels_at_all_is_an_error(self):

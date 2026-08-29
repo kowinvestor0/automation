@@ -109,3 +109,25 @@ def remember_videos(names, state=None):
     if own_state:
         save(state)
     return state
+
+
+def channel_start(state=None):
+    """Where the last run stopped dealing videos to channels.
+
+    Kept here rather than recomputed, because fairness across accounts is a
+    property of the whole history, not of any single run.
+    """
+    state = load() if state is None else state
+    try:
+        return max(0, int(state.get("channel_start") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def remember_channel_start(position, state=None):
+    own_state = state is None
+    state = load() if own_state else state
+    state["channel_start"] = max(0, int(position))
+    if own_state:
+        save(state)
+    return state

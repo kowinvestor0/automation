@@ -126,19 +126,34 @@ def publish(videos, cfg, key, log=print, now=None):
         if warning:
             result.warnings.append(warning)
 
-    dealt = planly.distribute(videos, chosen, cfg.get("distribute") or "unique")
+    # Carry the deal forward from where the last run stopped, so accounts take
+    # turns instead of the first few taking everything for ever.
+    start = hub_state.channel_start()
+    dealt = planly.distribute(videos, chosen, cfg.get("distribute") or "unique",
+                              start=start)
     by_id = {c["id"]: c for c in chosen}
 
     empty = [planly.describe(by_id[cid]) for cid, items in dealt.items() if not items]
     if empty:
         result.warnings.append(
-            f"{len(videos)} video(s) for {len(chosen)} channel(s) - nothing left for: "
-            + ", ".join(empty))
+            f"{len(videos)} video(s) for {len(chosen)} channel(s) - none this round "
+            f"for {len(empty)}: " + ", ".join(empty[:6])
+            + ("..." if len(empty) > 6 else "") + ". They lead the next run.")
 
-    # Plan every channel from the same booked-slot set. In same_time mode that
-    # is what makes the Nth post land on the same minute across all channels,
-    # which is how the user schedules by hand.
-    booked = hub_state.all_taken_slots()
+    # Plan every channel from one shared booked-slot set, which is what makes
+    # the Nth post land on the same minute across all of them - the way these
+    # get scheduled by hand.
+    #
+    # The set covers only the channels actually receiving videos this round. Two
+    # channels posting different videos at 09:00 is the normal case, not a
+    # clash; counting a slot as spent the moment any channel anywhere used it
+    # would push each run further into the day than the last and, after six
+    # runs, spill everything into tomorrow.
+    st_now = hub_state.load()
+    booked = set()
+    for channel_id, items in dealt.items():
+        if items:
+            booked |= hub_state.taken_slots(channel_id, st_now)
     per_channel = max((len(v) for v in dealt.values()), default=0)
     slots = planly.plan_slots(per_channel, cfg, now=now, taken=booked)
 
@@ -195,6 +210,9 @@ def publish(videos, cfg, key, log=print, now=None):
             hub_state.remember_slots(channel_id, slots[:len(items)], state=st)
     hub_state.remember_videos([v["folder"] for v in videos
                                if v["folder"] in media_ids], state=st)
+    if (cfg.get("distribute") or "unique") != "mirror":
+        hub_state.remember_channel_start(
+            planly.next_start(start, len(videos), len(chosen)), state=st)
     hub_state.save(st)
 
     log(f"scheduled {len(entries)} post(s)")

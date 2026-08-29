@@ -5,9 +5,9 @@
     "build_workflow": "build.yml"
   },
   "publish": {
-    "enabled": false,
-    "dry_run": true,
-    "team_id": "",
+    "enabled": true,
+    "dry_run": false,
+    "team_id": "c22dbf1e-b00e-42be-b254-c8549182abf5",
     "channels": [
       "all"
     ],

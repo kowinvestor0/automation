@@ -301,14 +301,20 @@ def plan_slots(count, cfg, now=None, taken=()):
     raise PlanlyError("No free slot within 120 days. Add more entries to `times`.")
 
 
-def distribute(videos, channels, mode="unique"):
+def distribute(videos, channels, mode="unique", start=0):
     """Which channel gets which video, and in what order.
 
     Returns {channel_id: [video, ...]}; position in the list is the slot index.
 
     "unique" deals the batch out like cards, so no clip lands on two channels -
-    that is what stops eight channels posting the same video at the same minute.
+    that is what stops every channel posting the same video at the same minute.
     "mirror" is the opposite: every channel gets every video.
+
+    `start` is where the deal begins in the channel list, and it is what makes
+    the split fair over time rather than only within one run. A run that makes
+    six videos for fifteen channels can only feed six of them; without carrying
+    the position forward, the same six would be fed on every run for ever and
+    the other nine would never post at all.
     """
     ids = [c["id"] for c in channels]
     if not ids:
@@ -318,8 +324,15 @@ def distribute(videos, channels, mode="unique"):
 
     out = {cid: [] for cid in ids}
     for index, video in enumerate(videos):
-        out[ids[index % len(ids)]].append(video)
+        out[ids[(start + index) % len(ids)]].append(video)
     return out
+
+
+def next_start(start, count, channel_count):
+    """Where the next run should pick up the deal."""
+    if channel_count <= 0:
+        return 0
+    return (start + count) % channel_count
 
 
 def duration_warning(video, max_seconds):
