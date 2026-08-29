@@ -1,0 +1,23 @@
+# Keys. Never commit these.
+.env
+settings.json
+
+# Anything a run produces.
+output/
+cache/
+logs/
+state.json
+*.log
+
+# Build products.
+build/
+dist/
+*.spec.bak
+__pycache__/
+*.py[cod]
+
+# Editor / OS noise.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

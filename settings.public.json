@@ -1,0 +1,47 @@
+{
+  "github": {
+    "repo": "",
+    "run_workflow": "videos.yml",
+    "build_workflow": "build.yml"
+  },
+  "publish": {
+    "enabled": false,
+    "dry_run": true,
+    "team_id": "",
+    "channels": [
+      "all"
+    ],
+    "mode": "same_time",
+    "times": [
+      "09:00",
+      "12:00",
+      "15:00",
+      "18:00",
+      "21:00",
+      "23:00"
+    ],
+    "gap_minutes": 120,
+    "timezone_offset": 7,
+    "lead_minutes": 30,
+    "distribute": "unique",
+    "max_seconds": 60,
+    "channel_options": {}
+  },
+  "run": {
+    "us": {
+      "count": 3,
+      "niche": "",
+      "enabled": true
+    },
+    "mx": {
+      "count": 3,
+      "niche": "",
+      "enabled": true
+    }
+  },
+  "notify": {
+    "telegram": true,
+    "on_success": true,
+    "on_failure": true
+  }
+}

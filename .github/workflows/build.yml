@@ -1,0 +1,131 @@
+# Builds the Windows app: the portable folder and the installer that wraps it.
+# The step summary at the bottom is written for a phone screen, because that is
+# where this gets read.
+name: Build Windows app
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    # paths-ignore rather than a positive paths list: a positive list is also
+    # applied to tag pushes, so a release tag on a commit that only touched,
+    # say, hub/ would still build, but one on a docs commit would silently
+    # produce no release. Ignoring only the noise keeps tags reliable. The
+    # noisiest of all is the STATUS.md commit videos.yml pushes after each run.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'status.json'
+      - '.github/workflows/videos.yml'
+      - '.github/workflows/heartbeat.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write        # needed to create the release on a v* tag
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Read the version
+        id: meta
+        shell: bash
+        run: |
+          version=$(python -c "import hub; print(hub.__version__)")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Building version $version"
+
+      - name: Build the exe
+        run: python tools/build_exe.py
+
+      - name: Check the exe starts
+        # Cheapest possible smoke test: preflight exercises the frozen import of
+        # hub.*, finds the bundled factories and exits without opening a window.
+        # It returns 1 when a key is missing, which is normal on a build runner,
+        # so only a crash counts as a failure here.
+        shell: bash
+        run: |
+          ./dist/AutomationHub/AutomationHub.exe preflight || true
+          test -f dist/AutomationHub/AutomationHub.exe
+
+      - name: Build the installer
+        # The windows runners ship Inno Setup under Program Files (x86), which
+        # is the third place tools/build_setup.py looks. If the image ever drops
+        # it, that script prints every path it tried and exits non-zero.
+        run: python tools/build_setup.py
+
+      - name: Zip the portable folder
+        shell: pwsh
+        run: |
+          $version = "${{ steps.meta.outputs.version }}"
+          Compress-Archive -Path dist/AutomationHub/* `
+                           -DestinationPath "dist/AutomationHub_portable_$version.zip" `
+                           -CompressionLevel Optimal
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AutomationHub-portable-${{ steps.meta.outputs.version }}
+          path: dist/AutomationHub_portable_*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AutomationHub-setup-${{ steps.meta.outputs.version }}
+          path: dist/setup/AutomationHub_Setup_*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          gh release create "$TAG" \
+            --title "Automation Hub $TAG" \
+            --generate-notes \
+            dist/setup/AutomationHub_Setup_*.exe \
+            dist/AutomationHub_portable_*.zip
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          version="${{ steps.meta.outputs.version }}"
+          {
+            echo "# Automation Hub $version"
+            echo ""
+            echo "| what | size |"
+            echo "| --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for f in dist/setup/AutomationHub_Setup_*.exe dist/AutomationHub_portable_*.zip; do
+            [ -f "$f" ] || continue
+            size=$(du -m "$f" | cut -f1)
+            echo "| \`$(basename "$f")\` | ${size} MB |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          {
+            echo ""
+            echo "Download the setup from the **Artifacts** box at the bottom of this page."
+            echo "The installer asks which drive to install to."
+          } >> "$GITHUB_STEP_SUMMARY"

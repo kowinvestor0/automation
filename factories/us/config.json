@@ -1,0 +1,115 @@
+{
+  "niche": "mysteries",
+  "language_note": "US English, conversational, second person",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "voice_rate": "+10%",
+  "voice_pitch": "+0Hz",
+  "scene_gap": 0.16,
+  "niche_voice": {
+    "mysteries": {
+      "voice": "en-US-AndrewMultilingualNeural",
+      "voice_rate": "+8%",
+      "scene_gap": 0.18
+    },
+    "truecrime": {
+      "voice": "en-US-BrianMultilingualNeural",
+      "voice_rate": "+4%",
+      "scene_gap": 0.22
+    },
+    "facts": {
+      "voice": "en-US-AvaMultilingualNeural",
+      "voice_rate": "+16%",
+      "scene_gap": 0.12
+    },
+    "history": {
+      "voice": "en-US-BrianMultilingualNeural",
+      "voice_rate": "+8%",
+      "scene_gap": 0.16
+    },
+    "money": {
+      "voice": "en-US-AndrewMultilingualNeural",
+      "voice_rate": "+14%",
+      "scene_gap": 0.12
+    },
+    "humor": {
+      "voice": "en-US-AndrewNeural",
+      "voice_rate": "+20%",
+      "scene_gap": 0.1
+    }
+  },
+  "resolution": "1080p",
+  "quality": "high",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "target_seconds": 45,
+  "scene_count": 7,
+  "provider": "auto",
+  "gemini_model": "gemini-2.5-pro",
+  "model": "claude-opus-5",
+  "visual_priority": [
+    "wikimedia",
+    "pexels_video",
+    "pexels_photo",
+    "local",
+    "gradient"
+  ],
+  "wikimedia_max_per_video": 5,
+  "niche_visuals": {
+    "humor": [
+      "pexels_video",
+      "pexels_photo",
+      "wikimedia",
+      "local",
+      "gradient"
+    ],
+    "money": [
+      "pexels_video",
+      "pexels_photo",
+      "wikimedia",
+      "local",
+      "gradient"
+    ],
+    "facts": [
+      "pexels_video",
+      "wikimedia",
+      "pexels_photo",
+      "local",
+      "gradient"
+    ]
+  },
+  "font": "Anton",
+  "font_size": 125,
+  "words_per_caption": 3,
+  "highlight_color": "&H0033E5FF&",
+  "transitions": true,
+  "transition_duration": 0.4,
+  "camera_shake": true,
+  "music": "auto",
+  "music_volume": 0.2,
+  "music_duck": true,
+  "sfx": true,
+  "sfx_volume": 0.35,
+  "voice_volume": 1.0,
+  "loudness_lufs": -14,
+  "crf": 20,
+  "preset": "veryfast",
+  "max_bitrate": "8M",
+  "bufsize": "16M",
+  "planly": {
+    "enabled": false,
+    "dry_run": true,
+    "team_id": "",
+    "channels": [
+      "all"
+    ],
+    "slots": [
+      "09:00",
+      "13:00",
+      "18:00"
+    ],
+    "timezone_offset": 7,
+    "lead_minutes": 30,
+    "channel_options": {}
+  }
+}

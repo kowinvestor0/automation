@@ -1,0 +1,160 @@
+# The background worker. Renders videos on a schedule and hands them to Planly.
+#
+# Nothing here needs the user's PC to be switched on - that is the whole point
+# of the job. What it leaves behind for them to look at on a phone: the run's
+# step summary, STATUS.md committed to the repo front page, the videos as an
+# artifact, and a Telegram message if a bot token is set.
+name: Generate videos
+
+on:
+  schedule:
+    # The user is UTC+7. These land at 06:00, 12:00, 18:00 and 22:00 Vietnam
+    # time, so a morning check on the phone always has an overnight batch
+    # waiting. GitHub's free-tier scheduler runs late under load - treat these
+    # as "some time after", not "on the dot".
+    - cron: '0 23 * * *'
+    - cron: '0 5 * * *'
+    - cron: '0 11 * * *'
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+    inputs:
+      factory:
+        description: 'Which factory'
+        type: choice
+        options: [all, us, mx]
+        default: all
+      count:
+        description: 'Videos per factory'
+        default: '3'
+      niche:
+        description: 'Force a niche (optional)'
+        default: ''
+      live:
+        description: 'Really post to Planly (off = dry run)'
+        type: boolean
+        default: false
+
+# state.json records which posting slots are already booked. Two runs at once
+# would each plan against a stale copy and double-book the same minute.
+concurrency:
+  group: generate-videos
+  cancel-in-progress: false
+
+permissions:
+  contents: write        # to commit STATUS.md back
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ffmpeg -version | head -1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -q -r requirements.txt
+
+      # state.json remembers booked slots and which videos were already
+      # published; cache/ keeps us from re-downloading the same Wikimedia
+      # photos every run. A runner is wiped between jobs, so without this the
+      # scheduler would forget every slot it ever booked.
+      - name: Restore state and media cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            state.json
+            factories/us/cache
+            factories/mx/cache
+          key: hub-state-${{ github.run_id }}
+          restore-keys: |
+            hub-state-
+
+      - name: Preflight
+        run: python tools/preflight.py || true
+
+      - name: Render and schedule
+        env:
+          # Gemini first: its free tier covers this workload.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PLANLY_API_KEY: ${{ secrets.PLANLY_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WIKI_CONTACT: ${{ secrets.WIKI_CONTACT }}
+          # Inputs come in through the environment, never interpolated into the
+          # command line: a niche containing a quote must not be able to inject.
+          IN_FACTORY: ${{ inputs.factory || 'all' }}
+          IN_COUNT: ${{ inputs.count || '' }}
+          IN_NICHE: ${{ inputs.niche || '' }}
+          IN_LIVE: ${{ inputs.live || 'false' }}
+          IN_EVENT: ${{ github.event_name }}
+        run: |
+          args=()
+          if [ "$IN_FACTORY" = "all" ] || [ -z "$IN_FACTORY" ]; then
+            args+=(--all)
+          else
+            args+=(--factory "$IN_FACTORY")
+          fi
+          [ -n "$IN_COUNT" ] && args+=(--count "$IN_COUNT")
+          [ -n "$IN_NICHE" ] && args+=(--niche "$IN_NICHE")
+          # A pressed button is always safe by default: it dry-runs unless the
+          # `live` box was ticked. The schedule is the opposite - it passes
+          # neither flag and lets settings.public.json decide, because a cron
+          # that could only ever dry-run would never post anything, which is
+          # the entire job. Flipping publish.enabled/dry_run in that committed
+          # file is the deliberate act that turns real posting on.
+          if [ "$IN_EVENT" = "workflow_dispatch" ]; then
+            if [ "$IN_LIVE" = "true" ]; then args+=(--live); else args+=(--dry-run); fi
+          fi
+          echo "run_factory ${args[*]}"
+          python tools/run_factory.py "${args[@]}"
+
+      - name: Upload the videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: videos-${{ github.run_number }}
+          path: |
+            factories/*/output/**/video.mp4
+            factories/*/output/**/meta.json
+            factories/*/output/**/credits.txt
+            factories/*/output/**/creditos.txt
+          retention-days: 30
+          # 'warn', not 'error': when the render failed the useful message is
+          # the one from the step above, not a second empty-artifact error.
+          if-no-files-found: warn
+
+      - name: Commit the status back
+        if: always()
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add STATUS.md status.json 2>/dev/null || true
+          git diff --cached --quiet && { echo 'status unchanged'; exit 0; }
+          git commit -m 'status: run ${{ github.run_number }}'
+          # A push can lose a race with another run or with the heartbeat. That
+          # is not worth failing a job that already made the videos.
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo 'push lost a race, skipping'
+
+      - name: Save state and media cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            state.json
+            factories/us/cache
+            factories/mx/cache
+          key: hub-state-${{ github.run_id }}

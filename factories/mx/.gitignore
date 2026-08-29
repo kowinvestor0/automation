@@ -1,0 +1,14 @@
+output/
+cache/
+state.json
+__pycache__/
+*.pyc
+assets/stock/*
+assets/music/*
+!assets/**/LEEME.txt
+.env
+
+# Artefactos de PyInstaller
+build/
+*.spec
+FabricaVideosMX.exe

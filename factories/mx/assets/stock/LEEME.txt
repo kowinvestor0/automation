@@ -1,0 +1,2 @@
+Pon aqui tus videos/fotos verticales de respaldo (.mp4 .mov .jpg .png).
+Se usan cuando no hay PEXELS_API_KEY o cuando Pexels no encuentra nada.

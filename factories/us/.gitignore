@@ -1,0 +1,14 @@
+output/
+cache/
+state.json
+__pycache__/
+*.pyc
+assets/stock/*
+assets/music/*
+!assets/**/README.txt
+.env
+dist/
+build/
+*.spec
+run.log
+build_ffmpeg/
