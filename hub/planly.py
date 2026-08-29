@@ -53,40 +53,36 @@ def _post(key, path, body):
 
 # ---------------------------------------------------------------- discovery
 
-def list_teams(key):
-    return _post(key, "/teams/list", {}).get("data") or []
-
-
 def list_channels(key, team_id):
     return _post(key, "/channels/list", {"team_id": team_id}).get("data") or []
 
 
 def resolve_team(key, team_id=""):
-    if team_id:
-        return team_id
-    teams = list_teams(key)
-    if not teams:
-        raise PlanlyError("This Planly account has no teams.")
-    return teams[0]["id"]
+    """Planly has no endpoint that lists teams - `/teams/list` returns 404. The
+    team id has to be configured, and it is the one thing that cannot be
+    discovered from the key alone."""
+    team_id = (team_id or "").strip()
+    if not team_id:
+        raise PlanlyError(
+            "No Planly team id set. Planly's API cannot list teams, so it has to "
+            "be filled in once - copy it from the Planly URL, or from the old "
+            "upload app's planly-accounts.json.")
+    return team_id
 
 
-def check_key(key):
+def check_key(key, team_id=""):
     """Backs the GUI's Test button. Returns (ok, message)."""
     key = (key or "").strip()
     if len(key) < 16:
         return False, "That key looks too short."
+    if not (team_id or "").strip():
+        return False, "Fill in the team id as well - Planly cannot look it up."
     try:
-        teams = list_teams(key)
+        channels = list_channels(key, team_id.strip())
     except Exception as e:
         return False, f"{type(e).__name__}: {str(e)[:150]}"
-    if not teams:
-        return False, "Key works, but the account has no teams."
-    try:
-        channels = list_channels(key, teams[0]["id"])
-    except Exception:
-        channels = []
-    name = teams[0].get("name") or teams[0].get("id")
-    return True, f"OK - team '{name}', {len(channels)} channel(s) connected."
+    networks = sorted({(c.get("social_network") or "?") for c in channels})
+    return True, (f"OK - {len(channels)} channel(s): {', '.join(networks)}")
 
 
 def pick_channels(all_channels, wanted):
@@ -151,21 +147,89 @@ def upload_media(key, team_id, path, log=print):
 
 # ---------------------------------------------------------------- schedules
 
-def create_schedules(key, entries):
-    return _post(key, "/schedules/create", {"schedules": entries})
+STATUS_SCHEDULED = 1
 
 
-def list_schedules(key, team_id, start=None, end=None):
-    body = {"team_id": team_id}
-    if start:
-        body["start_date"] = start
-    if end:
-        body["end_date"] = end
-    return _post(key, "/schedules/list", body).get("data") or []
+def build_groups(entries):
+    """Fold flat (channel, video, time) entries into Planly schedule groups.
+
+    Group by publish time AND media id, never by time alone. A Planly schedule
+    group means "one post going out to several channels at once" - so grouping
+    on time alone puts eight channels holding eight *different* videos into one
+    group, and Planly then shows and posts it as one video to eight channels.
+    That is exactly the bug that put the same clip on every channel before.
+
+      different video per channel -> one group each
+      same video on many channels -> one shared group, which is what a group is
+    """
+    order = []
+    grouped = {}
+    for entry in entries:
+        media_id = entry["media"][0]["id"]
+        gkey = (entry["publishOn"], media_id)
+        if gkey not in grouped:
+            grouped[gkey] = []
+            order.append(gkey)
+        grouped[gkey].append({
+            "channelId": entry["channelId"],
+            "content": entry.get("content", ""),
+            "status": STATUS_SCHEDULED,
+            "media": entry["media"],
+            "options": entry.get("options") or {"postType": 0},
+        })
+    return [{"publishOn": gkey[0], "schedules": grouped[gkey]} for gkey in order]
 
 
-def delete_schedule(key, schedule_id):
-    return _post(key, "/schedules/delete", {"id": schedule_id})
+def create_schedules(key, team_id, entries):
+    """Create every schedule in one call, as groups."""
+    groups = build_groups(entries)
+    return _post(key, "/schedule-groups/create",
+                 {"teamId": team_id, "scheduleGroups": groups})
+
+
+# 0 draft, 1 scheduled, 3 published, 4 failed. Failed and draft have to be
+# listed too, or a post that quietly died just looks like it vanished.
+ALL_STATUSES = [0, 1, 3, 4]
+
+
+def list_schedules(key, team_id, channel_ids=None, statuses=None, max_items=500):
+    """Scheduled posts, newest first. Paginated by cursor."""
+    rows = []
+    cursor = None
+    page_size = 50
+    while len(rows) < max_items:
+        body = {
+            "teamId": team_id,
+            "pagination": {
+                "cursor": cursor,
+                "orderBy": ["CreatedAt", "desc"],
+                "pageSize": min(page_size, max_items - len(rows)),
+            },
+        }
+        filters = {}
+        if channel_ids:
+            filters["channels"] = list(channel_ids)
+        filters["status"] = list(statuses or ALL_STATUSES)
+        body["filter"] = filters
+
+        data = _post(key, "/schedule-groups/list", body).get("data") or {}
+        page = data.get("rows") or []
+        if not page:
+            break
+        rows.extend(page)
+        cursor = data.get("next")
+        if not cursor:
+            break
+    return rows
+
+
+def delete_schedules(key, group_ids, batch=50):
+    """Delete by group. Planly documents this as the only supported way, and
+    deleting a group deletes every schedule inside it."""
+    ids = [i for i in (group_ids or []) if i]
+    for start in range(0, len(ids), batch):
+        _post(key, "/schedule-groups/delete", {"ids": ids[start:start + batch]})
+    return len(ids)
 
 
 # -------------------------------------------------------- slot planning (pure)

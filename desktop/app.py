@@ -1155,33 +1155,32 @@ class ControlPanel:
 
         def load():
             status.configure(text="Đang tải...")
-            today = dt.date.today()
 
             def work():
                 team = planly.resolve_team(key, (self.v_team.get() or "").strip())
-                return planly.list_schedules(
-                    key, team, today.isoformat(),
-                    (today + dt.timedelta(days=7)).isoformat())
+                return planly.list_schedules(key, team, max_items=300)
 
-            def done(items):
+            def done(groups):
                 tree.delete(*tree.get_children())
                 rows.clear()
                 offset = to_number(self.v_tz.get(), 7)
-                for item in items or []:
-                    if not isinstance(item, dict):
+                # One group can hold several channels. Each gets its own row so
+                # the table reads like a calendar, but the id kept for deletion
+                # is the GROUP's - Planly only deletes whole groups.
+                for group in groups or []:
+                    if not isinstance(group, dict):
                         continue
-                    sid = str(item.get("id") or item.get("scheduleId") or "")
-                    when = (item.get("publishOn") or item.get("publish_on")
-                            or item.get("date") or "")
-                    channel = (item.get("channelName") or item.get("channel_name")
-                               or item.get("channelId") or item.get("channel_id")
-                               or "")
-                    content = str(item.get("content") or item.get("text")
-                                  or "").replace("\n", " ")[:120]
-                    node = tree.insert("", "end", values=(
-                        local_clock(when, offset), channel, content, sid))
-                    rows[node] = sid
-                status.configure(text=f"{len(rows)} bài trong 7 ngày tới.")
+                    gid = str(group.get("id") or "")
+                    when = local_clock(group.get("publishOn") or "", offset)
+                    for item in group.get("schedules") or []:
+                        channel = ((item.get("channel") or {}).get("name")
+                                   or (item.get("channel") or {}).get("id") or "")
+                        content = str(item.get("content") or "").replace("\n", " ")[:120]
+                        node = tree.insert("", "end", values=(
+                            when, channel, content, gid[:8]))
+                        rows[node] = gid
+                status.configure(
+                    text=f"{len(rows)} bài trong {len(groups or [])} nhóm lịch.")
 
             run_async(window, work, done=done,
                       fail=lambda e: status.configure(text=friendly(e)))
@@ -1195,17 +1194,21 @@ class ControlPanel:
             sid = rows.get(node)
             values = tree.item(node, "values")
             if not sid:
-                self.info("Thiếu mã lịch",
-                          "Planly không trả về mã cho dòng này nên không xóa được.",
+                self.info("Thiếu mã nhóm lịch",
+                          "Planly không trả về mã nhóm cho dòng này nên không xóa được.",
                           window)
                 return
+            # Planly only deletes whole groups, so say how many posts go with it.
+            siblings = sum(1 for value in rows.values() if value == sid)
+            extra = ("" if siblings <= 1 else
+                     f"\nNhóm này có {siblings} bài - xóa là mất cả {siblings}.")
             if not messagebox.askyesno(
                     "Xóa lịch",
-                    f"Xóa hẳn bài lúc {values[0]} trên {values[1]}?\n"
+                    f"Xóa hẳn bài lúc {values[0]} trên {values[1]}?{extra}\n"
                     "Thao tác này không hoàn tác được.", parent=window):
                 return
             status.configure(text="Đang xóa...")
-            run_async(window, lambda: planly.delete_schedule(key, sid),
+            run_async(window, lambda: planly.delete_schedules(key, [sid]),
                       done=lambda _v: load(),
                       fail=lambda e: status.configure(text=friendly(e)))
 
@@ -1298,7 +1301,8 @@ class ControlPanel:
         if not key:
             self.info("Trống", "Chưa điền PLANLY_API_KEY.")
             return
-        self._test(lambda: planly.check_key(key))
+        team = (self.v_team.get() or "").strip()
+        self._test(lambda: planly.check_key(key, team))
 
     def test_telegram(self):
         cfg = self.collect()

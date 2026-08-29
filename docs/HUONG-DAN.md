@@ -15,7 +15,7 @@ Vài từ sẽ gặp liên tục:
 | cron | Lịch chạy tự động, ví dụ "6 giờ sáng mỗi ngày" |
 | dry run | Chạy thử: làm đủ mọi thứ kể cả upload, nhưng **không** tạo lịch đăng |
 | slot | Một khung giờ đăng, ví dụ 09:00 ngày mai |
-| channel | Một tài khoản mạng xã hội đã nối vào Planly. Bạn có 8 cái |
+| channel | Một tài khoản mạng xã hội đã nối vào Planly. Tài khoản của bạn đang nối **15 kênh**, tất cả là TikTok Business |
 
 ---
 
@@ -28,19 +28,23 @@ tạo mới từ đầu.
 **Private** cũng được — Actions vẫn chạy bình thường. **Không tích** "Add a README
 file", "Add .gitignore" hay "Choose a license"; để repo trống hoàn toàn.
 
-**1b.** Mở PowerShell trên máy, chạy từng dòng:
+**1b.** Repo git ở `D:\automation` **đã tạo sẵn và đã commit rồi** — nếu dùng
+cách dưới đây thì bỏ qua bước 1a. Lấy một Personal Access Token ở
+Settings → Developer settings → Personal access tokens (tích **repo** và
+**workflow**), rồi mở PowerShell:
 
 ```
 cd D:\automation
-git init
-git branch -M main
-git add .
-git commit -m "Automation Hub"
-git remote add origin https://github.com/TEN-CUA-BAN/TEN-REPO.git
-git push -u origin main
+$env:GITHUB_TOKEN = "dan_token_vao_day"
+python tools\push_to_github.py --name automation --private
 ```
 
-Đổi `TEN-CUA-BAN/TEN-REPO` thành đúng tên bạn vừa tạo.
+Lệnh này tự tạo repo trên GitHub rồi push luôn. Token chỉ sống trong phiên
+PowerShell đó, không ghi vào file nào. Đổi `--private` thành `--public` nếu muốn
+Actions miễn phí không giới hạn phút.
+
+Muốn làm tay thì vẫn được: tạo repo trống ở <https://github.com/new>, rồi
+`git remote add origin <url>` và `git push -u origin main`.
 
 **1c.** Lúc `git push` nó sẽ hỏi đăng nhập. GitHub **không còn nhận mật khẩu tài
 khoản** — chỗ "Password" bạn dán một Personal Access Token (tạo ở
@@ -67,6 +71,7 @@ secret**. Mỗi khoá là một secret riêng, tên phải viết **hoa và đú
 | `ANTHROPIC_API_KEY` | <https://console.anthropic.com> (trả tiền) | Không sao, Gemini thay được |
 | `PEXELS_API_KEY` | <https://www.pexels.com/api/> (miễn phí) | Chỉ còn ảnh tĩnh Wikimedia. Video vẫn ra, chỉ ít chuyển động hơn |
 | `PLANLY_API_KEY` | Planly → Settings → Security | **Không đăng được gì cả.** Video render xong nằm im trong `output/` |
+| `PLANLY_TEAM_ID` | App đã điền sẵn từ app upload cũ | Cũng không đăng được. Planly không có lệnh tra team, phải cho sẵn |
 | `TELEGRAM_BOT_TOKEN` | Nhắn `/newbot` cho [@BotFather](https://t.me/BotFather) | Không có tin nhắn báo kết quả về điện thoại |
 | `TELEGRAM_CHAT_ID` | Xem cách lấy ở dưới | Như trên. Thiếu một trong hai là mất luôn thông báo |
 | `WIKI_CONTACT` | Email của bạn | Wikimedia dễ chặn hơn khi tải nhiều ảnh liên tục |
@@ -121,10 +126,12 @@ xuất ra, có thể nặng vài GB) mặc định nằm ở `Documents\Automati
 Mở **Automation Hub** từ Start Menu.
 
 1. **Dán `PLANLY_API_KEY`** vào ô của nó, bấm nút **Test**. Phải hiện dòng dạng
-   `OK - team '...', 8 channel(s) connected.` Nếu không thì xem phần Sự cố ở dưới.
-2. **Load channels** — app gọi lên Planly và liệt kê 8 kênh của bạn kèm id. Tích
-   hết cả 8, hoặc để nguyên `all` (nghĩa là mọi kênh đang nối).
-3. **Kiểu xếp lịch:** để `same_time`. Đây đúng là cách bạn đang xếp tay: cả 8 kênh
+   `OK - 15 channel(s): tiktok_business`. Nếu không thì xem phần Sự cố ở dưới.
+   **Khoá này đã được điền sẵn** — lấy từ app upload Planly cũ của bạn, cùng với
+   `PLANLY_TEAM_ID`. Planly không có lệnh tra team nên id đó bắt buộc phải có.
+2. **Load channels** — app gọi lên Planly và liệt kê các kênh của bạn kèm id. Tích
+   những kênh muốn dùng, hoặc để nguyên `all` (nghĩa là mọi kênh đang nối).
+3. **Kiểu xếp lịch:** để `same_time`. Đây đúng là cách bạn đang xếp tay: mọi kênh
    đăng cùng một phút.
 4. **Cách chia video:** để `unique`. Mỗi kênh nhận video khác nhau, không kênh nào
    đăng trùng clip với kênh khác.
@@ -158,16 +165,16 @@ python AutomationHub.py run --factory us --count 3 --dry-run
 
 | Dòng bạn thấy | Nghĩa |
 |---|---|
-| `3 video(s) -> 8 channel(s) on team ...` | Đã thấy đủ kênh |
+| `3 video(s) -> 15 channel(s) on team ...` | Đã thấy đủ kênh |
 | `uploaded video.mp4  8.2 MB  1080x1920  id 3f9a...` | File đã lên thư viện Planly thật |
 | `DRY RUN - would create 3 schedule entries` | Đã dừng đúng chỗ, chưa tạo lịch |
-| `2026-08-30 09:00  Video A -> Kênh 1 (tiktok)` | Bảng giờ, theo giờ Việt Nam |
+| `2026-08-30 09:00  Video A -> outdoorboysl (tiktok_business)` | Bảng giờ, theo giờ Việt Nam |
 | `warning: ... 72s is longer than 60s` | Video quá dài, xem phần Sự cố |
 
 Trước khi tắt dry run, soát 4 điều:
 
 - Giờ trong bảng đúng ý bạn, và là giờ Việt Nam.
-- Đủ 8 kênh, không thiếu kênh nào.
+- Đủ số kênh bạn muốn, không thiếu kênh nào.
 - Không có video nào xuất hiện ở hai kênh khác nhau.
 - Không có cảnh báo quá 60 giây.
 

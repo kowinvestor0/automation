@@ -90,6 +90,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PLANLY_API_KEY: ${{ secrets.PLANLY_API_KEY }}
+          PLANLY_TEAM_ID: ${{ secrets.PLANLY_TEAM_ID }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           WIKI_CONTACT: ${{ secrets.WIKI_CONTACT }}

@@ -62,7 +62,9 @@ def publish_cfg(**over):
     cfg = {
         "enabled": True,
         "dry_run": True,
-        "team_id": "",
+        # Planly's API cannot look a team up, so a run without one is an error
+        # path, not the normal case. Tests that want that path clear it.
+        "team_id": "team-1",
         "channels": ["all"],
         "mode": "same_time",
         "times": list(SIX_TIMES),

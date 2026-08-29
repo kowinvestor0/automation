@@ -17,7 +17,9 @@ Toàn bộ phần này nằm trong `hub/planly.py` và `hub/publish.py`.
 3. **Tính khung giờ.** Từ `times`, `mode`, `timezone_offset`, `lead_minutes`, và
    danh sách khung đã dùng trong `state.json`.
 4. **Chia video cho kênh.** Theo `distribute`.
-5. **Tạo lịch.** Một lệnh `schedules/create` duy nhất, chứa mọi cặp (kênh, video).
+5. **Tạo lịch.** Một lệnh `schedule-groups/create` duy nhất. Các cặp (kênh, video)
+   được gộp thành nhóm theo **giờ đăng + video**, không phải chỉ theo giờ — xem
+   mục "Vì sao gộp theo nhóm" bên dưới.
    Có `dry_run` thì dừng ngay trước bước này.
 
 ---
@@ -243,7 +245,7 @@ chương trình chỉ tính lại từ đầu, không hỏng gì.
 |---|---|---|
 | `enabled` | `false` | Công tắc tổng. `false` thì không gọi Planly lần nào |
 | `dry_run` | `true` | Làm hết trừ bước tạo lịch |
-| `team_id` | `""` | Để trống là lấy team đầu tiên của tài khoản |
+| `team_id` | `""` | **Bắt buộc.** API Planly không có lệnh liệt kê team, để trống là không chạy được. Trên GitHub thì đặt bằng secret `PLANLY_TEAM_ID` |
 | `channels` | `["all"]` | `["all"]` = mọi kênh đang nối, hoặc liệt kê id cụ thể |
 | `mode` | `"same_time"` | `same_time` hoặc `spread` |
 | `times` | 6 mốc | Giờ địa phương của bạn |

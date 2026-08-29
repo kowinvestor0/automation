@@ -61,7 +61,37 @@ Công sức: **M** — sau khi anh xác nhận cách map thư mục.
 
 ---
 
-## 3. rclone + Google Drive — **đang chạy, nhưng có hạn sử dụng**
+## 3. Khoá Planly — **đã lấy được, đã gọi API thật**
+
+**Tình trạng: xong. Đây là chỗ trước đó tôi ghi là "chưa kiểm được".**
+
+Khoá nằm sẵn trong app upload cũ, ở
+`%APPDATA%/upload-app/planly-accounts.json`. Đã nạp vào hub và gọi API thật.
+
+Việc gọi thật làm lộ ra **ba lỗi** trong hub — code viết theo tài liệu Planly
+nhưng chưa bao giờ chạy thử lần nào:
+
+| Chỗ sai | Thực tế |
+|---|---|
+| Gọi `teams/list` để tự tìm team | Endpoint này **không tồn tại**, trả về 404. `team_id` bắt buộc phải cho sẵn |
+| Gửi `schedules/create`, thiếu `status` | Phải là `schedule-groups/create`, và mỗi lịch phải có `status: 1` |
+| Xoá bằng `schedules/delete` | Chỉ `schedule-groups/delete` mới được Planly hỗ trợ |
+
+Quan trọng nhất: nhóm lịch phải gộp theo **giờ + video**, không phải chỉ theo
+giờ. Gộp chỉ theo giờ thì Planly hiểu thành "một video lên N kênh" — đúng cái lỗi
+anh gặp lần trước. Đã sửa, và có một file test riêng cho quy tắc này.
+
+Cũng phát hiện: tài khoản đang nối **15 kênh**, không phải 8 như ghi nhận cũ. Tất
+cả đều là TikTok Business. Con số 8 trong các phiên trước là đọc nhầm từ thẻ hiển
+thị của Planly.
+
+Chưa chạy qua: `media/start-upload` → S3 → `finish-upload`. Chạy thử sẽ đẩy một
+file video vào thư viện Planly của anh — không tạo lịch, không đăng gì cả.
+**Anh cho phép thì tôi chạy nốt đoạn này.**
+
+---
+
+## 4. rclone + Google Drive — **đang chạy, nhưng có hạn sử dụng**
 
 **Tình trạng: kết nối thật, đã kiểm tra, liệt kê được thư mục Drive của anh.
 Nhưng còn một bước dở dang sẽ làm nó chết trong năm nay.**
@@ -91,7 +121,7 @@ Công sức: **S** với tôi, nhưng **cần anh ngồi máy** vài phút để
 
 ---
 
-## 4. Tool Adam Rose (`D:\adamrose`) — **đã xong, đang chờ anh dùng thử**
+## 5. Tool Adam Rose (`D:\adamrose`) — **đã xong, đang chờ anh dùng thử**
 
 **Tình trạng: hoàn chỉnh, có exe và bộ cài, không có lỗi nào bị bỏ lại.**
 
@@ -110,7 +140,7 @@ Công sức: **M** nếu còn phải sửa chất lượng video; **0** nếu an
 
 ---
 
-## 5. Quản lý CCCD (`D:\QuanLyCCCD`) — **đã giao bản 1.4.0, chưa được nghiệm thu**
+## 6. Quản lý CCCD (`D:\QuanLyCCCD`) — **đã giao bản 1.4.0, chưa được nghiệm thu**
 
 **Tình trạng: bản cài 1.4.0 có thật trên đĩa, sửa đúng hai lỗi anh báo cuối cùng.**
 
@@ -130,7 +160,7 @@ Công sức: **S** để cài; chưa rõ còn bao nhiêu nếu vẫn sai.
 
 ---
 
-## 6. Recap phim (`D:\recap phim`) — **bỏ dở, và nên bỏ luôn**
+## 7. Recap phim (`D:\recap phim`) — **bỏ dở, và nên bỏ luôn**
 
 **Tình trạng: thư mục rỗng. Không có gì được viết ra.**
 
@@ -147,7 +177,7 @@ Công sức: **0** — trừ khi anh muốn dựng recap phim bằng chính pipe
 
 ---
 
-## 7. Hỏi về giọng đọc (`D:\tts`) — **đã trả lời xong**
+## 8. Hỏi về giọng đọc (`D:\tts`) — **đã trả lời xong**
 
 **Tình trạng: thư mục rỗng, chỉ là một câu hỏi, đã có câu trả lời.**
 

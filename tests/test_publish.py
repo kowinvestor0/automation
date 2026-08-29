@@ -25,10 +25,13 @@ class FakePlanly:
         self.uploads = []
         self.created = []
         self.teams_asked = []
+        self.teams_used = []
 
     def resolve_team(self, key, team_id=""):
         self.teams_asked.append(team_id)
-        return team_id or "team-1"
+        if not team_id:
+            raise planly.PlanlyError("No Planly team id set.")
+        return team_id
 
     def list_channels(self, key, team_id):
         return list(self.channels)
@@ -40,7 +43,8 @@ class FakePlanly:
         self.uploads.append(folder)
         return f"media-{folder}"
 
-    def create_schedules(self, key, entries):
+    def create_schedules(self, key, team_id, entries):
+        self.teams_used.append(team_id)
         self.created.append(entries)
         return {"data": {"created": len(entries)}}
 

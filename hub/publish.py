@@ -105,7 +105,10 @@ def publish(videos, cfg, key, log=print, now=None):
         result.warnings.append("Nothing to publish - no new videos in output/.")
         return result
 
-    team_id = planly.resolve_team(key, cfg.get("team_id") or "")
+    # A repo secret is how CI gets this; the app stores it locally. Either
+    # way it never lands in the committed settings file.
+    team_id = planly.resolve_team(
+        key, cfg.get("team_id") or secret("PLANLY_TEAM_ID"))
     channels = planly.list_channels(key, team_id)
     missing = planly.missing_channel_ids(channels, cfg.get("channels") or [])
     if missing:
@@ -184,7 +187,7 @@ def publish(videos, cfg, key, log=print, now=None):
             f"{'y' if len(entries) == 1 else 'ies'}")
         return result
 
-    planly.create_schedules(key, entries)
+    planly.create_schedules(key, team_id, entries)
 
     st = hub_state.load()
     for channel_id, items in dealt.items():
