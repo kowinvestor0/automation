@@ -191,3 +191,43 @@ class ExportAndMissing(IsolatedHome):
         os.environ["GEMINI_API_KEY"] = "gemini-1"
         os.environ["PEXELS_API_KEY"] = "pexels-1"
         self.assertEqual(settings.missing_keys(settings.load()), [])
+
+
+class PublicViewKeepsPrivateThingsOut(IsolatedHome):
+    """settings.public.json is committed, and can end up in a public repo."""
+
+    def full(self):
+        cfg = settings.load()
+        cfg["keys"]["PLANLY_API_KEY"] = "secret-key"
+        cfg["publish"]["team_id"] = "team-uuid"
+        cfg["publish"]["routes"] = {"us": ["ch1"]}
+        cfg["workspace"] = r"D:\somebody\Documents"
+        return cfg
+
+    def test_the_keys_are_gone(self):
+        self.assertNotIn("keys", settings.public_view(self.full()))
+
+    def test_the_team_id_is_blanked(self):
+        # Not a credential, but it names the account. CI gets it from a secret.
+        self.assertEqual(settings.public_view(self.full())["publish"]["team_id"], "")
+
+    def test_the_workspace_path_is_gone(self):
+        self.assertNotIn("workspace", settings.public_view(self.full()))
+
+    def test_the_schedule_is_kept(self):
+        public = settings.public_view(self.full())
+        self.assertEqual(public["publish"]["times"],
+                         settings.DEFAULTS["publish"]["times"])
+        self.assertEqual(public["publish"]["routes"], {"us": ["ch1"]})
+
+    def test_the_original_is_not_modified(self):
+        cfg = self.full()
+        settings.public_view(cfg)
+        self.assertEqual(cfg["publish"]["team_id"], "team-uuid")
+        self.assertEqual(cfg["keys"]["PLANLY_API_KEY"], "secret-key")
+
+    def test_the_written_file_has_no_key_in_it(self):
+        settings.save_public(self.full())
+        written = settings.public_path().read_text(encoding="utf-8")
+        self.assertNotIn("secret-key", written)
+        self.assertNotIn("team-uuid", written)

@@ -128,11 +128,16 @@ def load():
 
 
 def public_view(cfg):
-    """`cfg` minus anything secret, ready to commit."""
+    """`cfg` minus anything that should not be in a repository, ready to commit."""
     out = copy.deepcopy(cfg)
     out.pop("keys", None)
     # The workspace is one machine's folder layout; it means nothing on a runner.
     out.pop("workspace", None)
+    # The team id is not a credential - it is useless without the token - but it
+    # names the account, and this file can end up in a public repo. CI gets it
+    # from the PLANLY_TEAM_ID secret instead.
+    if isinstance(out.get("publish"), dict):
+        out["publish"]["team_id"] = ""
     return out
 
 
