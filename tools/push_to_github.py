@@ -1,17 +1,27 @@
-"""Create the GitHub repository and push this folder to it, once.
+"""Push this folder to GitHub, once. Run it yourself - pushing code to somebody's
+account is not a decision a background job should make.
 
-Run it yourself - it is deliberately not wired into anything, because pushing
-code to an account is not a thing a background job should decide to do:
+Two ways, and the first one needs no token at all:
 
-    set GITHUB_TOKEN=ghp_...          (PowerShell: $env:GITHUB_TOKEN="ghp_...")
-    python tools/push_to_github.py --name automation --private
+  1. Make an empty repository at github.com/new (a phone browser will do), then
 
-The token needs the `repo` and `workflow` scopes - `workflow` because this repo
-contains .github/workflows and GitHub refuses a push that adds workflow files
-without it. Generate one at github.com/settings/tokens, and delete it when you
-are done; it is only needed for this one push.
+         python tools/push_to_github.py --repo YOURNAME/automation
 
-The token is read from the environment and never written to disk. If a push
+     Git Credential Manager opens a browser the first time and you sign in to
+     GitHub there. Nothing to generate, nothing to paste, and the sign-in is
+     remembered for every push after this one.
+
+  2. Or hand it a token and it will create the repository too:
+
+         $env:GITHUB_TOKEN="ghp_..."       # PowerShell
+         python tools/push_to_github.py --name automation --private
+
+     The token needs the `repo` and `workflow` scopes - `workflow` because this
+     repo contains .github/workflows, and GitHub rejects a push that adds
+     workflow files without it.
+
+Either way the token is read from the environment and never written to disk; the
+auth header is passed per-command so it cannot end up in .git/config. If a push
 fails, the error printed is the real one from git.
 """
 import argparse
@@ -73,6 +83,8 @@ def ensure_repo(name, token, private):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("--repo", help="an existing repository as OWNER/NAME; "
+                                       "with this, no token is needed")
     parser.add_argument("--name", default="automation", help="repository name")
     parser.add_argument("--private", action="store_true", default=True)
     parser.add_argument("--public", dest="private", action="store_false")
@@ -81,16 +93,32 @@ def main():
     args = parser.parse_args()
 
     token = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or "").strip()
-    if not token:
-        print("Set GITHUB_TOKEN first (scopes: repo, workflow).", file=sys.stderr)
-        return 2
 
-    try:
-        owner, clone_url = ensure_repo(args.name, token, args.private)
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode("utf-8", "replace")[:300]
-        print(f"GitHub said {e.code}: {detail}", file=sys.stderr)
-        return 1
+    if args.repo:
+        # The repository already exists, so nothing here needs the API. Git
+        # Credential Manager will open a browser sign-in on the first push.
+        owner, _, name = args.repo.strip().strip("/").rpartition("/")
+        if not owner or not name:
+            print("--repo wants OWNER/NAME, e.g. --repo kow/automation",
+                  file=sys.stderr)
+            return 2
+        clone_url = f"https://github.com/{owner}/{name}.git"
+        print(f"pushing to existing repo {owner}/{name}")
+    elif token:
+        try:
+            owner, clone_url = ensure_repo(args.name, token, args.private)
+            name = args.name
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", "replace")[:300]
+            print(f"GitHub said {e.code}: {detail}", file=sys.stderr)
+            return 1
+    else:
+        print("Nothing to push to yet. Either:\n"
+              "  - make an empty repo at https://github.com/new, then rerun with\n"
+              "      --repo YOURNAME/automation\n"
+              "  - or set GITHUB_TOKEN (scopes: repo, workflow) and this will "
+              "create the repo for you.", file=sys.stderr)
+        return 2
 
     if not (ROOT / ".git").exists():
         run("git", "init", "-b", args.branch)
@@ -105,21 +133,28 @@ def main():
     else:
         run("git", "remote", "add", args.remote, clone_url)
 
-    # Auth as a one-shot header via `git -c`, not in the remote URL: a URL with
-    # the token in it gets written into .git/config and printed back by any
-    # later `git remote -v`.
-    import base64
-    header = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+    command = ["git"]
+    if token:
+        # Auth as a one-shot header via `git -c`, not in the remote URL: a URL
+        # with the token in it gets written into .git/config and handed back by
+        # any later `git remote -v`.
+        import base64
+        header = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+        command += ["-c", f"http.extraheader=AUTHORIZATION: basic {header}"]
+    else:
+        print("\nNo token set, so git will ask Credential Manager to sign you in.")
+        print("A browser window opens - approve it there, once.")
+
+    command += ["push", "-u", args.remote, args.branch]
     print(f"$ git push -u {args.remote} {args.branch}")
-    pushed = subprocess.run(
-        ["git", "-c", f"http.extraheader=AUTHORIZATION: basic {header}",
-         "push", "-u", args.remote, args.branch], cwd=str(ROOT))
-    if pushed.returncode != 0:
-        print("Push failed. If it mentions 'workflow', the token is missing the "
-              "'workflow' scope.", file=sys.stderr)
+    if subprocess.run(command, cwd=str(ROOT)).returncode != 0:
+        print("\nPush failed. Two usual reasons:\n"
+              "  - 'workflow' in the message: the token lacks the workflow scope\n"
+              "  - 'not found': the repo name is wrong, or it is not yours",
+              file=sys.stderr)
         return 1
 
-    print(f"\nDone: https://github.com/{owner}/{args.name}")
+    print(f"\nDone: https://github.com/{owner}/{name}")
     print("Next: Settings > Secrets and variables > Actions, add the keys from "
           ".env.example, then run the 'Build' workflow.")
     return 0

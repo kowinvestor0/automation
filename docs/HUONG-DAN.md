@@ -28,23 +28,31 @@ tạo mới từ đầu.
 **Private** cũng được — Actions vẫn chạy bình thường. **Không tích** "Add a README
 file", "Add .gitignore" hay "Choose a license"; để repo trống hoàn toàn.
 
-**1b.** Repo git ở `D:\automation` **đã tạo sẵn và đã commit rồi** — nếu dùng
-cách dưới đây thì bỏ qua bước 1a. Lấy một Personal Access Token ở
-Settings → Developer settings → Personal access tokens (tích **repo** và
-**workflow**), rồi mở PowerShell:
+**1b.** Repo git ở `D:\automation` **đã tạo sẵn và đã commit rồi**. Chỉ còn
+đẩy lên. Mở PowerShell:
 
 ```
 cd D:\automation
+python tools\push_to_github.py --repo TEN-CUA-BAN/automation
+```
+
+**Không cần token.** Lần đầu chạy, Windows sẽ mở trình duyệt cho bạn đăng nhập
+GitHub — bấm đồng ý là xong, và nó nhớ luôn cho các lần push sau.
+
+Đổi `TEN-CUA-BAN` thành tên tài khoản GitHub của bạn, và nhớ tạo repo trống ở
+bước 1a trước (làm được trên điện thoại).
+
+**Cách khác, nếu bạn có Personal Access Token** (Settings → Developer settings →
+Personal access tokens, tích **repo** và **workflow**) thì khỏi cần bước 1a,
+lệnh này tự tạo repo luôn:
+
+```
 $env:GITHUB_TOKEN = "dan_token_vao_day"
 python tools\push_to_github.py --name automation --private
 ```
 
-Lệnh này tự tạo repo trên GitHub rồi push luôn. Token chỉ sống trong phiên
-PowerShell đó, không ghi vào file nào. Đổi `--private` thành `--public` nếu muốn
-Actions miễn phí không giới hạn phút.
-
-Muốn làm tay thì vẫn được: tạo repo trống ở <https://github.com/new>, rồi
-`git remote add origin <url>` và `git push -u origin main`.
+Token chỉ sống trong phiên PowerShell đó, không ghi vào file nào. Đổi
+`--private` thành `--public` nếu muốn Actions miễn phí không giới hạn phút.
 
 **1c.** Lúc `git push` nó sẽ hỏi đăng nhập. GitHub **không còn nhận mật khẩu tài
 khoản** — chỗ "Password" bạn dán một Personal Access Token (tạo ở

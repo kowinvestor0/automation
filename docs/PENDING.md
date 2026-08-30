@@ -17,8 +17,20 @@ Toàn bộ hệ thống chạy ngầm đã dựng xong và chạy được trên
 `.github/workflows/videos.yml` từ 28/08 mà **chưa bao giờ chạy lần nào** — cũng
 chưa từng là repo.
 
-Cần: một GitHub token của anh (scope `repo` + `workflow`), rồi chạy
-`tools/push_to_github.py`. Hướng dẫn từng bước ở [HUONG-DAN.md](HUONG-DAN.md).
+Đã kiểm: **trên máy này không có token GitHub nào**. Windows Credential Manager
+chỉ có 2 mục, không mục nào là GitHub; không có GitHub Desktop, không có `gh`,
+không có `.netrc`. Tài khoản GitHub anh nối hôm trước là nối với Claude trên web
+— quyền đó nằm ở phía Anthropic, terminal trên máy không dùng được.
+
+Nhưng **không cần token**: tạo một repo trống ở <https://github.com/new> (làm
+được trên điện thoại), rồi chạy
+
+```
+python tools/push_to_github.py --repo TEN-CUA-BAN/automation
+```
+
+Windows sẽ mở trình duyệt cho anh đăng nhập GitHub một lần, và nhớ luôn.
+Hướng dẫn từng bước ở [HUONG-DAN.md](HUONG-DAN.md).
 
 **Câu cần anh trả lời: repo để _public_ hay _private_?** Public thì Actions
 miễn phí không giới hạn phút; private chỉ có 2000 phút/tháng, dựng video sẽ ăn
