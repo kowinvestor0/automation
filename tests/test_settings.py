@@ -52,7 +52,8 @@ class Load(IsolatedHome):
         # untouched keys survive from DEFAULTS instead of vanishing
         self.assertEqual(cfg["publish"]["times"], settings.DEFAULTS["publish"]["times"])
         self.assertEqual(cfg["publish"]["timezone_offset"], 7)
-        self.assertEqual(cfg["publish"]["max_seconds"], 60)
+        self.assertEqual(cfg["publish"]["max_seconds"],
+                         settings.DEFAULTS["publish"]["max_seconds"])
         self.assertEqual(cfg["run"]["us"]["count"], 9)
         self.assertEqual(cfg["run"]["us"]["niche"], "")
         self.assertTrue(cfg["run"]["us"]["enabled"])

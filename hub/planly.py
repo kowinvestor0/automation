@@ -161,12 +161,15 @@ def build_groups(entries):
 
       different video per channel -> one group each
       same video on many channels -> one shared group, which is what a group is
+
+    An entry with no `publishOn` goes out immediately - that is Planly's own
+    rule: leave the field off and it publishes rather than schedules.
     """
     order = []
     grouped = {}
     for entry in entries:
         media_id = entry["media"][0]["id"]
-        gkey = (entry["publishOn"], media_id)
+        gkey = (entry.get("publishOn"), media_id)
         if gkey not in grouped:
             grouped[gkey] = []
             order.append(gkey)
@@ -177,7 +180,14 @@ def build_groups(entries):
             "media": entry["media"],
             "options": entry.get("options") or {"postType": 0},
         })
-    return [{"publishOn": gkey[0], "schedules": grouped[gkey]} for gkey in order]
+
+    groups = []
+    for gkey in order:
+        group = {"schedules": grouped[gkey]}
+        if gkey[0]:
+            group["publishOn"] = gkey[0]
+        groups.append(group)
+    return groups
 
 
 def create_schedules(key, team_id, entries):
@@ -336,14 +346,15 @@ def next_start(start, count, channel_count):
 
 
 def duration_warning(video, max_seconds):
-    """Planly hides posts longer than a minute from the calendar view.
+    """Flag a video longer than the configured ceiling.
 
-    Returns a warning string, or None. Never blocks - the limit is a setting and
-    the user may have raised it on purpose.
+    Length itself is fine - what used to break long posts was TikTok refusing
+    them while Duet and Stitch were on, and those are switched off automatically
+    now. This is only the "longer than you asked for" check, so it never blocks.
     """
     seconds = video.get("duration_seconds") or 0
     if max_seconds and seconds and float(seconds) > float(max_seconds):
         name = video.get("title") or video.get("file") or "video"
-        return (f"{name}: {float(seconds):.0f}s is longer than {max_seconds}s - "
-                f"Planly will not show it on the calendar.")
+        return (f"{name}: {float(seconds):.0f}s is longer than the {max_seconds}s "
+                f"ceiling you set.")
     return None

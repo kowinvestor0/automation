@@ -24,7 +24,15 @@
     "timezone_offset": 7,
     "lead_minutes": 30,
     "distribute": "unique",
-    "max_seconds": 60,
+    "when": "now",
+    "max_seconds": 90,
+    "post_options": {
+      "duet": "auto",
+      "stitch": "auto",
+      "comment": "keep",
+      "privacy_level": "default",
+      "auto_disable_over_seconds": 60
+    },
     "routes": {},
     "channel_options": {}
   },

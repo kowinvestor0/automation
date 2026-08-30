@@ -250,7 +250,8 @@ class Publish(FactoryOutput):
         make_output(self.factory, "20260829-1299-us",
                     {"title": "Long", "file": "video.mp4", "duration_seconds": 95})
         result = self.run_publish(dry_run=False)
-        self.assertTrue(any("95s is longer than 60s" in w for w in result.warnings))
+        self.assertTrue(any("95s is longer than the 90s" in w
+                            for w in result.warnings))
         self.assertEqual(result.scheduled, 7)
 
     def test_an_upload_failure_is_reported_and_the_rest_still_go_out(self):
@@ -381,9 +382,16 @@ class ChannelOptions(unittest.TestCase):
                                       {"id": "c1", "social_network": "youtube"}, {})
         self.assertEqual(options["title"], "A clip")
 
+    def test_tiktok_gets_the_duet_and_stitch_treatment(self):
+        # An unknown duration is treated as "might be long", so both go off.
+        options = publish.options_for({"title": "A clip"},
+                                      {"id": "c1", "social_network": "tiktok"}, {})
+        self.assertEqual(options, {"postType": 0, "disableDuet": True,
+                                   "disableStitch": True})
+
     def test_other_networks_get_nothing_by_default(self):
         self.assertEqual(publish.options_for({"title": "A clip"},
-                                             {"id": "c1", "social_network": "tiktok"},
+                                             {"id": "c1", "social_network": "instagram"},
                                              {}), {})
 
     def test_a_per_channel_override_wins_over_the_network_one(self):

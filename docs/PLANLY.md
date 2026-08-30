@@ -207,6 +207,63 @@ lên 60–70 giây; hạ xuống `40` là an toàn. Hoặc chạy một lượt 
 
 ---
 
+## Đăng ngay, hay xếp vào khung giờ
+
+Hai chế độ, đổi trong app ở khung **Giờ đăng**.
+
+| `when` | Nghĩa |
+|---|---|
+| `now` (mặc định) | Dựng xong video là đẩy lên Planly đăng luôn. Không chờ khung giờ nào cả |
+| `slots` | Xếp vào 6 khung giờ đã đặt |
+
+Chế độ `now` dùng đúng quy tắc của Planly: lịch nào **không có** trường
+`publishOn` thì Planly đăng ngay chứ không xếp lịch. Nên ở chế độ này các ô giờ,
+`lead_minutes`, và phần nhớ khung giờ đều không dùng đến — app tự làm mờ chúng.
+
+Việc **chia đều cho các acc vẫn chạy y nguyên** ở cả hai chế độ: mỗi acc vẫn
+nhận video khác nhau, và vòng xoay vẫn nhớ chỗ dừng để lượt sau đến lượt acc
+khác.
+
+---
+
+## Duet và Stitch — vì sao video dài từng không lên được
+
+Đây là nguyên nhân thật của chuyện "video trên 1 phút không hiện trên lịch".
+
+TikTok chỉ cho bật Duet/Stitch với video khoảng **1 phút đổ lại**. Video dài hơn
+mà hai cái đó còn bật thì TikTok **từ chối cả bài** — không báo lỗi ầm ĩ, bài chỉ
+đơn giản là không xuất hiện.
+
+Nên hệ thống tự tắt chúng khi cần:
+
+| Chế độ | Làm gì |
+|---|---|
+| `auto` (mặc định) | Tắt khi video dài hơn ngưỡng (mặc định 60 giây) |
+| `allow` | Không bao giờ tắt |
+| `disable` | Luôn tắt |
+
+Không biết thời lượng thì cũng **tắt** — đoán sai theo hướng này chỉ mất tính
+năng Duet, đoán sai theo hướng kia là mất cả bài.
+
+Chỉ những trường cần tắt mới được gửi lên. Gửi thừa trường lạ là một cách hay để
+bị nền tảng từ chối bài.
+
+Đổi trong app ở khung **Tuỳ chọn bài đăng (TikTok)**.
+
+---
+
+## Độ dài video
+
+Mặc định giờ là **60–90 giây** (`target_seconds: 75`, `scene_count: 11` trong
+`config.json` của mỗi xưởng). `max_seconds: 90` chỉ là mức cảnh báo — vượt thì
+ghi một dòng nhắc, không chặn.
+
+**Cần khoá LLM mới đạt được độ dài này.** Kịch bản viết bằng Gemini hoặc Claude
+thì dài đúng yêu cầu. Không có khoá, hệ thống rơi về `topics.json` — kịch bản có
+sẵn, ngắn hơn, và lặp lại sau một thời gian.
+
+---
+
 ## `dry_run` làm gì và **không** làm gì
 
 | Việc | `dry_run: true` | `dry_run: false` |
@@ -306,6 +363,8 @@ chương trình chỉ tính lại từ đầu, không hỏng gì.
 | `enabled` | `false` | Công tắc tổng. `false` thì không gọi Planly lần nào |
 | `dry_run` | `true` | Làm hết trừ bước tạo lịch |
 | `team_id` | `""` | **Bắt buộc.** API Planly không có lệnh liệt kê team, để trống là không chạy được. Trên GitHub thì đặt bằng secret `PLANLY_TEAM_ID` |
+| `when` | `"now"` | `now` = đăng ngay khi dựng xong; `slots` = xếp vào khung giờ |
+| `post_options` | xem trên | Duet/Stitch/bình luận, và ngưỡng tự tắt |
 | `channels` | `["all"]` | `["all"]` = mọi kênh đang nối, hoặc liệt kê id cụ thể |
 | `routes` | `{}` | Luồng nào đăng lên acc nào. Khóa là `us`, `mx`, hoặc `us:humor`. Trống là mọi luồng dùng `channels` |
 | `mode` | `"same_time"` | `same_time` hoặc `spread` |
@@ -314,7 +373,7 @@ chương trình chỉ tính lại từ đầu, không hỏng gì.
 | `timezone_offset` | `7` | `7` = UTC+7, giờ Việt Nam |
 | `lead_minutes` | `30` | Không xếp bài vào khung gần hơn ngần này phút |
 | `distribute` | `"unique"` | `unique` hoặc `mirror` |
-| `max_seconds` | `60` | Ngưỡng cảnh báo độ dài |
+| `max_seconds` | `90` | Ngưỡng cảnh báo độ dài |
 | `channel_options` | `{}` | Tham số riêng cho từng kênh hoặc từng nền tảng |
 
 **`channel_options`** nhận khoá là id kênh, hoặc là tên nền tảng (`"youtube"`,

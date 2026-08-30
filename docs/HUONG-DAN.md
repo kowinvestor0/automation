@@ -75,7 +75,7 @@ secret**. Mỗi khoá là một secret riêng, tên phải viết **hoa và đú
 
 | Tên secret | Lấy ở đâu | Không có thì sao |
 |---|---|---|
-| `GEMINI_API_KEY` | <https://aistudio.google.com/apikey> (miễn phí) | Rơi xuống Claude; không có Claude nữa thì lấy kịch bản có sẵn trong `topics.json`, nghĩa là nội dung sẽ lặp lại |
+| `GEMINI_API_KEY` | <https://aistudio.google.com/apikey> — **miễn phí, không cần thẻ** | Rơi xuống Claude; không có Claude nữa thì lấy kịch bản có sẵn trong `topics.json`, nghĩa là nội dung lặp lại **và video ngắn hơn 60 giây** |
 | `ANTHROPIC_API_KEY` | <https://console.anthropic.com> (trả tiền) | Không sao, Gemini thay được |
 | `PEXELS_API_KEY` | <https://www.pexels.com/api/> (miễn phí) | Chỉ còn ảnh tĩnh Wikimedia. Video vẫn ra, chỉ ít chuyển động hơn |
 | `PLANLY_API_KEY` | Planly → Settings → Security | **Không đăng được gì cả.** Video render xong nằm im trong `output/` |
@@ -83,6 +83,23 @@ secret**. Mỗi khoá là một secret riêng, tên phải viết **hoa và đú
 | `TELEGRAM_BOT_TOKEN` | Nhắn `/newbot` cho [@BotFather](https://t.me/BotFather) | Không có tin nhắn báo kết quả về điện thoại |
 | `TELEGRAM_CHAT_ID` | Xem cách lấy ở dưới | Như trên. Thiếu một trong hai là mất luôn thông báo |
 | `WIKI_CONTACT` | Email của bạn | Wikimedia dễ chặn hơn khi tải nhiều ảnh liên tục |
+
+### Về Gemini: gói Pro trả tiền **không** cho dùng API
+
+Đây là chỗ dễ mất tiền oan. Gói **Google AI Pro / Ultra** (thuê bao Gemini trong
+app và trên web) **không bao gồm quyền dùng API**. Mua Pro rồi thì key API vẫn
+phải lấy riêng, và vẫn tính riêng.
+
+Cái cần lấy là **API key ở Google AI Studio** (`aistudio.google.com/apikey`) —
+miễn phí, không cần thẻ, dùng ngay. Hạn mức miễn phí xem trong chính trang
+AI Studio của bạn.
+
+Khối lượng của hệ thống này rất nhẹ: 4 lượt/ngày × 2 xưởng × 3 video = **24 lần
+gọi/ngày**, mỗi lần là một đoạn văn ngắn. Đây không phải mức mà hạn mức miễn phí
+phải lo.
+
+Nếu đã trả tiền Pro rồi thì cứ dùng tiếp cho việc chat — chỉ là nó không giúp gì
+cho phần tự động này.
 
 **Lấy `TELEGRAM_CHAT_ID`:** sau khi BotFather cho bạn token, mở Telegram nhắn một
 câu bất kỳ cho con bot vừa tạo, rồi mở trên trình duyệt:

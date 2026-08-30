@@ -268,6 +268,14 @@ class ControlPanel:
         self.routes = {k: list(v) for k, v in
                        (self.cfg["publish"].get("routes") or {}).items() if v}
         self.route_key = "default"
+        pub0 = self.cfg["publish"]
+        post0 = pub0.get("post_options") or {}
+        self.v_when = tk.StringVar(value=pub0.get("when") or "now")
+        self.v_duet = tk.StringVar(value=post0.get("duet") or "auto")
+        self.v_stitch = tk.StringVar(value=post0.get("stitch") or "auto")
+        self.v_duet_limit = tk.StringVar(
+            value=str(post0.get("auto_disable_over_seconds") or 60))
+        self.v_no_comment = tk.BooleanVar(value=post0.get("comment") == "disable")
         self.gh_runs = []
         self.ready = False
         self.preview_job = None
@@ -889,6 +897,18 @@ class ControlPanel:
 
         timing = ttk.LabelFrame(left, text=" Giờ đăng ", padding=8)
         timing.pack(fill="x", pady=(8, 0))
+        ttk.Radiobutton(timing, text="Đăng ngay khi có video xong",
+                        value="now", variable=self.v_when,
+                        command=self._sync_when).pack(anchor="w")
+        ttk.Radiobutton(timing, text="Xếp vào khung giờ bên dưới",
+                        value="slots", variable=self.v_when,
+                        command=self._sync_when).pack(anchor="w")
+        ttk.Label(timing, wraplength=330, style="Hint.TLabel",
+                  text="Đăng ngay: Planly nhận là đăng luôn, không chờ khung giờ. "
+                       "Các ô giờ bên dưới lúc đó không dùng đến.").pack(
+            anchor="w", pady=(2, 8))
+
+        self.slot_widgets = []
         ttk.Radiobutton(timing, text="Đăng cùng giờ (mọi kênh cùng một phút)",
                         value="same_time", variable=self.v_mode,
                         command=self._sync_mode).pack(anchor="w")
@@ -917,6 +937,28 @@ class ControlPanel:
         ttk.Label(timing, text="Nhập dạng 09:00 rồi bấm Thêm.",
                   style="Hint.TLabel").pack(anchor="w", pady=(2, 0))
         self._render_times()
+
+        post = ttk.LabelFrame(left, text=" Tuỳ chọn bài đăng (TikTok) ", padding=8)
+        post.pack(fill="x", pady=(8, 0))
+        ttk.Label(post, wraplength=330, style="Hint.TLabel",
+                  text="TikTok từ chối video dài hơn khoảng 1 phút nếu còn bật "
+                       "Duet/Stitch - bài sẽ không lên. Để \"Tự động\" là an "
+                       "toàn nhất.").pack(anchor="w", pady=(0, 6))
+        for label, var in (("Duet:", self.v_duet), ("Stitch:", self.v_stitch)):
+            row = ttk.Frame(post)
+            row.pack(fill="x", pady=1)
+            ttk.Label(row, text=label, width=8).pack(side="left")
+            for value, text in (("auto", "Tự động"), ("allow", "Luôn bật"),
+                                ("disable", "Luôn tắt")):
+                ttk.Radiobutton(row, text=text, value=value, variable=var,
+                                command=self.schedule_preview).pack(side="left")
+        cutoff = ttk.Frame(post)
+        cutoff.pack(fill="x", pady=(6, 0))
+        ttk.Label(cutoff, text="Tự tắt khi video dài hơn (giây):").pack(side="left")
+        ttk.Spinbox(cutoff, from_=1, to=600, width=6,
+                    textvariable=self.v_duet_limit).pack(side="left", padx=6)
+        ttk.Checkbutton(post, text="Tắt bình luận",
+                        variable=self.v_no_comment).pack(anchor="w", pady=(6, 0))
 
         deal = ttk.LabelFrame(left, text=" Chia video cho kênh ", padding=8)
         deal.pack(fill="x", pady=(8, 0))
@@ -1044,6 +1086,18 @@ class ControlPanel:
     def _channel_picked(self):
         self.v_all_channels.set(False)
         self._channels_toggled()
+
+    def _sync_when(self):
+        """Grey out the slot controls when nothing is being scheduled."""
+        state = "normal" if self.v_when.get() == "slots" else "disabled"
+        for widget in getattr(self, "slot_widgets", []):
+            try:
+                widget.configure(state=state)
+            except tk.TclError:
+                pass
+        if self.v_when.get() == "slots":
+            self._sync_mode()
+        self.schedule_preview()
 
     def _route_changed(self, _event=None):
         """Remember the route being left before showing the next one."""
@@ -1517,6 +1571,15 @@ class ControlPanel:
             "timezone_offset": to_number(self.v_tz.get(), 7),
             "lead_minutes": max(0, to_int(self.v_lead.get(), 30)),
             "distribute": self.v_distribute.get() or "unique",
+            "when": self.v_when.get() or "now",
+            "post_options": {
+                "duet": self.v_duet.get() or "auto",
+                "stitch": self.v_stitch.get() or "auto",
+                "comment": "disable" if self.v_no_comment.get() else "keep",
+                "privacy_level": "default",
+                "auto_disable_over_seconds": max(
+                    1, to_int(self.v_duet_limit.get(), 60)),
+            },
             "max_seconds": max(0, to_int(self.v_max_seconds.get(), 60)),
             "channel_options": (self.cfg["publish"].get("channel_options") or {}),
         }

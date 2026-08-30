@@ -59,6 +59,26 @@ def find_iscc():
     return None, looked
 
 
+def payload_is_fresh(payload):
+    """Refuse to package a folder that a failed or interrupted build left behind.
+
+    A build that dies part-way through leaves a directory that still looks like
+    a build, and Inno will happily compile an installer out of it. That produced
+    a setup missing a third of its files once; it is not a failure worth being
+    able to repeat.
+    """
+    exe = payload / "AutomationHub.exe"
+    internal = payload / "_internal"
+    if not exe.exists():
+        return False, f"no exe at {exe}"
+    if not (internal / "base_library.zip").exists():
+        return False, f"{internal} looks incomplete - rerun tools/build_exe.py"
+    for name in ("factories", "assets"):
+        if not (internal / name).is_dir():
+            return False, f"{internal / name} is missing - rerun tools/build_exe.py"
+    return True, ""
+
+
 def main():
     parser = argparse.ArgumentParser(description="Compile the Windows installer.")
     parser.add_argument("--version", default=None,
@@ -91,6 +111,11 @@ def main():
             print(f"  - {path}", file=sys.stderr)
         print("Install Inno Setup 6 from https://jrsoftware.org/isdl.php, or set "
               "ISCC_PATH to its ISCC.exe.", file=sys.stderr)
+        return 1
+
+    fresh, problem = payload_is_fresh(source)
+    if not fresh:
+        print(f"\nERROR: {problem}", file=sys.stderr)
         return 1
 
     app_version = args.version or version()

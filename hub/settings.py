@@ -57,7 +57,19 @@ DEFAULTS = {
         # unique: split the batch so no two channels get the same video.
         # mirror: every channel gets every video.
         "distribute": "unique",
-        "max_seconds": 60,
+        # "now" hands the video to Planly to publish immediately; "slots" puts
+        # it on the calendar at the times above.
+        "when": "now",
+        "max_seconds": 90,
+        # TikTok rejects a video longer than about a minute while Duet or
+        # Stitch are on, so "auto" switches them off past the limit.
+        "post_options": {
+            "duet": "auto",
+            "stitch": "auto",
+            "comment": "keep",
+            "privacy_level": "default",
+            "auto_disable_over_seconds": 60,
+        },
         # Which stream of videos goes to which accounts. Keys are "us", "mx",
         # or "us:humor" for one niche; the value is a list of Planly channel
         # ids. Anything with no route falls back to `channels` above.

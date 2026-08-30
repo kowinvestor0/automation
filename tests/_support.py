@@ -58,23 +58,30 @@ def local(year=2026, month=8, day=29, hour=8, minute=0):
 
 
 def publish_cfg(**over):
-    """The `publish` block of settings.json, with the shipped defaults."""
-    cfg = {
+    """The `publish` block, taken from the shipped defaults.
+
+    Copied from DEFAULTS rather than written out again: a hand-written copy
+    drifts the moment a default changes, and then the suite is quietly testing
+    a configuration nobody ships.
+    """
+    import copy
+
+    from hub import settings
+
+    cfg = copy.deepcopy(settings.DEFAULTS["publish"])
+    cfg.update({
+        # Publishing off by default is right for a shipped install and useless
+        # for a test, which exists to exercise the path.
         "enabled": True,
         "dry_run": True,
         # Planly's API cannot look a team up, so a run without one is an error
         # path, not the normal case. Tests that want that path clear it.
         "team_id": "team-1",
-        "channels": ["all"],
-        "mode": "same_time",
+        # Most of the suite exercises calendar scheduling; posting immediately
+        # has its own file, which asks for it explicitly.
+        "when": "slots",
         "times": list(SIX_TIMES),
-        "gap_minutes": 120,
-        "timezone_offset": 7,
-        "lead_minutes": 30,
-        "distribute": "unique",
-        "max_seconds": 60,
-        "channel_options": {},
-    }
+    })
     cfg.update(over)
     return cfg
 

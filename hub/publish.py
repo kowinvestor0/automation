@@ -88,13 +88,59 @@ def caption_for(video, channel, cfg):
     return text[:limit]
 
 
+DUET_STITCH_LIMIT = 60
+
+
+def _switch(mode, seconds, limit):
+    """Resolve a three-way duet/stitch switch into "must disable this".
+
+    'auto' with an unknown duration disables, on purpose: leaving it on for a
+    long video loses the whole post, while turning it off on a short one costs
+    only the duet feature.
+    """
+    if mode == "allow":
+        return False
+    if mode == "disable":
+        return True
+    if not seconds:
+        return True
+    return float(seconds) > float(limit)
+
+
 def options_for(video, channel, cfg):
-    """Per-network extras. YouTube refuses a post with no title."""
+    """Per-network extras sent with each schedule.
+
+    The duet/stitch part is not cosmetic. TikTok only allows Duet and Stitch on
+    videos of about a minute or less, and rejects a longer one outright while
+    those are still on - the post simply never appears. So anything past the
+    limit gets them switched off automatically.
+    """
     network = (channel.get("social_network") or "").lower()
     configured = cfg.get("channel_options") or {}
     options = dict(configured.get(channel["id"]) or configured.get(network) or {})
+
     if "youtube" in network:
         options.setdefault("title", (video.get("title") or "")[:95])
+        return options
+
+    if "tiktok" not in network:
+        return options
+
+    post = cfg.get("post_options") or {}
+    limit = post.get("auto_disable_over_seconds") or DUET_STITCH_LIMIT
+    seconds = video.get("duration_seconds")
+
+    options.setdefault("postType", 0)
+    # Only sent when switching something off - an unexpected field is a good way
+    # to have a network reject the whole post.
+    if _switch(post.get("duet", "auto"), seconds, limit):
+        options.setdefault("disableDuet", True)
+    if _switch(post.get("stitch", "auto"), seconds, limit):
+        options.setdefault("disableStitch", True)
+    if post.get("comment") == "disable":
+        options.setdefault("disableComment", True)
+    if post.get("privacy_level") and post["privacy_level"] != "default":
+        options.setdefault("privacyLevel", post["privacy_level"])
     return options
 
 
@@ -173,13 +219,19 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
     # clash; counting a slot as spent the moment any channel anywhere used it
     # would push each run further into the day than the last and, after six
     # runs, spill everything into tomorrow.
-    st_now = hub_state.load()
-    booked = set()
-    for channel_id, items in dealt.items():
-        if items:
-            booked |= hub_state.taken_slots(channel_id, st_now)
+    # "now" is Planly's own rule: a schedule with no publishOn goes out
+    # immediately. There is nothing to plan and no slot to book.
+    post_now = (cfg.get("when") or "slots") == "now"
     per_channel = max((len(v) for v in dealt.values()), default=0)
-    slots = planly.plan_slots(per_channel, cfg, now=now, taken=booked)
+    if post_now:
+        slots = [None] * per_channel
+    else:
+        st_now = hub_state.load()
+        booked = set()
+        for channel_id, items in dealt.items():
+            if items:
+                booked |= hub_state.taken_slots(channel_id, st_now)
+        slots = planly.plan_slots(per_channel, cfg, now=now, taken=booked)
 
     # One upload per video, reused by every channel that was dealt it.
     media_ids = {}
@@ -201,20 +253,22 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
                 result.skipped.append(f"{video['folder']} -> {planly.describe(channel)}")
                 continue
             when = slots[index]
-            entries.append({
+            entry = {
                 "channelId": channel_id,
-                "publishOn": when,
                 "content": caption_for(video, channel, cfg),
                 "media": [{"id": media_id, "options": {}}],
                 "options": options_for(video, channel, cfg),
-            })
+            }
+            if when:
+                entry["publishOn"] = when
+            entries.append(entry)
             result.entries.append({
                 "channel": planly.describe(channel),
                 "channel_id": channel_id,
                 "video": video.get("title") or video["folder"],
                 "folder": video["folder"],
                 "publish_on": when,
-                "local_time": _local(when, cfg),
+                "local_time": _local(when, cfg) if when else "ngay bay gio",
             })
 
     if not entries:
@@ -222,16 +276,19 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
         return result
 
     if result.dry_run:
-        log(f"DRY RUN - would create {len(entries)} schedule entr"
+        log(f"DRY RUN - would {'post' if post_now else 'schedule'} "
+            f"{len(entries)} video(s) right now" if post_now else
+            f"DRY RUN - would create {len(entries)} schedule entr"
             f"{'y' if len(entries) == 1 else 'ies'}")
         return result
 
     planly.create_schedules(key, team_id, entries)
 
     st = hub_state.load()
-    for channel_id, items in dealt.items():
-        if items:
-            hub_state.remember_slots(channel_id, slots[:len(items)], state=st)
+    if not post_now:
+        for channel_id, items in dealt.items():
+            if items:
+                hub_state.remember_slots(channel_id, slots[:len(items)], state=st)
     hub_state.remember_videos([v["folder"] for v in videos
                                if v["folder"] in media_ids], state=st)
     if (cfg.get("distribute") or "unique") != "mirror":
