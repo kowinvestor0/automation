@@ -59,6 +59,26 @@ FACTORY_VI = {
 }
 
 MODE_VI = {"same_time": "Đăng cùng giờ", "spread": "Cách đều"}
+
+# A route pins one stream of videos to one set of accounts. "default" is the
+# fallback every unrouted stream uses, so it always stays first in the list.
+ROUTE_VI = [
+    ("default", "Chung - mọi luồng chưa chỉ định"),
+    ("us", "Xưởng US (tiếng Anh)"),
+    ("us:mysteries", "  US · bí ẩn"),
+    ("us:truecrime", "  US · vụ án có thật"),
+    ("us:facts", "  US · kiến thức"),
+    ("us:history", "  US · lịch sử"),
+    ("us:money", "  US · tiền bạc"),
+    ("us:humor", "  US · hài"),
+    ("mx", "Xưởng Mexico (tiếng Tây Ban Nha)"),
+    ("mx:misterios", "  MX · bí ẩn"),
+    ("mx:curiosidades", "  MX · chuyện lạ"),
+    ("mx:historia", "  MX · lịch sử"),
+    ("mx:lugares", "  MX · địa danh"),
+    ("mx:humor", "  MX · hài"),
+]
+ROUTE_LABEL = {key: label.strip() for key, label in ROUTE_VI}
 DISTRIBUTE_VI = {"unique": "Chia đều, không trùng", "mirror": "Tất cả kênh cùng video"}
 
 STATUS_VI = {
@@ -244,6 +264,10 @@ class ControlPanel:
         self.channels = []            # channels loaded from Planly, if any
         self.channel_vars = {}
         self.wanted_channels = list((self.cfg["publish"].get("channels") or ["all"]))
+        # route key -> list of channel ids. "default" mirrors wanted_channels.
+        self.routes = {k: list(v) for k, v in
+                       (self.cfg["publish"].get("routes") or {}).items() if v}
+        self.route_key = "default"
         self.gh_runs = []
         self.ready = False
         self.preview_job = None
@@ -839,9 +863,23 @@ class ControlPanel:
                    command=self.load_channels).pack(side="left")
         ttk.Checkbutton(row, text="Tất cả", variable=self.v_all_channels,
                         command=self._channels_toggled).pack(side="left", padx=8)
-        ttk.Label(channels, text="Mã nhóm (team id, để trống là tự tìm):",
+        ttk.Label(channels, text="Mã nhóm (team id, bắt buộc):",
                   style="Hint.TLabel").pack(anchor="w", pady=(6, 0))
         ttk.Entry(channels, textvariable=self.v_team).pack(fill="x")
+        route_row = ttk.Frame(channels)
+        route_row.pack(fill="x", pady=(8, 2))
+        ttk.Label(route_row, text="Luồng video:").pack(side="left")
+        self.v_route = tk.StringVar(value=ROUTE_LABEL["default"])
+        self.cmb_route = ttk.Combobox(
+            route_row, textvariable=self.v_route, state="readonly", width=30,
+            values=[label for _key, label in ROUTE_VI])
+        self.cmb_route.pack(side="left", padx=6)
+        self.cmb_route.bind("<<ComboboxSelected>>", self._route_changed)
+        ttk.Label(channels, style="Hint.TLabel", wraplength=330,
+                  text="Chọn một luồng rồi tích những kênh mà luồng đó đăng lên. "
+                       "Luồng nào không tích riêng thì dùng danh sách Chung.").pack(
+            anchor="w")
+
         outer, self.channel_box = scrollable(channels, height=150)
         outer.pack(fill="x", pady=(6, 0))
         self.lbl_channels = ttk.Label(channels, text="", style="Hint.TLabel",
@@ -974,12 +1012,15 @@ class ControlPanel:
                 pass
         self.schedule_preview()
 
-    def _render_channels(self):
+    def _render_channels(self, current=None):
+        if current is None:
+            current = (self.wanted_channels if self.route_key == "default"
+                       else self.routes.get(self.route_key) or ["all"])
         for child in self.channel_box.winfo_children():
             child.destroy()
         self.channel_vars = {}
         if not self.channels:
-            saved = [c for c in self.wanted_channels if c != "all"]
+            saved = [c for c in current if c != "all"]
             note = (f"Đang dùng {len(saved)} kênh đã lưu."
                     if saved else "Chưa tải danh sách kênh.")
             ttk.Label(self.channel_box, style="Hint.TLabel", wraplength=320,
@@ -987,7 +1028,7 @@ class ControlPanel:
                                   "thật từ Planly.").pack(anchor="w")
             self.lbl_channels.configure(text="")
             return
-        wanted = set(self.wanted_channels)
+        wanted = set(current)
         for channel in self.channels:
             cid = channel.get("id")
             var = tk.BooleanVar(value=(self.v_all_channels.get() or cid in wanted))
@@ -997,11 +1038,55 @@ class ControlPanel:
                             command=self._channel_picked).pack(anchor="w")
         self._channels_toggled()
         self.lbl_channels.configure(
-            text=f"Tài khoản này có {len(self.channels)} kênh.")
+            text=f"Tài khoản này có {len(self.channels)} kênh. "
+                 + self._route_summary())
 
     def _channel_picked(self):
         self.v_all_channels.set(False)
         self._channels_toggled()
+
+    def _route_changed(self, _event=None):
+        """Remember the route being left before showing the next one."""
+        self._store_route()
+        # Match on the combobox index first. The labels are indented to show
+        # which factory a niche belongs to, and matching on the text alone
+        # silently picks the wrong route the moment anything trims it.
+        index = self.cmb_route.current()
+        if 0 <= index < len(ROUTE_VI):
+            self.route_key = ROUTE_VI[index][0]
+        else:
+            wanted = (self.v_route.get() or "").strip()
+            for key, text in ROUTE_VI:
+                if text.strip() == wanted:
+                    self.route_key = key
+                    break
+        self._load_route()
+
+    def _store_route(self):
+        picked = self._picked_channels()
+        if self.route_key == "default":
+            self.wanted_channels = picked
+        elif picked == ["all"]:
+            # "all" on a specific route means "no opinion" - drop it so the
+            # stream falls back to the shared list instead of pinning itself
+            # to every account by accident.
+            self.routes.pop(self.route_key, None)
+        else:
+            self.routes[self.route_key] = picked
+
+    def _load_route(self):
+        current = (self.wanted_channels if self.route_key == "default"
+                   else self.routes.get(self.route_key) or ["all"])
+        self.v_all_channels.set(current == ["all"])
+        self._render_channels(current)
+        self.schedule_preview()
+
+    def _route_summary(self):
+        if not self.routes:
+            return "Chưa chỉ định luồng nào - tất cả dùng danh sách Chung."
+        parts = [f"{ROUTE_LABEL.get(k, k)}: {len(v)} kênh"
+                 for k, v in sorted(self.routes.items())]
+        return "Đã chỉ định - " + "; ".join(parts)
 
     def load_channels(self):
         key = self.secret("PLANLY_API_KEY")
@@ -1034,7 +1119,7 @@ class ControlPanel:
 
     def _preview_channels(self):
         """Real channels when they have been loaded, believable stand-ins if not."""
-        wanted = self._current_channels()
+        wanted = self._picked_channels()
         if self.channels:
             chosen = planly.pick_channels(self.channels, wanted)
             if chosen:
@@ -1399,13 +1484,25 @@ class ControlPanel:
 
     # ------------------------------------------------------ settings plumbing
 
-    def _current_channels(self):
+    def _picked_channels(self):
+        """Whatever is ticked right now, for the route on screen."""
         if self.v_all_channels.get():
             return ["all"]
         if self.channel_vars:
             picked = [cid for cid, var in self.channel_vars.items() if var.get()]
             return picked or ["all"]
+        return list(self.wanted_channels if self.route_key == "default"
+                    else self.routes.get(self.route_key) or ["all"])
+
+    def _current_channels(self):
+        """The shared list - what an unrouted stream posts to."""
+        if self.route_key == "default":
+            return self._picked_channels()
         return list(self.wanted_channels)
+
+    def _current_routes(self):
+        self._store_route()
+        return {k: list(v) for k, v in self.routes.items() if v}
 
     def _publish_cfg(self):
         return {
@@ -1413,6 +1510,7 @@ class ControlPanel:
             "dry_run": bool(self.v_dry_run.get()),
             "team_id": (self.v_team.get() or "").strip(),
             "channels": self._current_channels(),
+            "routes": self._current_routes(),
             "mode": self.v_mode.get() or "same_time",
             "times": sorted(self.times) or ["09:00"],
             "gap_minutes": max(1, to_int(self.v_gap.get(), 120)),
@@ -1457,6 +1555,8 @@ class ControlPanel:
     def save(self, quiet=False):
         cfg = self.collect()
         self.wanted_channels = list(cfg["publish"]["channels"])
+        self.routes = {k: list(v) for k, v in
+                       (cfg["publish"].get("routes") or {}).items() if v}
         try:
             where = hub_settings.save(cfg)
         except Exception as e:        # noqa: BLE001

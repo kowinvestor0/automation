@@ -58,6 +58,10 @@ DEFAULTS = {
         # mirror: every channel gets every video.
         "distribute": "unique",
         "max_seconds": 60,
+        # Which stream of videos goes to which accounts. Keys are "us", "mx",
+        # or "us:humor" for one niche; the value is a list of Planly channel
+        # ids. Anything with no route falls back to `channels` above.
+        "routes": {},
         "channel_options": {},
     },
     "run": {

@@ -148,6 +148,11 @@ Full defaults live in `hub/settings.py:DEFAULTS`.
 | `github.repo` | `owner/name`, so the app can show runs and start one |
 | `github.run_workflow` | Which workflow the Run button dispatches (`videos.yml`) |
 
+`publish.routes` pins a stream of videos to a set of accounts - `{"us": [id, id],
+"mx": [id]}`, or `"us:humor"` for one niche. Anything unrouted uses
+`publish.channels`. The rotation that keeps accounts taking turns is remembered
+per route, so one stream posting does not move another stream's place.
+
 Settings live in two files. `settings.json` holds the API keys, sits in
 `%APPDATA%\AutomationHub` and is gitignored. `settings.public.json` holds
 everything else - posting times, channels, run counts - and **is committed**,

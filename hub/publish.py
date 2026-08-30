@@ -29,6 +29,7 @@ class PublishResult:
         self.uploaded = 0
         self.dry_run = True
         self.skipped = []
+        self.route = "default"
 
     @property
     def scheduled(self):
@@ -43,6 +44,7 @@ class PublishResult:
             "warnings": self.warnings,
             "errors": self.errors,
             "skipped": self.skipped,
+            "route": self.route,
         }
 
 
@@ -96,7 +98,23 @@ def options_for(video, channel, cfg):
     return options
 
 
-def publish(videos, cfg, key, log=print, now=None):
+def route_for(cfg, factory=None, niche=None):
+    """Which channel list a given source of videos posts to, and under what name.
+
+    Looked up most specific first: a niche inside a factory, then the factory,
+    then the account-wide list. Returns (channel_ids, key) - the key names the
+    route, and the rotation pointer is kept per key so a Spanish stream taking
+    its turn does not move an English stream's place in its own list.
+    """
+    routes = cfg.get("routes") or {}
+    for candidate in (f"{factory}:{niche}" if factory and niche else None,
+                      factory or None):
+        if candidate and routes.get(candidate):
+            return list(routes[candidate]), candidate
+    return list(cfg.get("channels") or ["all"]), "default"
+
+
+def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
     """Upload each video once, then schedule it on the channels it was dealt to."""
     result = PublishResult()
     result.dry_run = bool(cfg.get("dry_run", True))
@@ -110,16 +128,22 @@ def publish(videos, cfg, key, log=print, now=None):
     team_id = planly.resolve_team(
         key, cfg.get("team_id") or secret("PLANLY_TEAM_ID"))
     channels = planly.list_channels(key, team_id)
-    missing = planly.missing_channel_ids(channels, cfg.get("channels") or [])
-    if missing:
-        result.warnings.append("Channel id(s) not on this account: " + ", ".join(missing))
-    chosen = planly.pick_channels(channels, cfg.get("channels") or [])
-    if not chosen:
-        result.errors.append("No Planly channels to post to. Connect one in Planly, "
-                             "or fix the channel list in settings.")
-        return result
 
-    log(f"{len(videos)} video(s) -> {len(chosen)} channel(s) on team {team_id}")
+    wanted, route = route_for(cfg, factory, niche)
+    missing = planly.missing_channel_ids(channels, wanted)
+    if missing:
+        result.warnings.append(f"Route '{route}' names channel id(s) not on this "
+                               f"account: " + ", ".join(missing))
+    chosen = planly.pick_channels(channels, wanted)
+    if not chosen:
+        result.errors.append(
+            f"Route '{route}' has no channel to post to. Connect one in Planly, "
+            f"or fix the channel list for this route in settings.")
+        return result
+    result.route = route
+
+    log(f"{len(videos)} video(s) -> {len(chosen)} channel(s) "
+        f"on team {team_id} [route: {route}]")
 
     for video in videos:
         warning = planly.duration_warning(video, cfg.get("max_seconds"))
@@ -128,7 +152,7 @@ def publish(videos, cfg, key, log=print, now=None):
 
     # Carry the deal forward from where the last run stopped, so accounts take
     # turns instead of the first few taking everything for ever.
-    start = hub_state.channel_start()
+    start = hub_state.channel_start(route)
     dealt = planly.distribute(videos, chosen, cfg.get("distribute") or "unique",
                               start=start)
     by_id = {c["id"]: c for c in chosen}
@@ -212,7 +236,7 @@ def publish(videos, cfg, key, log=print, now=None):
                                if v["folder"] in media_ids], state=st)
     if (cfg.get("distribute") or "unique") != "mirror":
         hub_state.remember_channel_start(
-            planly.next_start(start, len(videos), len(chosen)), state=st)
+            route, planly.next_start(start, len(videos), len(chosen)), state=st)
     hub_state.save(st)
 
     log(f"scheduled {len(entries)} post(s)")
@@ -230,7 +254,8 @@ def _local(iso, cfg):
     return when.astimezone(offset).strftime("%Y-%m-%d %H:%M")
 
 
-def run_for_factory(factory_dir, cfg, log=print, only_new=True):
+def run_for_factory(factory_dir, cfg, log=print, only_new=True,
+                    factory=None, niche=None):
     """Entry point used by the CLI and the GUI. Returns a PublishResult."""
     result = PublishResult()
     result.dry_run = bool(cfg.get("dry_run", True))
@@ -246,7 +271,7 @@ def run_for_factory(factory_dir, cfg, log=print, only_new=True):
 
     videos = collect_videos(factory_dir, only_new=only_new, log=log)
     try:
-        return publish(videos, cfg, key, log=log)
+        return publish(videos, cfg, key, log=log, factory=factory, niche=niche)
     except planly.PlanlyError as e:
         result.errors.append(str(e))
     except Exception as e:

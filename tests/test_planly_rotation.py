@@ -82,19 +82,34 @@ class Rotation(unittest.TestCase):
 class RotationIsRemembered(IsolatedHome):
 
     def test_it_starts_at_zero_on_a_fresh_install(self):
-        self.assertEqual(hub_state.channel_start(), 0)
+        self.assertEqual(hub_state.channel_start("us"), 0)
 
     def test_it_round_trips(self):
-        hub_state.remember_channel_start(7)
-        self.assertEqual(hub_state.channel_start(), 7)
+        hub_state.remember_channel_start("us", 7)
+        self.assertEqual(hub_state.channel_start("us"), 7)
+
+    def test_each_route_keeps_its_own_place(self):
+        hub_state.remember_channel_start("us", 3)
+        hub_state.remember_channel_start("mx", 9)
+        self.assertEqual(hub_state.channel_start("us"), 3)
+        self.assertEqual(hub_state.channel_start("mx"), 9)
+
+    def test_an_unknown_route_starts_at_zero(self):
+        hub_state.remember_channel_start("us", 5)
+        self.assertEqual(hub_state.channel_start("mx"), 0)
 
     def test_rubbish_in_the_file_reads_as_zero_not_a_crash(self):
-        hub_state.save({"channel_start": "not a number"})
-        self.assertEqual(hub_state.channel_start(), 0)
+        hub_state.save({"channel_starts": {"us": "not a number"}})
+        self.assertEqual(hub_state.channel_start("us"), 0)
+
+    def test_the_old_flat_key_is_ignored_rather_than_misread(self):
+        # Versions before routes stored a bare int under a different name.
+        hub_state.save({"channel_start": 6})
+        self.assertEqual(hub_state.channel_start("us"), 0)
 
     def test_a_negative_position_is_clamped(self):
-        hub_state.save({"channel_start": -4})
-        self.assertEqual(hub_state.channel_start(), 0)
+        hub_state.save({"channel_starts": {"us": -4}})
+        self.assertEqual(hub_state.channel_start("us"), 0)
 
 
 if __name__ == "__main__":

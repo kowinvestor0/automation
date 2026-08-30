@@ -75,17 +75,17 @@ class TheRotationIsPersisted(FactoryOutput):
         videos = self.collect()[:2]
         publish.publish(videos, publish_cfg(dry_run=False), "planly-key",
                         log=self.log.append, now=local(hour=8))
-        self.assertEqual(hub_state.channel_start(),
+        self.assertEqual(hub_state.channel_start("default"),
                          planly.next_start(0, 2, 3))
 
     def test_a_dry_run_leaves_the_pointer_alone(self):
         publish.publish(self.collect()[:2], publish_cfg(dry_run=True),
                         "planly-key", log=self.log.append, now=local(hour=8))
-        self.assertEqual(hub_state.channel_start(), 0)
+        self.assertEqual(hub_state.channel_start("default"), 0)
 
     def test_mirror_does_not_move_the_pointer(self):
         # Everyone gets everything, so there is no place in a deal to resume.
         publish.publish(self.collect()[:2],
                         publish_cfg(dry_run=False, distribute="mirror"),
                         "planly-key", log=self.log.append, now=local(hour=8))
-        self.assertEqual(hub_state.channel_start(), 0)
+        self.assertEqual(hub_state.channel_start("default"), 0)

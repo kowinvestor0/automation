@@ -138,11 +138,13 @@ def one_factory(name, cfg, args):
         record["errors"].append("the render produced no video")
 
     if not args.no_publish:
-        result = publish.run_for_factory(directory, cfg.get("publish") or {}, log=log)
+        result = publish.run_for_factory(directory, cfg.get("publish") or {},
+                                         log=log, factory=name, niche=niche)
         record["scheduled"] = result.scheduled
         record["dry_run"] = result.dry_run
         record["warnings"] += result.warnings
         record["errors"] += result.errors
+        record["route"] = result.route
         record["calendar"] = [(e["local_time"], f"{e['video']} -> {e['channel']}")
                               for e in result.entries]
         if result.errors and record["status"] == "ok":

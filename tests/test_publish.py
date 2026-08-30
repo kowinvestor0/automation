@@ -296,7 +296,7 @@ class Publish(FactoryOutput):
     def test_no_channels_at_all_is_an_error(self):
         self.fake.channels = []
         result = self.run_publish(dry_run=False)
-        self.assertTrue(any("No Planly channels" in e for e in result.errors))
+        self.assertTrue(any("no channel to post to" in e for e in result.errors))
         self.assertEqual(self.fake.uploads, [])
 
     def test_the_configured_team_is_used_when_there_is_one(self):

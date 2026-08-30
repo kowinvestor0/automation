@@ -105,25 +105,85 @@ không giới hạn phút. Cân nhắc con số này trước khi tăng `count`.
 
 ---
 
-## Hai nhà máy, một danh sách kênh
+## Hai nhà máy, hai danh sách kênh
 
-Phần đăng chạy **riêng cho từng nhà máy**, nhưng dùng chung một khối `publish` trong
-cấu hình. Nghĩa là video tiếng Anh (US) và video tiếng Tây Ban Nha (MX) đều được rải
-lên **cùng danh sách kênh**.
+Phần đăng chạy **riêng cho từng nhà máy**. Mặc định cả hai dùng chung một danh
+sách kênh, nghĩa là video tiếng Anh và video tiếng Tây Ban Nha rải lên cùng một
+rổ acc.
 
-Chúng không đè lên nhau: nhà máy US chạy trước, đặt chỗ 09:00; đến lượt MX thì 09:00
-đã bị đánh dấu là đã dùng, nên MX bắt đầu từ 12:00.
+Muốn tách ra thì đặt **route** — xem mục "Luồng video nào đăng lên acc nào" ngay
+dưới. Đặt xong thì US chỉ đăng lên kênh tiếng Anh, MX chỉ đăng lên kênh tiếng
+Tây Ban Nha, và không cần chạy hai lượt tay nữa.
 
-Nếu bạn có kênh riêng cho từng thứ tiếng, hiện chưa có cách khai báo trong
-`settings.json`. Cách làm được, chạy hai lượt tay:
+Hai luồng không đè giờ của nhau: khung giờ được giữ chỗ **theo từng kênh**, nên
+kênh US đăng 09:00 và kênh MX cũng đăng 09:00 là chuyện bình thường.
 
+---
+
+## Luồng video nào đăng lên acc nào
+
+Mặc định mọi video đổ chung một rổ rồi chia lần lượt cho tất cả các kênh. Nghĩa
+là một video tiếng Tây Ban Nha có thể rơi vào một kênh tiếng Anh, chỉ vì đến
+lượt kênh đó.
+
+**Route** là để chỉ định: luồng nào đăng lên những acc nào.
+
+### Làm trong app
+
+Tab **Đăng bài** → khung **Kênh Planly** → ô chọn **Luồng video**.
+
+1. Chọn một luồng, ví dụ `Xưởng US (tiếng Anh)`.
+2. Tích những kênh mà luồng đó được phép đăng lên.
+3. Đổi sang luồng khác, tích tiếp.
+4. Bấm **Lưu**.
+
+Luồng nào không tích riêng thì dùng danh sách **Chung**.
+
+### Thứ tự ưu tiên
+
+Tìm từ hẹp đến rộng, dừng ở cái đầu tiên có kênh:
+
+| Thứ tự | Khóa | Nghĩa |
+|---|---|---|
+| 1 | `us:humor` | Riêng niche hài của xưởng US |
+| 2 | `us` | Cả xưởng US |
+| 3 | `channels` | Danh sách Chung |
+
+Nên có thể để cả xưởng US đăng lên 8 kênh, riêng niche hài tách ra 2 kênh khác.
+
+### Trong file
+
+Nếu muốn sửa tay, nó nằm ở `settings.public.json`:
+
+```json
+"publish": {
+  "channels": ["all"],
+  "routes": {
+    "us": ["id-kenh-1", "id-kenh-2"],
+    "mx": ["id-kenh-3", "id-kenh-4"],
+    "us:humor": ["id-kenh-5"]
+  }
+}
 ```
-# đặt publish.channels = các kênh tiếng Anh, Save, rồi:
-python AutomationHub.py run --factory us --count 6
 
-# đổi publish.channels = các kênh tiếng Tây Ban Nha, Save, rồi:
-python AutomationHub.py run --factory mx --count 6
-```
+Lấy id kênh bằng nút **Tải danh sách kênh** trong app — nó in ra tên kèm id.
+
+File này **có** đẩy lên GitHub, nên các lần chạy trên mây dùng đúng route anh
+vừa đặt. Nhớ commit và push sau khi đổi.
+
+### Mỗi luồng giữ lượt riêng
+
+Vòng xoay chia acc được nhớ **theo từng route**. Xưởng US đăng một lượt thì chỉ
+con trỏ của route `us` nhích lên; route `mx` vẫn đứng nguyên chỗ của nó. Hai
+luồng không đẩy nhau đi.
+
+### Đặt sai thì sao
+
+| Tình huống | Hệ thống làm gì |
+|---|---|
+| Route ghi id kênh không còn tồn tại | Cảnh báo nêu đúng id đó, vẫn đăng lên các kênh còn lại |
+| Route mà **mọi** kênh đều không còn | Báo lỗi, không đăng gì cho luồng đó, các luồng khác vẫn chạy |
+| Route để trống | Coi như chưa đặt, dùng danh sách Chung |
 
 ---
 
@@ -247,6 +307,7 @@ chương trình chỉ tính lại từ đầu, không hỏng gì.
 | `dry_run` | `true` | Làm hết trừ bước tạo lịch |
 | `team_id` | `""` | **Bắt buộc.** API Planly không có lệnh liệt kê team, để trống là không chạy được. Trên GitHub thì đặt bằng secret `PLANLY_TEAM_ID` |
 | `channels` | `["all"]` | `["all"]` = mọi kênh đang nối, hoặc liệt kê id cụ thể |
+| `routes` | `{}` | Luồng nào đăng lên acc nào. Khóa là `us`, `mx`, hoặc `us:humor`. Trống là mọi luồng dùng `channels` |
 | `mode` | `"same_time"` | `same_time` hoặc `spread` |
 | `times` | 6 mốc | Giờ địa phương của bạn |
 | `gap_minutes` | `120` | Chỉ có tác dụng ở `spread` |

@@ -111,23 +111,32 @@ def remember_videos(names, state=None):
     return state
 
 
-def channel_start(state=None):
-    """Where the last run stopped dealing videos to channels.
+def channel_start(route="default", state=None):
+    """Where the last run stopped dealing videos to this route's channels.
 
     Kept here rather than recomputed, because fairness across accounts is a
-    property of the whole history, not of any single run.
+    property of the whole history, not of any single run. One pointer per route:
+    two streams posting to different sets of accounts each keep their own place,
+    and neither pushes the other along.
     """
     state = load() if state is None else state
+    starts = state.get("channel_starts")
+    if not isinstance(starts, dict):
+        return 0
     try:
-        return max(0, int(state.get("channel_start") or 0))
+        return max(0, int(starts.get(route) or 0))
     except (TypeError, ValueError):
         return 0
 
 
-def remember_channel_start(position, state=None):
+def remember_channel_start(route, position, state=None):
     own_state = state is None
     state = load() if own_state else state
-    state["channel_start"] = max(0, int(position))
+    starts = state.get("channel_starts")
+    if not isinstance(starts, dict):
+        starts = {}
+    starts[route] = max(0, int(position))
+    state["channel_starts"] = starts
     if own_state:
         save(state)
     return state
