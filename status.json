@@ -1,6 +1,6 @@
 {
   "status": "ok",
-  "finished_at": "2026-08-31 20:29 UTC",
+  "finished_at": "2026-08-31 20:37 UTC",
   "videos": 1,
   "scheduled": 1,
   "runs": [
@@ -10,27 +10,32 @@
       "videos": 1,
       "scheduled": 1,
       "titles": [
-        "Nine hikers cut their way out of a tent from the inside"
+        "An entire American colony vanished and left one word behind"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "Nine hikers cut their way out of a tent from the inside -> acc-f23f (tiktok_business)"
+          "An entire American colony vanished and left one word behind -> acc-f23f (tiktok_business)"
         ]
       ],
       "warnings": [
-        "1 video(s) for 6 channel(s) - none this round for 5: outdoorboyso (tiktok_business), outdoorboysl (tiktok_business), outdoorboysr (tiktok_business), outdoorboysc (tiktok_business), outdoorboysi (tiktok_business). They lead the next run."
+        "1 video(s) for 6 channel(s) - none this round for 5: acc-a35d (tiktok_business), acc-9356 (tiktok_business), acc-ada3 (tiktok_business), acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": true,
       "status": "ok",
       "route": "us",
       "channel_names": [
-        "acc-f23f"
+        "acc-d9b6",
+        "acc-f23f",
+        "acc-7a7e",
+        "acc-9356",
+        "acc-a35d",
+        "acc-ada3"
       ],
-      "seconds": 391.19851636886597
+      "seconds": 354.26910305023193
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33435614697",
-  "run_number": "2"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33436379489",
+  "run_number": "3"
 }
