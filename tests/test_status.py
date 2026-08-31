@@ -250,3 +250,17 @@ class MaskingForAPublicRepo(unittest.TestCase):
     def test_nothing_to_mask_is_a_no_op(self):
         payload, _ = self.payload()
         self.assertEqual(status.mask(payload, []), payload)
+
+    def test_an_account_named_only_in_a_warning_is_masked(self):
+        # Idle accounts never appear in `entries`, only in the warning that says
+        # they got nothing. Collecting names from entries alone left them plain.
+        run = {"factory": "us", "label": "US", "videos": 1, "scheduled": 1,
+               "seconds": 5, "titles": [], "status": "ok", "errors": [],
+               "warnings": ["none this round for 2: idleone, idletwo"],
+               "channel_names": ["gotone", "idleone", "idletwo"],
+               "calendar": [("09:00", "A -> gotone")]}
+        payload = status.build([run])
+        masked = status.mask(payload, status.channel_names(payload))
+        text = json.dumps(masked, ensure_ascii=False)
+        for name in ("idleone", "idletwo", "gotone"):
+            self.assertNotIn(name, text)

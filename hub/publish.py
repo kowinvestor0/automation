@@ -30,6 +30,10 @@ class PublishResult:
         self.dry_run = True
         self.skipped = []
         self.route = "default"
+        # Every account this run touched or mentioned. The status file is
+        # committed to a public repo and scrubs these; collecting only the ones
+        # that received a video left the idle ones named in a warning.
+        self.channel_names = []
 
     @property
     def scheduled(self):
@@ -45,6 +49,7 @@ class PublishResult:
             "errors": self.errors,
             "skipped": self.skipped,
             "route": self.route,
+            "channel_names": self.channel_names,
         }
 
 
@@ -187,6 +192,7 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
             f"or fix the channel list for this route in settings.")
         return result
     result.route = route
+    result.channel_names = sorted({c.get("name") for c in chosen if c.get("name")})
 
     log(f"{len(videos)} video(s) -> {len(chosen)} channel(s) "
         f"on team {team_id} [route: {route}]")

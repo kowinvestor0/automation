@@ -147,10 +147,9 @@ def one_factory(name, cfg, args):
         record["route"] = result.route
         record["calendar"] = [(e["local_time"], f"{e['video']} -> {e['channel']}")
                               for e in result.entries]
-        # Kept so the committed status can scrub them; the Telegram copy keeps
-        # the real names.
-        record["channel_names"] = sorted({e["channel"].split(" (")[0]
-                                          for e in result.entries})
+        # Every account the run considered, not just the ones that got a video:
+        # an idle account is named in a warning, and half-masking is no masking.
+        record["channel_names"] = list(result.channel_names)
         if result.errors and record["status"] == "ok":
             record["status"] = "partial"
 
