@@ -1,6 +1,6 @@
 {
   "status": "ok",
-  "finished_at": "2026-08-31 20:20 UTC",
+  "finished_at": "2026-08-31 20:29 UTC",
   "videos": 1,
   "scheduled": 1,
   "runs": [
@@ -10,12 +10,12 @@
       "videos": 1,
       "scheduled": 1,
       "titles": [
-        "An entire American colony vanished and left one word behind"
+        "Nine hikers cut their way out of a tent from the inside"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "An entire American colony vanished and left one word behind -> acc-f23f (tiktok_business)"
+          "Nine hikers cut their way out of a tent from the inside -> acc-f23f (tiktok_business)"
         ]
       ],
       "warnings": [
@@ -28,9 +28,9 @@
       "channel_names": [
         "acc-f23f"
       ],
-      "seconds": 460.40403008461
+      "seconds": 391.19851636886597
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33434743306",
-  "run_number": "1"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33435614697",
+  "run_number": "2"
 }
