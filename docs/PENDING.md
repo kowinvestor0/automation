@@ -133,22 +133,12 @@ Công sức: **S** với tôi, nhưng **cần anh ngồi máy** vài phút để
 
 ---
 
-## 5. Tool Adam Rose (`D:\adamrose`) — **đã xong, đang chờ anh dùng thử**
+## 5. Tool Adam Rose (`D:\adamrose`) — **bỏ, không làm nữa**
 
-**Tình trạng: hoàn chỉnh, có exe và bộ cài, không có lỗi nào bị bỏ lại.**
+Anh đã chốt ngày 30/08/2026: không cần nữa.
 
-Trên đĩa có đủ: `AdamRose.exe`, `adamrose-cli.exe`, `installer.iss`, `models/`,
-`src/`, `config.yaml`. Phiên đó kết thúc bằng câu hỏi của anh "seed trong app là
-gì" và đã được giải thích xong — không phải báo lỗi.
-
-Việc còn lại là **anh chạy thử và nói video ra có ưng không**. Những lần trước
-anh chê "video quá vớ vẩn", "toàn mặt adam rose biểu cảm", và bản sửa cuối cùng
-chưa được anh nghiệm thu.
-
-**Câu cần anh trả lời: bản mới nhất dựng ra video đã ổn chưa, hay vẫn còn lỗi
-cũ?** Không có câu trả lời này thì sửa tiếp chỉ là đoán.
-
-Công sức: **M** nếu còn phải sửa chất lượng video; **0** nếu anh đã ưng.
+Thư mục `D:\adamrose` vẫn còn nguyên trên đĩa (có exe, có bộ cài) nếu sau này
+đổi ý. Không có việc gì đang chờ.
 
 ---
 
@@ -201,11 +191,18 @@ Không còn việc gì.
 
 ---
 
-## Tóm tắt: ba câu hỏi cần anh trả lời
+## Tóm tắt: còn hai câu hỏi
 
-1. Repo GitHub để **public** hay **private**?
+1. Repo GitHub để **public** hay **private**? Với khối lượng anh muốn
+   (6 video/kênh/ngày = 90 video/ngày ≈ 8100 phút runner/tháng) thì **phải để
+   public** — gói private chỉ có 2000 phút/tháng.
 2. Mỗi thư mục trong `D:\video` là **một kênh riêng**, đúng không?
-3. Tool Adam Rose bản mới nhất — **video ra đã ổn chưa**?
+
+Đã trả lời rồi:
+
+- Kênh nào cho luồng nào — đã đặt ngày 30/08: US 6 kênh
+  (`outdoorboysh/o/l/r/c/i`), MX 9 kênh còn lại.
+- Tool Adam Rose — bỏ.
 
 Trả lời được ba câu này là tôi làm tiếp được hết phần còn lại mà không cần hỏi
 thêm.
