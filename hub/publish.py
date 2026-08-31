@@ -196,14 +196,27 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
         if warning:
             result.warnings.append(warning)
 
-    # Carry the deal forward from where the last run stopped, so accounts take
-    # turns instead of the first few taking everything for ever.
-    start = hub_state.channel_start(route)
-    dealt = planly.distribute(videos, chosen, cfg.get("distribute") or "unique",
-                              start=start)
+    # A video that names its own channel was put in that account's folder by
+    # hand, and the folder is the instruction - there is nothing to deal.
+    pinned = [v for v in videos if v.get("channel_id")]
     by_id = {c["id"]: c for c in chosen}
+    start = hub_state.channel_start(route)
+    if pinned and len(pinned) == len(videos):
+        rotating = False
+        dealt = {c["id"]: [] for c in chosen}
+        for video in videos:
+            if video["channel_id"] in dealt:
+                dealt[video["channel_id"]].append(video)
+            else:
+                result.warnings.append(
+                    f"{video['folder']}: that account is not in this route")
+    else:
+        rotating = True
+        dealt = planly.distribute(videos, chosen,
+                                  cfg.get("distribute") or "unique", start=start)
 
-    empty = [planly.describe(by_id[cid]) for cid, items in dealt.items() if not items]
+    empty = ([planly.describe(by_id[cid]) for cid, items in dealt.items() if not items]
+             if rotating else [])
     if empty:
         result.warnings.append(
             f"{len(videos)} video(s) for {len(chosen)} channel(s) - none this round "
@@ -291,7 +304,7 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
                 hub_state.remember_slots(channel_id, slots[:len(items)], state=st)
     hub_state.remember_videos([v["folder"] for v in videos
                                if v["folder"] in media_ids], state=st)
-    if (cfg.get("distribute") or "unique") != "mirror":
+    if rotating and (cfg.get("distribute") or "unique") != "mirror":
         hub_state.remember_channel_start(
             route, planly.next_start(start, len(videos), len(chosen)), state=st)
     hub_state.save(st)

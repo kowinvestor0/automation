@@ -1,30 +1,25 @@
 {
   "status": "ok",
-  "finished_at": "2026-08-29 17:31 UTC",
-  "videos": 1,
-  "scheduled": 1,
+  "finished_at": "2026-08-31 19:43 UTC",
+  "videos": 0,
+  "scheduled": 0,
   "runs": [
     {
       "factory": "us",
       "label": "US / English",
-      "videos": 1,
-      "scheduled": 1,
-      "titles": [
-        "An entire American colony vanished and left one word behind"
-      ],
-      "calendar": [
-        [
-          "2026-08-30 09:00",
-          "An entire American colony vanished and left one word behind -> user675045657555 (tiktok_business)"
-        ]
-      ],
+      "videos": 0,
+      "scheduled": 0,
+      "titles": [],
+      "calendar": [],
       "warnings": [
-        "1 video(s) for 15 channel(s) - none this round for 14: outdoorboysl (tiktok_business), outdoorboysm (tiktok_business), user77564676798945476447 (tiktok_business), outdoorboysi (tiktok_business), outdoorboyso (tiktok_business), outdoorboysd (tiktok_business).... They lead the next run."
+        "Nothing to publish - no new videos in output/."
       ],
       "errors": [],
       "dry_run": false,
       "status": "ok",
-      "seconds": 198.1907444000244
+      "route": "default",
+      "channel_names": [],
+      "seconds": 0.002000570297241211
     }
   ],
   "run_url": "",

@@ -33,6 +33,7 @@
       "privacy_level": "default",
       "auto_disable_over_seconds": 60
     },
+    "library_root": "D:\\dang-bai",
     "routes": {
       "us": [
         "35b5ff6c-86cd-4e8c-aa82-352e5d4f5fea",

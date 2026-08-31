@@ -6,7 +6,9 @@ and "look at it now".
 """
 import json
 import os
+import tempfile
 import unittest
+from pathlib import Path
 
 from tests._support import IsolatedHome
 from hub import status
@@ -189,3 +191,62 @@ class Short(IsolatedHome):
         os.environ["GITHUB_RUN_ID"] = "9"
         payload = status.build([run()])
         self.assertTrue(status.short(payload).endswith(payload["run_url"]))
+
+
+class MaskingForAPublicRepo(unittest.TestCase):
+    """STATUS.md is committed, and the repo has to be public for the minutes."""
+
+    def payload(self):
+        run = {
+            "factory": "us", "label": "US", "videos": 1, "scheduled": 2,
+            "seconds": 12, "titles": ["A clip"], "status": "ok", "errors": [],
+            "warnings": ["outdoorboyso got nothing this round"],
+            "channel_names": ["outdoorboysl", "outdoorboyso", "outdoorboysoo"],
+            "calendar": [("09:00", "A clip -> outdoorboysl (tiktok)"),
+                         ("09:00", "B clip -> outdoorboysoo (tiktok)")],
+        }
+        return status.build([run]), run["channel_names"]
+
+    def test_no_account_name_survives_into_the_written_files(self):
+        payload, names = self.payload()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            status.write(payload, root, names=names)
+            blob = ((root / "STATUS.md").read_text(encoding="utf-8")
+                    + (root / "status.json").read_text(encoding="utf-8"))
+        for name in names:
+            self.assertNotIn(name, blob)
+
+    def test_the_calendar_tuples_are_scrubbed_too(self):
+        # They are tuples, not lists, and a scrubber that only walked lists let
+        # every account name straight through.
+        payload, names = self.payload()
+        masked = status.mask(payload, names)
+        self.assertNotIn("outdoorboysl", masked["runs"][0]["calendar"][0][1])
+
+    def test_warnings_are_scrubbed(self):
+        payload, names = self.payload()
+        masked = status.mask(payload, names)
+        self.assertNotIn("outdoorboyso", masked["runs"][0]["warnings"][0])
+
+    def test_an_account_name_inside_another_is_not_half_replaced(self):
+        payload, names = self.payload()
+        masked = status.mask(payload, names)
+        line = masked["runs"][0]["calendar"][1][1]
+        self.assertIn(status.alias("outdoorboysoo"), line)
+        self.assertNotIn(status.alias("outdoorboyso") + "o", line)
+
+    def test_the_alias_is_the_same_every_run(self):
+        self.assertEqual(status.alias("outdoorboysl"), status.alias("outdoorboysl"))
+
+    def test_different_accounts_get_different_aliases(self):
+        self.assertNotEqual(status.alias("outdoorboysl"), status.alias("outdoorboysm"))
+
+    def test_the_original_payload_is_untouched_so_telegram_keeps_real_names(self):
+        payload, names = self.payload()
+        status.mask(payload, names)
+        self.assertIn("outdoorboysl", payload["runs"][0]["calendar"][0][1])
+
+    def test_nothing_to_mask_is_a_no_op(self):
+        payload, _ = self.payload()
+        self.assertEqual(status.mask(payload, []), payload)

@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from hub import notify, publish, settings, state as hub_state, status   # noqa: E402
+from hub import library, notify, publish, settings, state as hub_state, status  # noqa: E402
 from hub import workspace as hub_workspace                             # noqa: E402
 from hub.paths import CODE, FACTORIES, FACTORY_LABEL, factory_dir       # noqa: E402
 
@@ -147,11 +147,63 @@ def one_factory(name, cfg, args):
         record["route"] = result.route
         record["calendar"] = [(e["local_time"], f"{e['video']} -> {e['channel']}")
                               for e in result.entries]
+        # Kept so the committed status can scrub them; the Telegram copy keeps
+        # the real names.
+        record["channel_names"] = sorted({e["channel"].split(" (")[0]
+                                          for e in result.entries})
         if result.errors and record["status"] == "ok":
             record["status"] = "partial"
 
     record["seconds"] = time.time() - started
     return record
+
+
+def library_root(cfg):
+    configured = (cfg.get("publish") or {}).get("library_root") or ""
+    return Path(configured) if configured else CODE / "video"
+
+
+def library_pass(cfg, make_only=False):
+    """Create the per-account folders, and post whatever is waiting in them."""
+    pub = cfg.get("publish") or {}
+    key = settings.secret("PLANLY_API_KEY", cfg)
+    if not key:
+        log("no PLANLY_API_KEY, cannot look up the accounts")
+        return 1
+    from hub import planly
+
+    team = planly.resolve_team(key, pub.get("team_id")
+                               or settings.secret("PLANLY_TEAM_ID", cfg))
+    channels = planly.list_channels(key, team)
+    root = library_root(cfg)
+    library.ensure_folders(root, channels, log)
+    log(f"library: {root}")
+
+    if make_only:
+        for channel in channels:
+            log(f"  {library.folder_name(channel)}")
+        return 0
+
+    waiting, unknown = library.scan(root, channels, log=log)
+    for name in unknown:
+        log(f"folder '{name}' matches no account - nothing from it will post")
+    videos = library.unposted(library.as_videos(waiting, channels))
+    if not videos:
+        log("library: nothing waiting")
+        return 0
+
+    log(f"library: {len(videos)} video(s) waiting")
+    result = publish.publish(videos, pub, key, log=log)
+    for warning in result.warnings:
+        log(f"  warning: {warning}")
+    for error in result.errors:
+        log(f"  ERROR: {error}")
+    if not result.dry_run and result.scheduled:
+        posted = {e["folder"] for e in result.entries}
+        for video in videos:
+            if video["folder"] in posted:
+                library.mark_done(video, log=log)
+    return 0 if not result.errors else 1
 
 
 def main():
@@ -170,6 +222,10 @@ def main():
                         help="walk the whole publish flow but create no schedule")
     parser.add_argument("--live", action="store_true",
                         help="turn the dry run off for this run - posts for real")
+    parser.add_argument("--library", action="store_true",
+                        help="post videos waiting in the per-account folders")
+    parser.add_argument("--make-folders", action="store_true",
+                        help="create one folder per connected account, then stop")
     parser.add_argument("--bank", action="store_true",
                         help="write scripts from topics.json instead of an LLM")
     # Anything after a bare `--` goes to the factory untouched, for the flags
@@ -201,9 +257,17 @@ def main():
     hub_workspace.ensure(log)
     hub_state.forget_past_slots()
 
+    if args.make_folders or args.library:
+        code = library_pass(cfg, make_only=args.make_folders)
+        if args.make_folders or not (args.factory or args.all):
+            return code
+
     runs = [one_factory(name, cfg, args) for name in names]
     payload = status.build(runs)
-    text = status.write(payload, CODE)
+    names = set()
+    for run in runs:
+        names.update(run.get("channel_names") or [])
+    text = status.write(payload, CODE, names=names)
     hub_state.record_run({"finished_at": payload["finished_at"],
                           "status": payload["status"],
                           "videos": payload["videos"],

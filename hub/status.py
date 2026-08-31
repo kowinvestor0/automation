@@ -104,13 +104,61 @@ def _lines(payload):
     return out
 
 
-def write(payload, repo_root):
+def alias(name):
+    """A stable stand-in for an account name. Same name, same alias, for ever."""
+    import hashlib
+
+    return "acc-" + hashlib.sha1(name.encode("utf-8")).hexdigest()[:4]
+
+
+def _scrub(value, names):
+    if isinstance(value, str):
+        for name in names:
+            if name in value:
+                value = value.replace(name, alias(name))
+        return value
+    if isinstance(value, list):
+        return [_scrub(v, names) for v in value]
+    # Tuples matter here rather than being pedantry: the calendar is a list of
+    # (time, text) tuples, and skipping them let every account name through.
+    if isinstance(value, tuple):
+        return tuple(_scrub(v, names) for v in value)
+    if isinstance(value, dict):
+        return {k: _scrub(v, names) for k, v in value.items()}
+    return value
+
+
+def mask(payload, names):
+    """Replace account names throughout, for the copies that get committed.
+
+    STATUS.md and status.json land in the repository, and the repository has to
+    be public to get unlimited Actions minutes. Account names in there would
+    publish the whole network and its posting rhythm to anyone who looks. The
+    Telegram message is private and keeps the real names.
+
+    Longest first, so one account name that contains another - outdoorboyso
+    inside outdoorboysoo - cannot be half-replaced.
+    """
+    names = sorted({n for n in names if n}, key=len, reverse=True)
+    return _scrub(payload, names) if names else payload
+
+
+def channel_names(payload):
+    """Every account name a run recorded, for scrubbing."""
+    found = set()
+    for run in payload.get("runs") or []:
+        found.update(run.get("channel_names") or [])
+    return found
+
+
+def write(payload, repo_root, names=()):
     """Write all three surfaces. Returns the markdown that was produced."""
-    text = "\n".join(_lines(payload)) + "\n"
+    committed = mask(payload, set(names) | channel_names(payload))
+    text = "\n".join(_lines(committed)) + "\n"
 
     (repo_root / "STATUS.md").write_text(text, encoding="utf-8")
     (repo_root / "status.json").write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        json.dumps(committed, indent=2, ensure_ascii=False), encoding="utf-8")
 
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:

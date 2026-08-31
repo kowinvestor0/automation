@@ -70,6 +70,9 @@ DEFAULTS = {
             "privacy_level": "default",
             "auto_disable_over_seconds": 60,
         },
+        # Folder holding one sub-folder per account, for videos the user made
+        # themselves. Empty means <repo>/video.
+        "library_root": "",
         # Which stream of videos goes to which accounts. Keys are "us", "mx",
         # or "us:humor" for one niche; the value is a list of Planly channel
         # ids. Anything with no route falls back to `channels` above.
