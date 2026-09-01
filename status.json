@@ -1,6 +1,6 @@
 {
   "status": "ok",
-  "finished_at": "2026-09-01 18:28 UTC",
+  "finished_at": "2026-09-01 21:58 UTC",
   "videos": 10,
   "scheduled": 10,
   "runs": [
@@ -10,24 +10,24 @@
       "videos": 5,
       "scheduled": 5,
       "titles": [
-        "Archaeologists found honey that was still edible after three thousand years",
-        "Australia declared war on birds and lost",
-        "Nobody has ever successfully left a group chat",
-        "The coffee thing is a distraction and the math proves it",
-        "Nine hikers cut their way out of a tent from the inside"
+        "They were told to lick the brush. It was radium.",
+        "Bananas are radioactive and scientists actually use them as a unit",
+        "They were told to lick the brush. It was radium.",
+        "The self-checkout machine has decided you are a criminal",
+        "The coffee thing is a distraction and the math proves it"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "Archaeologists found honey that was still edible after three thousand years -> acc-f23f (tiktok_business)"
+          "Bananas are radioactive and scientists actually use them as a unit -> acc-f23f (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Australia declared war on birds and lost -> acc-a35d (tiktok_business)"
+          "They were told to lick the brush. It was radium. -> acc-a35d (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Nobody has ever successfully left a group chat -> acc-9356 (tiktok_business)"
+          "The self-checkout machine has decided you are a criminal -> acc-9356 (tiktok_business)"
         ],
         [
           "ngay bay gio",
@@ -35,11 +35,11 @@
         ],
         [
           "ngay bay gio",
-          "Nine hikers cut their way out of a tent from the inside -> acc-d9b6 (tiktok_business)"
+          "They were told to lick the brush. It was radium. -> acc-7a7e (tiktok_business)"
         ]
       ],
       "warnings": [
-        "5 video(s) for 6 channel(s) - none this round for 1: acc-7a7e (tiktok_business). They lead the next run."
+        "5 video(s) for 6 channel(s) - none this round for 1: acc-d9b6 (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -53,7 +53,7 @@
         "acc-a35d",
         "acc-ada3"
       ],
-      "seconds": 720.1717648506165
+      "seconds": 892.4462149143219
     },
     {
       "factory": "mx",
@@ -61,36 +61,36 @@
       "videos": 5,
       "scheduled": 5,
       "titles": [
-        "La isla mexicana a la que van los tiburones blancos",
-        "Lo que desenterraron a media cuadra del Zócalo",
-        "El grupo de WhatsApp de la familia es un lugar peligroso",
-        "El volcán con dos lagunas dentro del cráter",
-        "Lo que encontraron al construir el metro de la CDMX"
+        "El animal mexicano que puede regenerar su cerebro",
+        "El único castillo real de América y lo que pasó ahí",
+        "El \"ahorita\" mexicano explicado para extranjeros",
+        "El cañón mexicano que es más grande que el del Colorado",
+        "El río de mercurio que encontraron bajo Teotihuacán"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "La isla mexicana a la que van los tiburones blancos -> acc-7d1e (tiktok_business)"
+          "El río de mercurio que encontraron bajo Teotihuacán -> acc-7d1e (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Lo que desenterraron a media cuadra del Zócalo -> acc-3fe1 (tiktok_business)"
+          "El animal mexicano que puede regenerar su cerebro -> acc-f583 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "El grupo de WhatsApp de la familia es un lugar peligroso -> acc-d28e (tiktok_business)"
+          "El único castillo real de América y lo que pasó ahí -> acc-6000 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "El volcán con dos lagunas dentro del cráter -> acc-9106 (tiktok_business)"
+          "El \"ahorita\" mexicano explicado para extranjeros -> acc-2bf3 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Lo que encontraron al construir el metro de la CDMX -> acc-3cac (tiktok_business)"
+          "El cañón mexicano que es más grande que el del Colorado -> acc-0f17 (tiktok_business)"
         ]
       ],
       "warnings": [
-        "5 video(s) for 9 channel(s) - none this round for 4: acc-f583 (tiktok_business), acc-6000 (tiktok_business), acc-2bf3 (tiktok_business), acc-0f17 (tiktok_business). They lead the next run."
+        "5 video(s) for 9 channel(s) - none this round for 4: acc-3fe1 (tiktok_business), acc-d28e (tiktok_business), acc-9106 (tiktok_business), acc-3cac (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -107,9 +107,9 @@
         "acc-0f17",
         "acc-3cac"
       ],
-      "seconds": 616.3551509380341
+      "seconds": 742.2625563144684
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33541536373",
-  "run_number": "7"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33561497063",
+  "run_number": "8"
 }
