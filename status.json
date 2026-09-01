@@ -1,28 +1,38 @@
 {
   "status": "ok",
-  "finished_at": "2026-08-31 20:37 UTC",
-  "videos": 1,
-  "scheduled": 1,
+  "finished_at": "2026-09-01 02:12 UTC",
+  "videos": 6,
+  "scheduled": 6,
   "runs": [
     {
       "factory": "us",
       "label": "US / English",
-      "videos": 1,
-      "scheduled": 1,
+      "videos": 3,
+      "scheduled": 3,
       "titles": [
+        "Nine hikers cut their way out of a tent from the inside",
+        "An entire American colony vanished and left one word behind",
         "An entire American colony vanished and left one word behind"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "An entire American colony vanished and left one word behind -> acc-f23f (tiktok_business)"
+          "Nine hikers cut their way out of a tent from the inside -> acc-f23f (tiktok_business)"
+        ],
+        [
+          "ngay bay gio",
+          "An entire American colony vanished and left one word behind -> acc-a35d (tiktok_business)"
+        ],
+        [
+          "ngay bay gio",
+          "An entire American colony vanished and left one word behind -> acc-9356 (tiktok_business)"
         ]
       ],
       "warnings": [
-        "1 video(s) for 6 channel(s) - none this round for 5: acc-a35d (tiktok_business), acc-9356 (tiktok_business), acc-ada3 (tiktok_business), acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business). They lead the next run."
+        "3 video(s) for 6 channel(s) - none this round for 3: acc-ada3 (tiktok_business), acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business). They lead the next run."
       ],
       "errors": [],
-      "dry_run": true,
+      "dry_run": false,
       "status": "ok",
       "route": "us",
       "channel_names": [
@@ -33,9 +43,53 @@
         "acc-a35d",
         "acc-ada3"
       ],
-      "seconds": 354.26910305023193
+      "seconds": 917.558153629303
+    },
+    {
+      "factory": "mx",
+      "label": "Mexico / Espanol",
+      "videos": 3,
+      "scheduled": 3,
+      "titles": [
+        "La Zona del Silencio: dónde los radios dejan de funcionar",
+        "El truco imposible que los mayas escondieron en Chichén Itzá",
+        "Por qué Guanajuato tiene un museo lleno de momias"
+      ],
+      "calendar": [
+        [
+          "ngay bay gio",
+          "La Zona del Silencio: dónde los radios dejan de funcionar -> acc-7d1e (tiktok_business)"
+        ],
+        [
+          "ngay bay gio",
+          "El truco imposible que los mayas escondieron en Chichén Itzá -> acc-3fe1 (tiktok_business)"
+        ],
+        [
+          "ngay bay gio",
+          "Por qué Guanajuato tiene un museo lleno de momias -> acc-d28e (tiktok_business)"
+        ]
+      ],
+      "warnings": [
+        "3 video(s) for 9 channel(s) - none this round for 6: acc-9106 (tiktok_business), acc-3cac (tiktok_business), acc-f583 (tiktok_business), acc-6000 (tiktok_business), acc-2bf3 (tiktok_business), acc-0f17 (tiktok_business). They lead the next run."
+      ],
+      "errors": [],
+      "dry_run": false,
+      "status": "ok",
+      "route": "mx",
+      "channel_names": [
+        "acc-9106",
+        "acc-7d1e",
+        "acc-f583",
+        "acc-2bf3",
+        "acc-3fe1",
+        "acc-6000",
+        "acc-d28e",
+        "acc-0f17",
+        "acc-3cac"
+      ],
+      "seconds": 680.9774639606476
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33436379489",
-  "run_number": "3"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33459930201",
+  "run_number": "4"
 }
