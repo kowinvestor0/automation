@@ -59,12 +59,12 @@
   },
   "run": {
     "us": {
-      "count": 3,
+      "count": 5,
       "niche": "",
       "enabled": true
     },
     "mx": {
-      "count": 3,
+      "count": 5,
       "niche": "",
       "enabled": true
     }

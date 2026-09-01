@@ -8,12 +8,16 @@ name: Generate videos
 
 on:
   schedule:
-    # The user is UTC+7. These land at 06:00, 12:00, 18:00 and 22:00 Vietnam
-    # time, so a morning check on the phone always has an overnight batch
-    # waiting. GitHub's free-tier scheduler runs late under load - treat these
-    # as "some time after", not "on the dot".
+    # The user is UTC+7. Every four hours, landing at 02:00, 06:00, 10:00,
+    # 14:00, 18:00 and 22:00 Vietnam time - so whenever they pick up the phone
+    # there is a recent batch. Ten videos a run takes about fifty minutes, well
+    # inside the four-hour gap, so runs never queue behind each other.
+    # GitHub's scheduler runs late under load; treat these as "some time
+    # after", not "on the dot".
+    - cron: '0 19 * * *'
     - cron: '0 23 * * *'
-    - cron: '0 5 * * *'
+    - cron: '0 3 * * *'
+    - cron: '0 7 * * *'
     - cron: '0 11 * * *'
     - cron: '0 15 * * *'
   workflow_dispatch:
@@ -25,7 +29,7 @@ on:
         default: all
       count:
         description: 'Videos per factory'
-        default: '3'
+        default: '5'
       niche:
         description: 'Force a niche (optional)'
         default: ''
@@ -74,6 +78,8 @@ jobs:
         with:
           path: |
             state.json
+            factories/us/state.json
+            factories/mx/state.json
             factories/us/cache
             factories/mx/cache
           key: hub-state-${{ github.run_id }}
@@ -156,6 +162,8 @@ jobs:
         with:
           path: |
             state.json
+            factories/us/state.json
+            factories/mx/state.json
             factories/us/cache
             factories/mx/cache
           key: hub-state-${{ github.run_id }}

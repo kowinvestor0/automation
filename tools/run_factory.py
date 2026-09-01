@@ -94,6 +94,34 @@ def render(name, count, niche, extra_args, cfg, bank=False):
     return _stream(command, directory, env)
 
 
+def factory_niches(directory):
+    """Every niche this factory knows, from its own config."""
+    try:
+        config = json.loads((directory / "config.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    niches = sorted((config.get("niche_voice") or {}).keys())
+    return niches or ([config.get("niche")] if config.get("niche") else [])
+
+
+def plan_niches(name, count, directory, cfg):
+    """One niche per video, carried forward between runs.
+
+    A factory pinned to a single niche draws from that niche's slice of the
+    topic bank and nothing else - and a slice can be two topics deep, which is
+    how three videos in one run came out as two identical ones. Spreading the
+    run across niches uses the whole bank, and starting where the last run
+    stopped means consecutive runs do not open on the same one.
+    """
+    niches = factory_niches(directory)
+    if not niches:
+        return [""] * count
+    start = hub_state.channel_start(f"niche:{name}")
+    plan = [niches[(start + i) % len(niches)] for i in range(count)]
+    hub_state.remember_channel_start(f"niche:{name}", (start + count) % len(niches))
+    return plan
+
+
 def one_factory(name, cfg, args):
     started = time.time()
     run_cfg = (cfg.get("run") or {}).get(name) or {}
@@ -117,11 +145,23 @@ def one_factory(name, cfg, args):
     before = {p.name for p in (directory / "output").glob("*") if p.is_dir()}
 
     if not args.publish_only:
-        code, tail = render(name, count, niche, args.factory_args, cfg,
-                            bank=args.bank)
-        if code != 0:
+        # One video at a time, each with its own niche. Slower to start up by a
+        # few seconds per video, and worth it: the whole topic bank gets used,
+        # and one bad render loses one video instead of the batch.
+        plan = [niche] * count if niche else plan_niches(name, count, directory, cfg)
+        failures = []
+        for index, want in enumerate(plan, 1):
+            log(f"\n[{name} {index}/{count}] niche: {want or 'default'}")
+            code, tail = render(name, 1, want, args.factory_args, cfg,
+                                bank=args.bank)
+            if code != 0:
+                failures.append(f"video {index} exited {code}: "
+                                + " / ".join(tail[-2:]))
+        if failures and len(failures) == count:
             record["status"] = "failed"
-            record["errors"].append(f"render exited {code}: " + " / ".join(tail[-3:]))
+        elif failures:
+            record["status"] = "partial"
+        record["errors"] += failures
 
     after = [p for p in sorted((directory / "output").glob("*")) if p.is_dir()]
     fresh = [p for p in after if p.name not in before]

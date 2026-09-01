@@ -114,3 +114,34 @@ class RotationIsRemembered(IsolatedHome):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NichePlanning(IsolatedHome):
+    """Spreading a run across niches, and carrying the position forward."""
+
+    def plan(self, count, niches, name="us"):
+        import json
+        from pathlib import Path
+        directory = self.tmp / name
+        directory.mkdir(exist_ok=True)
+        (directory / "config.json").write_text(
+            json.dumps({"niche_voice": {n: {} for n in niches}}), encoding="utf-8")
+        from tools import run_factory
+        return run_factory.plan_niches(name, count, Path(directory), {})
+
+    def test_a_run_uses_a_different_niche_for_each_video(self):
+        plan = self.plan(3, ["a", "b", "c"])
+        self.assertEqual(sorted(plan), ["a", "b", "c"])
+
+    def test_the_next_run_carries_on_where_this_one_stopped(self):
+        first = self.plan(2, ["a", "b", "c"])
+        second = self.plan(2, ["a", "b", "c"])
+        self.assertNotEqual(first[0], second[0])
+
+    def test_more_videos_than_niches_wraps_rather_than_running_out(self):
+        plan = self.plan(5, ["a", "b"])
+        self.assertEqual(len(plan), 5)
+        self.assertEqual(set(plan), {"a", "b"})
+
+    def test_a_factory_with_no_niches_gets_blanks_not_a_crash(self):
+        self.assertEqual(self.plan(2, []), ["", ""])
