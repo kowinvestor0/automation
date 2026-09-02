@@ -1,40 +1,40 @@
 # Status
 
-🟢 **OK** - 2026-09-02 19:17 UTC
+🟢 **OK** - 2026-09-02 22:08 UTC
 
 - Videos rendered: **10**
-- Posts scheduled on Planly: **8**
-- [Open this run on GitHub](https://github.com/kowinvestor0/automation/actions/runs/33666376577)
+- Posts scheduled on Planly: **10**
+- [Open this run on GitHub](https://github.com/kowinvestor0/automation/actions/runs/33685309578)
 
-## 🟡 US / English
+## 🟢 US / English
 
-- rendered: 5  ·  scheduled: 3  ·  took: 1280s
-  - Ice is not slippery for the reason your science teacher gave you
-  - Australia sent soldiers with machine guns to fight emus and the emus won
-  - 20260902-184844_bread-stopped-the-collider
-  - 20260902-184945_barings-bank-collapse
-  - A dead man on an Australian beach carried two Persian words and no name
-  - `ngay bay gio`  Ice is not slippery for the reason your science teacher gave you -> acc-f23f (tiktok_business)
-  - `ngay bay gio`  Australia sent soldiers with machine guns to fight emus and the emus won -> acc-a35d (tiktok_business)
-  - `ngay bay gio`  A dead man on an Australian beach carried two Persian words and no name -> acc-9356 (tiktok_business)
-  - warning: 3 video(s) for 6 channel(s) - none this round for 3: acc-ada3 (tiktok_business), acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business). They lead the next run.
-  - **error:** video 3 exited 1:  / FAILED video 1: NoAudioReceived: No audio was received. Please verify that your parameters are correct.
-  - **error:** video 4 exited 1:  / FAILED video 1: NoAudioReceived: No audio was received. Please verify that your parameters are correct.
+- rendered: 5  ·  scheduled: 5  ·  took: 1589s
+  - The extortion gang that terrorized Japan's candy industry and was never caught
+  - The Amazon rainforest is fertilized by dust blown across the ocean from the Sahara
+  - A king of Mali handed out so much gold that Egypt felt it for years
+  - Oregon tried to remove a dead whale with half a ton of dynamite
+  - The hundred trillion dollar bill that could not buy groceries
+  - `ngay bay gio`  Oregon tried to remove a dead whale with half a ton of dynamite -> acc-f23f (tiktok_business)
+  - `ngay bay gio`  The hundred trillion dollar bill that could not buy groceries -> acc-a35d (tiktok_business)
+  - `ngay bay gio`  The extortion gang that terrorized Japan's candy industry and was never caught -> acc-ada3 (tiktok_business)
+  - `ngay bay gio`  The Amazon rainforest is fertilized by dust blown across the ocean from the Sahara -> acc-d9b6 (tiktok_business)
+  - `ngay bay gio`  A king of Mali handed out so much gold that Egypt felt it for years -> acc-7a7e (tiktok_business)
+  - warning: 5 video(s) for 6 channel(s) - none this round for 1: acc-9356 (tiktok_business). They lead the next run.
 
 ## 🟢 Mexico / Espanol
 
-- rendered: 5  ·  scheduled: 5  ·  took: 1130s
-  - El maíz con cal no es tradición, es química que salvó vidas
-  - El cable de luz que desenterro a una diosa
-  - The largest machine ever built was knocked offline by a piece of bread
-  - El pueblo al que solo se entra por un túnel de mina
-  - Las piedras de Ica: el fraude que su propio autor confesó y mucha gente sigue creyendo
-  - `ngay bay gio`  El maíz con cal no es tradición, es química que salvó vidas -> acc-3fe1 (tiktok_business)
-  - `ngay bay gio`  El cable de luz que desenterro a una diosa -> acc-d28e (tiktok_business)
-  - `ngay bay gio`  The largest machine ever built was knocked offline by a piece of bread -> acc-9106 (tiktok_business)
-  - `ngay bay gio`  El pueblo al que solo se entra por un túnel de mina -> acc-3cac (tiktok_business)
-  - `ngay bay gio`  Las piedras de Ica: el fraude que su propio autor confesó y mucha gente sigue creyendo -> acc-f583 (tiktok_business)
-  - warning: 5 video(s) for 9 channel(s) - none this round for 4: acc-7d1e (tiktok_business), acc-6000 (tiktok_business), acc-2bf3 (tiktok_business), acc-0f17 (tiktok_business). They lead the next run.
+- rendered: 5  ·  scheduled: 5  ·  took: 793s
+  - El chicle que masticas empezó como un intento fallido de hacer llantas
+  - El dia que descubrieron un lugar donde ya vivia gente
+  - Berlin built an airport nine years late with lights nobody could switch off
+  - La cueva de Guerrero donde cabe una catedral
+  - Por qué el Popocatépetl asusta a los científicos
+  - `ngay bay gio`  La cueva de Guerrero donde cabe una catedral -> acc-7d1e (tiktok_business)
+  - `ngay bay gio`  Por qué el Popocatépetl asusta a los científicos -> acc-3fe1 (tiktok_business)
+  - `ngay bay gio`  El chicle que masticas empezó como un intento fallido de hacer llantas -> acc-6000 (tiktok_business)
+  - `ngay bay gio`  El dia que descubrieron un lugar donde ya vivia gente -> acc-2bf3 (tiktok_business)
+  - `ngay bay gio`  Berlin built an airport nine years late with lights nobody could switch off -> acc-0f17 (tiktok_business)
+  - warning: 5 video(s) for 9 channel(s) - none this round for 4: acc-d28e (tiktok_business), acc-9106 (tiktok_business), acc-3cac (tiktok_business), acc-f583 (tiktok_business). They lead the next run.
 
 ---
 
