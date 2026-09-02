@@ -132,5 +132,49 @@ class RoutedPublishing(FactoryOutput):
         self.assertEqual(spy.call_args.kwargs["niche"], "humor")
 
 
+
+
+class RepeatedTopicsAreHeldBack(FactoryOutput):
+    """The bank recycles in under two days at full volume; a repeat must wait."""
+
+    def setUp(self):
+        super().setUp()
+        self.fake = FakePlanly(channels("a", "b", "c")).patch(self)
+
+    def videos(self, *topic_ids):
+        return [{"folder": f"f{i}", "title": f"v{i}", "topic_id": t,
+                 "path": self.factory / "output" / "x.mp4"}
+                for i, t in enumerate(topic_ids)]
+
+    def test_a_topic_posted_recently_is_held(self):
+        hub_state.remember_topics(["seen-one"])
+        keep, held = publish.drop_repeats(self.videos("seen-one", "fresh"), 14,
+                                          log=lambda *_: None)
+        self.assertEqual([v["topic_id"] for v in keep], ["fresh"])
+        self.assertEqual([v["topic_id"] for v in held], ["seen-one"])
+
+    def test_an_old_enough_topic_comes_back(self):
+        import datetime as dt
+        long_ago = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=40)
+        hub_state.remember_topics(["old-one"], now=long_ago)
+        keep, held = publish.drop_repeats(self.videos("old-one"), 14,
+                                          log=lambda *_: None)
+        self.assertEqual(len(keep), 1)
+        self.assertEqual(held, [])
+
+    def test_a_video_with_no_topic_id_is_never_held(self):
+        keep, held = publish.drop_repeats(self.videos(""), 14, log=lambda *_: None)
+        self.assertEqual(len(keep), 1)
+        self.assertEqual(held, [])
+
+    def test_zero_days_switches_the_guard_off(self):
+        hub_state.remember_topics(["seen-one"])
+        keep, _ = publish.drop_repeats(self.videos("seen-one"), 0,
+                                       log=lambda *_: None)
+        self.assertEqual(len(keep), 1)
+
+    def test_only_topics_that_actually_posted_are_recorded(self):
+        self.assertEqual(hub_state.recent_topics(14), set())
+
 if __name__ == "__main__":
     unittest.main()

@@ -13,6 +13,7 @@ The shape of a run:
     schedule - one entry per (channel, video), sent in a single batch
 """
 import datetime as dt
+import json
 
 from hub import planly, state as hub_state
 from hub.settings import secret
@@ -81,8 +82,40 @@ def collect_videos(factory_dir, only_new=True, log=print):
         meta = dict(meta)
         meta["path"] = video
         meta["folder"] = key
+        # The topic id lives next door in script.json. Carried along so the
+        # publisher can refuse a topic that already went out - once the local
+        # bank recycles, the same topic renders again under a new folder name
+        # and the folder check alone would wave it straight through.
+        try:
+            script = json.loads((folder / "script.json").read_text(encoding="utf-8"))
+            meta["topic_id"] = script.get("id") or ""
+        except (OSError, ValueError):
+            meta["topic_id"] = ""
         out.append(meta)
     return out
+
+
+def drop_repeats(videos, days, log=print):
+    """Hold back anything whose topic went out recently.
+
+    The bank is finite; at sixty videos a day it comes round in under two. A
+    repeat is not a cosmetic problem - the same clip on two accounts is what
+    gets a network flagged - so a recycled topic waits rather than posting.
+    """
+    if not days:
+        return videos, []
+    recent = hub_state.recent_topics(days)
+    keep, held = [], []
+    for video in videos:
+        topic = video.get("topic_id")
+        if topic and topic in recent:
+            held.append(video)
+        else:
+            keep.append(video)
+    if held:
+        log(f"holding {len(held)} video(s) whose topic already went out "
+            f"in the last {days} days")
+    return keep, held
 
 
 def caption_for(video, channel, cfg):
@@ -170,8 +203,14 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
     result = PublishResult()
     result.dry_run = bool(cfg.get("dry_run", True))
 
+    videos, held = drop_repeats(videos, cfg.get("repeat_days", 14), log=log)
+    for video in held:
+        result.warnings.append(
+            f"held back: '{video.get('title') or video['folder']}' repeats a topic "
+            f"posted in the last {cfg.get('repeat_days', 14)} days")
     if not videos:
-        result.warnings.append("Nothing to publish - no new videos in output/.")
+        result.warnings.append("Nothing to publish - every video repeated a "
+                               "recent topic, or output/ was empty.")
         return result
 
     # A repo secret is how CI gets this; the app stores it locally. Either
@@ -310,6 +349,9 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
                 hub_state.remember_slots(channel_id, slots[:len(items)], state=st)
     hub_state.remember_videos([v["folder"] for v in videos
                                if v["folder"] in media_ids], state=st)
+    hub_state.remember_topics([v["topic_id"] for v in videos
+                               if v.get("topic_id") and v["folder"] in media_ids],
+                              state=st)
     if rotating and (cfg.get("distribute") or "unique") != "mirror":
         hub_state.remember_channel_start(
             route, planly.next_start(start, len(videos), len(chosen)), state=st)

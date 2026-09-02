@@ -61,6 +61,10 @@ DEFAULTS = {
         # it on the calendar at the times above.
         "when": "now",
         "max_seconds": 90,
+        # Hold back a video whose topic already went out this recently.
+        # The local bank recycles in under two days at full volume, and
+        # the same clip on two accounts is what gets a network flagged.
+        "repeat_days": 14,
         # TikTok rejects a video longer than about a minute while Duet or
         # Stitch are on, so "auto" switches them off past the limit.
         "post_options": {

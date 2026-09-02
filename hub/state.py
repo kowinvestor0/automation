@@ -140,3 +140,34 @@ def remember_channel_start(route, position, state=None):
     if own_state:
         save(state)
     return state
+
+
+def remember_topics(topic_ids, state=None, now=None):
+    """Record when each topic went out, so a recycled one can be held back."""
+    own_state = state is None
+    state = load() if own_state else state
+    stamp = (now or dt.datetime.now(dt.timezone.utc)).strftime("%Y-%m-%d")
+    posted = state.get("topics_posted")
+    if not isinstance(posted, dict):
+        posted = {}
+    for topic_id in topic_ids:
+        if topic_id:
+            posted[topic_id] = stamp
+    # Keep it from growing without bound; a year is far past any repeat window.
+    cutoff = ((now or dt.datetime.now(dt.timezone.utc))
+              - dt.timedelta(days=365)).strftime("%Y-%m-%d")
+    state["topics_posted"] = {k: v for k, v in posted.items() if v >= cutoff}
+    if own_state:
+        save(state)
+    return state
+
+
+def recent_topics(days, state=None, now=None):
+    """Topic ids posted within the last `days`."""
+    state = load() if state is None else state
+    posted = state.get("topics_posted")
+    if not isinstance(posted, dict):
+        return set()
+    cutoff = ((now or dt.datetime.now(dt.timezone.utc))
+              - dt.timedelta(days=int(days))).strftime("%Y-%m-%d")
+    return {k for k, v in posted.items() if v >= cutoff}
