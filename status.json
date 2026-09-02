@@ -1,6 +1,6 @@
 {
   "status": "ok",
-  "finished_at": "2026-09-01 21:58 UTC",
+  "finished_at": "2026-09-02 01:23 UTC",
   "videos": 10,
   "scheduled": 10,
   "runs": [
@@ -10,11 +10,11 @@
       "videos": 5,
       "scheduled": 5,
       "titles": [
-        "They were told to lick the brush. It was radium.",
+        "An entire American colony vanished and left one word behind",
+        "Australia declared war on birds and lost",
         "Bananas are radioactive and scientists actually use them as a unit",
         "They were told to lick the brush. It was radium.",
-        "The self-checkout machine has decided you are a criminal",
-        "The coffee thing is a distraction and the math proves it"
+        "The self-checkout machine has decided you are a criminal"
       ],
       "calendar": [
         [
@@ -31,15 +31,15 @@
         ],
         [
           "ngay bay gio",
-          "The coffee thing is a distraction and the math proves it -> acc-ada3 (tiktok_business)"
+          "An entire American colony vanished and left one word behind -> acc-d9b6 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "They were told to lick the brush. It was radium. -> acc-7a7e (tiktok_business)"
+          "Australia declared war on birds and lost -> acc-7a7e (tiktok_business)"
         ]
       ],
       "warnings": [
-        "5 video(s) for 6 channel(s) - none this round for 1: acc-d9b6 (tiktok_business). They lead the next run."
+        "5 video(s) for 6 channel(s) - none this round for 1: acc-ada3 (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -53,7 +53,7 @@
         "acc-a35d",
         "acc-ada3"
       ],
-      "seconds": 892.4462149143219
+      "seconds": 861.8508512973785
     },
     {
       "factory": "mx",
@@ -61,36 +61,36 @@
       "videos": 5,
       "scheduled": 5,
       "titles": [
-        "El animal mexicano que puede regenerar su cerebro",
-        "El único castillo real de América y lo que pasó ahí",
-        "El \"ahorita\" mexicano explicado para extranjeros",
-        "El cañón mexicano que es más grande que el del Colorado",
-        "El río de mercurio que encontraron bajo Teotihuacán"
+        "El volcán que le nació a un señor en su milpa",
+        "Lo que desenterraron a media cuadra del Zócalo",
+        "La tienda de la esquina tiene reglas que nadie escribió",
+        "La ciudad maya que la selva escondió mil años",
+        "México le dio al mundo algo que hoy vale miles de millones"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "El río de mercurio que encontraron bajo Teotihuacán -> acc-7d1e (tiktok_business)"
+          "El volcán que le nació a un señor en su milpa -> acc-3fe1 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "El animal mexicano que puede regenerar su cerebro -> acc-f583 (tiktok_business)"
+          "Lo que desenterraron a media cuadra del Zócalo -> acc-d28e (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "El único castillo real de América y lo que pasó ahí -> acc-6000 (tiktok_business)"
+          "La tienda de la esquina tiene reglas que nadie escribió -> acc-9106 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "El \"ahorita\" mexicano explicado para extranjeros -> acc-2bf3 (tiktok_business)"
+          "La ciudad maya que la selva escondió mil años -> acc-3cac (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "El cañón mexicano que es más grande que el del Colorado -> acc-0f17 (tiktok_business)"
+          "México le dio al mundo algo que hoy vale miles de millones -> acc-f583 (tiktok_business)"
         ]
       ],
       "warnings": [
-        "5 video(s) for 9 channel(s) - none this round for 4: acc-3fe1 (tiktok_business), acc-d28e (tiktok_business), acc-9106 (tiktok_business), acc-3cac (tiktok_business). They lead the next run."
+        "5 video(s) for 9 channel(s) - none this round for 4: acc-7d1e (tiktok_business), acc-6000 (tiktok_business), acc-2bf3 (tiktok_business), acc-0f17 (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -107,9 +107,9 @@
         "acc-0f17",
         "acc-3cac"
       ],
-      "seconds": 742.2625563144684
+      "seconds": 663.8756101131439
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33561497063",
-  "run_number": "8"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33577390870",
+  "run_number": "9"
 }
