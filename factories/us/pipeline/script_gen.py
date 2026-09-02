@@ -131,6 +131,13 @@ def generate_with_gemini(cfg, topic=None, avoid=None):
     return data
 
 
+def _forget_used(topic_ids):
+    """Drop these from the used list so the next cycle can pick them again."""
+    state = _load_state()
+    drop = set(topic_ids)
+    state["used_topics"] = [t for t in state.get("used_topics", []) if t not in drop]
+    save_json(STATE_PATH, state)
+
 def generate_from_bank(topic_id=None, niche=None):
     bank = load_json(ROOT / "topics.json", []) or []
     if not bank:
@@ -144,7 +151,14 @@ def generate_from_bank(topic_id=None, niche=None):
         if niche:
             bank = [t for t in bank if t.get("niche", "mysteries") == niche] or bank
         used = set(_load_state().get("used_topics", []))
-        pool = [t for t in bank if t["id"] not in used] or bank
+        pool = [t for t in bank if t["id"] not in used]
+        if not pool:
+            # The niche is used up. Start a clean cycle instead of drawing at
+            # random from everything - random reuse can repeat inside a single
+            # run, which puts the same clip on two accounts at once.
+            log(f"bank exhausted for '{niche or 'all'}', starting a new cycle")
+            _forget_used([t["id"] for t in bank])
+            pool = list(bank)
         item = random.choice(pool)
 
     return {

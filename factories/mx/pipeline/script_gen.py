@@ -164,6 +164,13 @@ def generate_with_gemini(cfg, topic=None, avoid=None):
 
 # ----------------------------------------------------------------- banco local
 
+def _forget_used(topic_ids):
+    """Los saca de la lista de usados para que el proximo ciclo los tome otra vez."""
+    state = _load_state()
+    drop = set(topic_ids)
+    state["used_topics"] = [t for t in state.get("used_topics", []) if t not in drop]
+    save_json(STATE_PATH, state)
+
 def generate_from_bank(topic_id=None, niche=None):
     bank = load_json(ROOT / "topics.json", []) or []
     if not bank:
@@ -177,7 +184,14 @@ def generate_from_bank(topic_id=None, niche=None):
         if niche:
             bank = [t for t in bank if t.get("niche", "misterios") == niche] or bank
         used = set(_load_state().get("used_topics", []))
-        pool = [t for t in bank if t["id"] not in used] or bank
+        pool = [t for t in bank if t["id"] not in used]
+        if not pool:
+            # El nicho se agoto. Empezar un ciclo limpio en vez de sortear entre
+            # todo: repetir al azar puede dar el mismo tema dos veces en una
+            # sola corrida, y eso pone el mismo clip en dos cuentas a la vez.
+            log(f"banco agotado para '{niche or 'todos'}', empiezo otro ciclo")
+            _forget_used([t["id"] for t in bank])
+            pool = list(bank)
         item = random.choice(pool)
 
     return {
