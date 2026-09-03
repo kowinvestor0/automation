@@ -1,45 +1,42 @@
 {
   "status": "ok",
-  "finished_at": "2026-09-03 08:37 UTC",
+  "finished_at": "2026-09-03 12:32 UTC",
   "videos": 10,
-  "scheduled": 9,
+  "scheduled": 8,
   "runs": [
     {
       "factory": "us",
       "label": "US / English",
       "videos": 5,
-      "scheduled": 5,
+      "scheduled": 4,
       "titles": [
-        "The flower bubble everyone remembers slightly wrong",
-        "Three lighthouse keepers vanished and the spooky details were all invented later",
-        "An Australian butcher claimed to be a missing English heir and the mother believed him",
-        "A rodent in East Africa can survive eighteen minutes with no oxygen at all",
-        "One Soviet officer decided the missile alert on his screen was a lie"
+        "Australia sent soldiers with machine guns to deal with emus and the emus won",
+        "Raising the price to thirty nine dollars sold more, not less",
+        "Europeans found a stone city in Africa and spent a century denying who built it",
+        "The theft that turned the Mona Lisa into the most famous painting in the world",
+        "A giant steel ball is the only reason Taipei 101 does not make people seasick"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "The flower bubble everyone remembers slightly wrong -> acc-a35d (tiktok_business)"
+          "Raising the price to thirty nine dollars sold more, not less -> acc-f23f (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Three lighthouse keepers vanished and the spooky details were all invented later -> acc-9356 (tiktok_business)"
+          "Europeans found a stone city in Africa and spent a century denying who built it -> acc-a35d (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "An Australian butcher claimed to be a missing English heir and the mother believed him -> acc-ada3 (tiktok_business)"
+          "The theft that turned the Mona Lisa into the most famous painting in the world -> acc-9356 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "A rodent in East Africa can survive eighteen minutes with no oxygen at all -> acc-d9b6 (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "One Soviet officer decided the missile alert on his screen was a lie -> acc-7a7e (tiktok_business)"
+          "A giant steel ball is the only reason Taipei 101 does not make people seasick -> acc-ada3 (tiktok_business)"
         ]
       ],
       "warnings": [
-        "5 video(s) for 6 channel(s) - none this round for 1: acc-f23f (tiktok_business). They lead the next run."
+        "held back: 'Australia sent soldiers with machine guns to deal with emus and the emus won' repeats a topic posted in the last 14 days",
+        "4 video(s) for 6 channel(s) - none this round for 2: acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -53,7 +50,7 @@
         "acc-a35d",
         "acc-ada3"
       ],
-      "seconds": 1722.1802184581757
+      "seconds": 1529.109215259552
     },
     {
       "factory": "mx",
@@ -61,33 +58,33 @@
       "videos": 5,
       "scheduled": 4,
       "titles": [
-        "Los cenotes de Yucatán dibujan el borde del cráter que acabó con los dinosaurios",
-        "La monja que defendio por escrito su derecho a estudiar",
-        "Oregon tried to remove a dead whale with half a ton of dynamite",
-        "La pirámide más grande del mundo está en Puebla y parece un cerro",
-        "De dónde salió realmente el chupacabras en 1995"
+        "El ajolote se regenera hasta el cerebro y en libertad solo vive en un lugar",
+        "La pieza de oro que probo que El Dorado era una ceremonia",
+        "Russia once taxed beards and gave out metal tokens to prove you had paid",
+        "El pueblo mexicano al que solo se entra por un túnel",
+        "La Zona del Silencio: dónde los radios dejan de funcionar"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "De dónde salió realmente el chupacabras en 1995 -> acc-7d1e (tiktok_business)"
+          "El ajolote se regenera hasta el cerebro y en libertad solo vive en un lugar -> acc-3fe1 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Los cenotes de Yucatán dibujan el borde del cráter que acabó con los dinosaurios -> acc-6000 (tiktok_business)"
+          "La pieza de oro que probo que El Dorado era una ceremonia -> acc-d28e (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "La monja que defendio por escrito su derecho a estudiar -> acc-2bf3 (tiktok_business)"
+          "El pueblo mexicano al que solo se entra por un túnel -> acc-9106 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "La pirámide más grande del mundo está en Puebla y parece un cerro -> acc-0f17 (tiktok_business)"
+          "La Zona del Silencio: dónde los radios dejan de funcionar -> acc-3cac (tiktok_business)"
         ]
       ],
       "warnings": [
-        "held back: 'Oregon tried to remove a dead whale with half a ton of dynamite' repeats a topic posted in the last 14 days",
-        "4 video(s) for 9 channel(s) - none this round for 5: acc-3fe1 (tiktok_business), acc-d28e (tiktok_business), acc-9106 (tiktok_business), acc-3cac (tiktok_business), acc-f583 (tiktok_business). They lead the next run."
+        "held back: 'Russia once taxed beards and gave out metal tokens to prove you had paid' repeats a topic posted in the last 14 days",
+        "4 video(s) for 9 channel(s) - none this round for 5: acc-7d1e (tiktok_business), acc-f583 (tiktok_business), acc-6000 (tiktok_business), acc-2bf3 (tiktok_business), acc-0f17 (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -104,9 +101,9 @@
         "acc-0f17",
         "acc-3cac"
       ],
-      "seconds": 971.5220074653625
+      "seconds": 872.2668204307556
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33730271972",
-  "run_number": "16"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33751988447",
+  "run_number": "17"
 }
