@@ -1,6 +1,6 @@
 {
   "status": "ok",
-  "finished_at": "2026-09-03 01:51 UTC",
+  "finished_at": "2026-09-03 08:37 UTC",
   "videos": 10,
   "scheduled": 9,
   "runs": [
@@ -10,36 +10,36 @@
       "videos": 5,
       "scheduled": 5,
       "titles": [
-        "A book nobody on Earth can read has beaten codebreakers for a century",
-        "The Bombay murder trial that is blamed for ending jury trials in India",
-        "Sunlight crosses space in eight minutes after spending millennia trying to leave the sun",
-        "Sweden built the mightiest warship in Europe and it sank one mile into its first voyage",
-        "Russia once taxed beards and gave out metal tokens to prove you had paid"
+        "The flower bubble everyone remembers slightly wrong",
+        "Three lighthouse keepers vanished and the spooky details were all invented later",
+        "An Australian butcher claimed to be a missing English heir and the mother believed him",
+        "A rodent in East Africa can survive eighteen minutes with no oxygen at all",
+        "One Soviet officer decided the missile alert on his screen was a lie"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "Russia once taxed beards and gave out metal tokens to prove you had paid -> acc-f23f (tiktok_business)"
+          "The flower bubble everyone remembers slightly wrong -> acc-a35d (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "A book nobody on Earth can read has beaten codebreakers for a century -> acc-9356 (tiktok_business)"
+          "Three lighthouse keepers vanished and the spooky details were all invented later -> acc-9356 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "The Bombay murder trial that is blamed for ending jury trials in India -> acc-ada3 (tiktok_business)"
+          "An Australian butcher claimed to be a missing English heir and the mother believed him -> acc-ada3 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Sunlight crosses space in eight minutes after spending millennia trying to leave the sun -> acc-d9b6 (tiktok_business)"
+          "A rodent in East Africa can survive eighteen minutes with no oxygen at all -> acc-d9b6 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Sweden built the mightiest warship in Europe and it sank one mile into its first voyage -> acc-7a7e (tiktok_business)"
+          "One Soviet officer decided the missile alert on his screen was a lie -> acc-7a7e (tiktok_business)"
         ]
       ],
       "warnings": [
-        "5 video(s) for 6 channel(s) - none this round for 1: acc-a35d (tiktok_business). They lead the next run."
+        "5 video(s) for 6 channel(s) - none this round for 1: acc-f23f (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -53,7 +53,7 @@
         "acc-a35d",
         "acc-ada3"
       ],
-      "seconds": 1930.0824446678162
+      "seconds": 1722.1802184581757
     },
     {
       "factory": "mx",
@@ -61,33 +61,33 @@
       "videos": 5,
       "scheduled": 4,
       "titles": [
-        "Hay una pirámide adentro de una estación del metro y casi nadie voltea a verla",
-        "El dia que Mexico le hizo funeral de Estado a una pierna",
-        "Henry Ford built a town in the Amazon and made the workers eat oatmeal and square dance",
-        "La cascada de Oaxaca que lleva miles de años sin caer",
-        "Lo que hay en el fondo de los cenotes te va a helar la sangre"
+        "Los cenotes de Yucatán dibujan el borde del cráter que acabó con los dinosaurios",
+        "La monja que defendio por escrito su derecho a estudiar",
+        "Oregon tried to remove a dead whale with half a ton of dynamite",
+        "La pirámide más grande del mundo está en Puebla y parece un cerro",
+        "De dónde salió realmente el chupacabras en 1995"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "Hay una pirámide adentro de una estación del metro y casi nadie voltea a verla -> acc-d28e (tiktok_business)"
+          "De dónde salió realmente el chupacabras en 1995 -> acc-7d1e (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "El dia que Mexico le hizo funeral de Estado a una pierna -> acc-9106 (tiktok_business)"
+          "Los cenotes de Yucatán dibujan el borde del cráter que acabó con los dinosaurios -> acc-6000 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "La cascada de Oaxaca que lleva miles de años sin caer -> acc-3cac (tiktok_business)"
+          "La monja que defendio por escrito su derecho a estudiar -> acc-2bf3 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Lo que hay en el fondo de los cenotes te va a helar la sangre -> acc-f583 (tiktok_business)"
+          "La pirámide más grande del mundo está en Puebla y parece un cerro -> acc-0f17 (tiktok_business)"
         ]
       ],
       "warnings": [
-        "held back: 'Henry Ford built a town in the Amazon and made the workers eat oatmeal and square dance' repeats a topic posted in the last 14 days",
-        "4 video(s) for 9 channel(s) - none this round for 5: acc-7d1e (tiktok_business), acc-3fe1 (tiktok_business), acc-6000 (tiktok_business), acc-2bf3 (tiktok_business), acc-0f17 (tiktok_business). They lead the next run."
+        "held back: 'Oregon tried to remove a dead whale with half a ton of dynamite' repeats a topic posted in the last 14 days",
+        "4 video(s) for 9 channel(s) - none this round for 5: acc-3fe1 (tiktok_business), acc-d28e (tiktok_business), acc-9106 (tiktok_business), acc-3cac (tiktok_business), acc-f583 (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -104,9 +104,9 @@
         "acc-0f17",
         "acc-3cac"
       ],
-      "seconds": 971.4705877304077
+      "seconds": 971.5220074653625
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33702000163",
-  "run_number": "15"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33730271972",
+  "run_number": "16"
 }
