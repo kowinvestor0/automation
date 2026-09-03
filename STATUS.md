@@ -1,40 +1,40 @@
 # Status
 
-🟢 **OK** - 2026-09-03 18:51 UTC
+🟢 **OK** - 2026-09-03 22:13 UTC
 
 - Videos rendered: **10**
-- Posts scheduled on Planly: **5**
-- [Open this run on GitHub](https://github.com/kowinvestor0/automation/actions/runs/33789505653)
+- Posts scheduled on Planly: **1**
+- [Open this run on GitHub](https://github.com/kowinvestor0/automation/actions/runs/33808427355)
 
-## 🟡 US / English
+## 🟢 US / English
 
-- rendered: 5  ·  scheduled: 2  ·  took: 1192s
-  - 20260903-181702_roman-seawater-concrete
-  - A volcano in Indonesia erupted and Europe lost the following summer
-  - A French court put the local rats on trial and assigned them a defense lawyer
-  - The hundred trillion dollar bill that could not buy groceries
-  - Nine hikers cut their way out of a tent from the inside
-  - `ngay bay gio`  A volcano in Indonesia erupted and Europe lost the following summer -> acc-a35d (tiktok_business)
-  - `ngay bay gio`  Nine hikers cut their way out of a tent from the inside -> acc-9356 (tiktok_business)
-  - warning: held back: 'A French court put the local rats on trial and assigned them a defense lawyer' repeats a topic posted in the last 14 days
-  - warning: held back: 'The hundred trillion dollar bill that could not buy groceries' repeats a topic posted in the last 14 days
-  - warning: 2 video(s) for 6 channel(s) - none this round for 4: acc-f23f (tiktok_business), acc-ada3 (tiktok_business), acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business). They lead the next run.
-  - **error:** video 1 exited 1:  / FAILED video 1: NoAudioReceived: No audio was received. Please verify that your parameters are correct.
+- rendered: 5  ·  scheduled: 0  ·  took: 1375s
+  - A public family tree website named the Golden State Killer forty years later
+  - Almost all of a tree's weight comes out of thin air, not out of the ground
+  - A king of Mali handed out so much gold that Egypt felt it for years
+  - Oregon tried to remove a dead whale with half a ton of dynamite
+  - Apple's third founder sold his ten percent for eight hundred dollars
+  - warning: held back: 'A public family tree website named the Golden State Killer forty years later' repeats a topic posted in the last 14 days
+  - warning: held back: 'Almost all of a tree's weight comes out of thin air, not out of the ground' repeats a topic posted in the last 14 days
+  - warning: held back: 'A king of Mali handed out so much gold that Egypt felt it for years' repeats a topic posted in the last 14 days
+  - warning: held back: 'Oregon tried to remove a dead whale with half a ton of dynamite' repeats a topic posted in the last 14 days
+  - warning: held back: 'Apple's third founder sold his ten percent for eight hundred dollars' repeats a topic posted in the last 14 days
+  - warning: Nothing to publish - every video repeated a recent topic, or output/ was empty.
 
 ## 🟢 Mexico / Espanol
 
-- rendered: 5  ·  scheduled: 3  ·  took: 878s
-  - El volcán que le nació a un señor en su milpa
-  - El cable de luz que desenterro a una diosa
-  - A Utah banker mailed an entire building to himself one crate of bricks at a time
-  - El jardín surrealista que un inglés construyó en la selva huasteca
-  - La verdad detrás de La Llorona que nadie te contó
-  - `ngay bay gio`  El jardín surrealista que un inglés construyó en la selva huasteca -> acc-7d1e (tiktok_business)
-  - `ngay bay gio`  La verdad detrás de La Llorona que nadie te contó -> acc-3fe1 (tiktok_business)
-  - `ngay bay gio`  El volcán que le nació a un señor en su milpa -> acc-0f17 (tiktok_business)
-  - warning: held back: 'El cable de luz que desenterro a una diosa' repeats a topic posted in the last 14 days
-  - warning: held back: 'A Utah banker mailed an entire building to himself one crate of bricks at a time' repeats a topic posted in the last 14 days
-  - warning: 3 video(s) for 9 channel(s) - none this round for 6: acc-d28e (tiktok_business), acc-9106 (tiktok_business), acc-3cac (tiktok_business), acc-f583 (tiktok_business), acc-6000 (tiktok_business), acc-2bf3 (tiktok_business). They lead the next run.
+- rendered: 5  ·  scheduled: 1  ·  took: 1101s
+  - Cada vez que dices chocolate estás hablando náhuatl
+  - El libro maya que se salvo porque un fraile quiso combatirlo
+  - Australia sent soldiers with machine guns to deal with emus and the emus won
+  - La cascada de Oaxaca que lleva miles de años sin caer
+  - Las momias más antiguas del mundo no son egipcias, son de unos pescadores
+  - `ngay bay gio`  Las momias más antiguas del mundo no son egipcias, son de unos pescadores -> acc-d28e (tiktok_business)
+  - warning: held back: 'Cada vez que dices chocolate estás hablando náhuatl' repeats a topic posted in the last 14 days
+  - warning: held back: 'El libro maya que se salvo porque un fraile quiso combatirlo' repeats a topic posted in the last 14 days
+  - warning: held back: 'Australia sent soldiers with machine guns to deal with emus and the emus won' repeats a topic posted in the last 14 days
+  - warning: held back: 'La cascada de Oaxaca que lleva miles de años sin caer' repeats a topic posted in the last 14 days
+  - warning: 1 video(s) for 9 channel(s) - none this round for 8: acc-7d1e (tiktok_business), acc-3fe1 (tiktok_business), acc-9106 (tiktok_business), acc-3cac (tiktok_business), acc-f583 (tiktok_business), acc-6000 (tiktok_business).... They lead the next run.
 
 ---
 
