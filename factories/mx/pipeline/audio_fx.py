@@ -19,6 +19,7 @@ MOODS = {
     "lugares":     {"bass": 73.42, "notes": [146.83, 220.00, 293.66], "lp": 1800, "pulse": 0.80},
     # Humor: mayor con sexta, brillante y con pulso rapido. Nada de suspenso.
     "humor":       {"bass": 87.31, "notes": [174.61, 220.00, 293.66], "lp": 2600, "pulse": 1.60},
+    "commentary":  {"bass": 65.41, "notes": [130.81, 196.00, 261.63], "lp": 1800, "pulse": 1.10},
 }
 
 

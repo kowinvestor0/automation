@@ -40,6 +40,10 @@ STYLES = {
         "transitions": ["slideleft", "circleopen", "squeezeh", "slideup"],
         "vignette": 0.0, "grain": 0, "saturation": 1.18, "brightness": 0.02,
     },
+    "commentary": {
+        "transitions": ["slideleft", "dissolve", "smoothleft", "wipeleft"],
+        "vignette": 0.1, "grain": 0, "saturation": 1.15, "brightness": 0.02,
+    },
 }
 
 

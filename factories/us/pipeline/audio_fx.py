@@ -25,6 +25,8 @@ MOODS = {
     "money": {"bass": 73.42, "notes": [146.83, 220.00, 293.66], "lp": 1800, "pulse": 0.90},
     # F major with a sixth: bright, fast pulse, zero suspense.
     "humor": {"bass": 87.31, "notes": [174.61, 220.00, 293.66], "lp": 2600, "pulse": 1.60},
+    # Dynamic, engaging bed for viral breakdowns.
+    "commentary": {"bass": 65.41, "notes": [130.81, 196.00, 261.63], "lp": 1800, "pulse": 1.10},
 }
 
 

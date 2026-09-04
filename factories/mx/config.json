@@ -1,11 +1,11 @@
 {
-  "niche": "misterios",
+  "niche": "commentary",
   "language_note": "Espanol de Mexico, tono cercano y coloquial",
   "voice": "es-MX-JorgeNeural",
   "voice_alt": "es-MX-DaliaNeural",
-  "voice_rate": "+14%",
+  "voice_rate": "+16%",
   "voice_pitch": "+0Hz",
-  "scene_gap": 0.14,
+  "scene_gap": 0.12,
   "resolution": "1080p",
   "quality": "high",
   "width": 1080,
@@ -20,14 +20,21 @@
   ],
   "gemini_model": "gemini-2.5-flash",
   "visual_priority": [
-    "wikimedia",
     "pexels_video",
     "pexels_photo",
+    "wikimedia",
     "local",
     "gradient"
   ],
   "wikimedia_max_per_video": 5,
   "niche_visuals": {
+    "commentary": [
+      "pexels_video",
+      "pexels_photo",
+      "wikimedia",
+      "local",
+      "gradient"
+    ],
     "humor": [
       "pexels_video",
       "pexels_photo",
@@ -51,6 +58,11 @@
   "transition_duration": 0.4,
   "camera_shake": true,
   "niche_voice": {
+    "commentary": {
+      "voice": "es-MX-JorgeNeural",
+      "voice_rate": "+16%",
+      "scene_gap": 0.12
+    },
     "humor": {
       "voice": "es-MX-JorgeNeural",
       "voice_rate": "+24%",

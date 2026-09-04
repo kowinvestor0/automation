@@ -71,12 +71,14 @@ ROUTE_VI = [
     ("us:history", "  US · lịch sử"),
     ("us:money", "  US · tiền bạc"),
     ("us:humor", "  US · hài"),
+    ("us:commentary", "  US · bình luận viral"),
     ("mx", "Xưởng Mexico (tiếng Tây Ban Nha)"),
     ("mx:misterios", "  MX · bí ẩn"),
     ("mx:curiosidades", "  MX · chuyện lạ"),
     ("mx:historia", "  MX · lịch sử"),
     ("mx:lugares", "  MX · địa danh"),
     ("mx:humor", "  MX · hài"),
+    ("mx:commentary", "  MX · bình luận viral"),
 ]
 ROUTE_LABEL = {key: label.strip() for key, label in ROUTE_VI}
 DISTRIBUTE_VI = {"unique": "Chia đều, không trùng", "mirror": "Tất cả kênh cùng video"}

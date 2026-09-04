@@ -36,6 +36,10 @@ STYLES = {
         "transitions": ["smoothleft", "circleopen", "dissolve", "wipeup"],
         "vignette": 0.25, "grain": 0, "saturation": 1.15, "brightness": 0.01,
     },
+    "commentary": {
+        "transitions": ["slideleft", "dissolve", "smoothleft", "wipeleft"],
+        "vignette": 0.1, "grain": 0, "saturation": 1.15, "brightness": 0.02,
+    },
 }
 
 

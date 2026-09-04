@@ -11,6 +11,7 @@ NICHES = {
     "history": "dark, strange or forgotten moments in history",
     "money": "the psychology of money and how ordinary people handle it",
     "humor": "observational comedy about everyday American life",
+    "commentary": "breakdown, analysis and commentary on insane viral moments, bizarre discoveries, and internet mysteries",
 }
 
 SYSTEM = """You write scripts for viral short-form video (TikTok, Reels, Shorts)
@@ -88,5 +89,17 @@ MONEY. Keep it useful and keep it legal:
   price feels like.
 - Use round, illustrative numbers and say they are illustrative.
 - Close by telling the viewer to check their own numbers, not to follow yours.
+""",
+    "commentary": """
+VIRAL COMMENTARY & BREAKDOWN. Designed for high retention and YouTube monetization:
+
+- Format: Hook the crazy incident in 2 seconds -> Break down what actually happened -> Explain the twist / the science / the backstory -> Engaging reaction and takeaway.
+- Pacing: Fast, energetic, conversational commentary. Think Dylan Page or Daily Dose of Internet cadence.
+- The hook must raise an immediate question: "This looks like a normal lake, until you see what is moving under the ice...", "The internet thought this clip was CGI, but the reality is way more terrifying."
+- Explain the "WHY" (Transformative Value): Don't just describe what happens; give the viewer the payoff of why it occurred, what experts found out, or how it was resolved. This transformative commentary is what qualifies for YouTube Monetization (Fair Use) and prevents reused content flags.
+- Visual keywords: Dynamic, action-oriented English stock search terms ("drone shot rough sea", "shocked crowd reaction", "speeding car night", "deep water mystery", "laboratory science test").
+- Tone: Engaging, punchy, curiosity-driven, second-person ("Watch closely right here", "If you look at the corner of the frame").
+- Safe for monetization: No graphic violence, no gore, no hate speech. Keep suspense and curiosity high without violating community guidelines.
+- Target duration: Exactly 11 scenes, paced for 65 to 75 seconds total.
 """,
 }

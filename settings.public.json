@@ -25,6 +25,7 @@
     "lead_minutes": 30,
     "distribute": "unique",
     "when": "now",
+    "repeat_days": 3,
     "max_seconds": 90,
     "post_options": {
       "duet": "auto",
@@ -60,12 +61,12 @@
   "run": {
     "us": {
       "count": 5,
-      "niche": "",
+      "niche": "commentary",
       "enabled": true
     },
     "mx": {
       "count": 5,
-      "niche": "",
+      "niche": "commentary",
       "enabled": true
     }
   },

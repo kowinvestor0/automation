@@ -11,6 +11,7 @@ NICHES = {
     "historia": "momentos oscuros, raros u olvidados de la historia de Mexico",
     "lugares": "lugares increibles, abandonados o prohibidos de Mexico",
     "humor": "comedia observacional sobre la vida diaria en Mexico",
+    "commentary": "analisis, reaccion y comentarios de videos virales, sucesos insolitos y misterios de internet",
 }
 
 SYSTEM = """Eres guionista de video corto viral para TikTok/Reels/Shorts en Mexico.
@@ -126,5 +127,14 @@ CURIOSIDADES. Reglas del nicho:
 - Numeros con letra y con su unidad. Si el dato trae asterisco, ponlo en la misma
   escena y no en la siguiente.
 - `subject`: el objeto, el animal o la planta de la que hablas, en concreto.
+""",
+    "commentary": """
+COMENTARIOS VIRALES Y CASOS INSOLITOS. Disenado para alta retencion y monetizacion:
+
+- Formato: Gancho inmediato en los primeros 2 segundos -> Que fue lo que paso exactamente -> Explicacion de la razon cientifica / investigacion detras del suceso -> Remate y reflexion interactiva.
+- Tono: Conversacional, dinamico, intrigante, directo al punto ("Parece algo normal, pero fíjate bien en la orilla del agua...", "Muchos creyeron que este video era falso, hasta que vieron el reporte oficial").
+- Aporte de valor (Fair Use / Monetizacion): No te limites a describir el video; explica el PORQUE sucedio, la verdad detras del misterio o lo que concluyeron los expertos. Esto garantiza contenido original y evita penalizaciones por contenido reutilizado en YouTube.
+- `keywords`: 2 o 3 palabras clave en ingles para buscar video vertical de stock de accion ("ocean storm drone", "crowd shocked reaction", "mysterious cave exploration").
+- Duracion: 11 escenas, pensado para 65 a 75 segundos.
 """,
 }
