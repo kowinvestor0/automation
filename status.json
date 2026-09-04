@@ -1,61 +1,81 @@
 {
   "status": "ok",
-  "finished_at": "2026-09-03 22:13 UTC",
+  "finished_at": "2026-09-04 01:35 UTC",
   "videos": 10,
-  "scheduled": 1,
+  "scheduled": 5,
   "runs": [
     {
       "factory": "us",
       "label": "US / English",
       "videos": 5,
-      "scheduled": 0,
+      "scheduled": 2,
       "titles": [
-        "A public family tree website named the Golden State Killer forty years later",
-        "Almost all of a tree's weight comes out of thin air, not out of the ground",
-        "A king of Mali handed out so much gold that Egypt felt it for years",
-        "Oregon tried to remove a dead whale with half a ton of dynamite",
-        "Apple's third founder sold his ten percent for eight hundred dollars"
+        "A dead man on an Australian beach carried two Persian words and no name",
+        "An Australian butcher claimed to be a missing English heir and the mother believed him",
+        "Sunlight crosses space in eight minutes after spending millennia trying to leave the sun",
+        "They were told to lick the brush. It was radium.",
+        "Nobody has ever successfully left a group chat"
       ],
-      "calendar": [],
+      "calendar": [
+        [
+          "ngay bay gio",
+          "They were told to lick the brush. It was radium. -> acc-ada3 (tiktok_business)"
+        ],
+        [
+          "ngay bay gio",
+          "Nobody has ever successfully left a group chat -> acc-d9b6 (tiktok_business)"
+        ]
+      ],
       "warnings": [
-        "held back: 'A public family tree website named the Golden State Killer forty years later' repeats a topic posted in the last 14 days",
-        "held back: 'Almost all of a tree's weight comes out of thin air, not out of the ground' repeats a topic posted in the last 14 days",
-        "held back: 'A king of Mali handed out so much gold that Egypt felt it for years' repeats a topic posted in the last 14 days",
-        "held back: 'Oregon tried to remove a dead whale with half a ton of dynamite' repeats a topic posted in the last 14 days",
-        "held back: 'Apple's third founder sold his ten percent for eight hundred dollars' repeats a topic posted in the last 14 days",
-        "Nothing to publish - every video repeated a recent topic, or output/ was empty."
+        "held back: 'A dead man on an Australian beach carried two Persian words and no name' repeats a topic posted in the last 14 days",
+        "held back: 'An Australian butcher claimed to be a missing English heir and the mother believed him' repeats a topic posted in the last 14 days",
+        "held back: 'Sunlight crosses space in eight minutes after spending millennia trying to leave the sun' repeats a topic posted in the last 14 days",
+        "2 video(s) for 6 channel(s) - none this round for 4: acc-f23f (tiktok_business), acc-a35d (tiktok_business), acc-9356 (tiktok_business), acc-7a7e (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
       "status": "ok",
-      "route": "default",
-      "channel_names": [],
-      "seconds": 1375.1612348556519
+      "route": "us",
+      "channel_names": [
+        "acc-d9b6",
+        "acc-f23f",
+        "acc-7a7e",
+        "acc-9356",
+        "acc-a35d",
+        "acc-ada3"
+      ],
+      "seconds": 1417.152355670929
     },
     {
       "factory": "mx",
       "label": "Mexico / Espanol",
       "videos": 5,
-      "scheduled": 1,
+      "scheduled": 3,
       "titles": [
-        "Cada vez que dices chocolate estás hablando náhuatl",
-        "El libro maya que se salvo porque un fraile quiso combatirlo",
-        "Australia sent soldiers with machine guns to deal with emus and the emus won",
-        "La cascada de Oaxaca que lleva miles de años sin caer",
-        "Las momias más antiguas del mundo no son egipcias, son de unos pescadores"
+        "El animal mexicano que puede regenerar su cerebro",
+        "El dia que descubrieron un lugar donde ya vivia gente",
+        "The largest machine ever built was knocked offline by a piece of bread",
+        "La ciudad maya que la selva escondió mil años",
+        "Los pozos funerarios de Jalisco que los saqueadores vaciaron antes que los arqueólogos"
       ],
       "calendar": [
         [
           "ngay bay gio",
-          "Las momias más antiguas del mundo no son egipcias, son de unos pescadores -> acc-d28e (tiktok_business)"
+          "El animal mexicano que puede regenerar su cerebro -> acc-9106 (tiktok_business)"
+        ],
+        [
+          "ngay bay gio",
+          "La ciudad maya que la selva escondió mil años -> acc-3cac (tiktok_business)"
+        ],
+        [
+          "ngay bay gio",
+          "Los pozos funerarios de Jalisco que los saqueadores vaciaron antes que los arqueólogos -> acc-f583 (tiktok_business)"
         ]
       ],
       "warnings": [
-        "held back: 'Cada vez que dices chocolate estás hablando náhuatl' repeats a topic posted in the last 14 days",
-        "held back: 'El libro maya que se salvo porque un fraile quiso combatirlo' repeats a topic posted in the last 14 days",
-        "held back: 'Australia sent soldiers with machine guns to deal with emus and the emus won' repeats a topic posted in the last 14 days",
-        "held back: 'La cascada de Oaxaca que lleva miles de años sin caer' repeats a topic posted in the last 14 days",
-        "1 video(s) for 9 channel(s) - none this round for 8: acc-7d1e (tiktok_business), acc-3fe1 (tiktok_business), acc-9106 (tiktok_business), acc-3cac (tiktok_business), acc-f583 (tiktok_business), acc-6000 (tiktok_business).... They lead the next run."
+        "held back: 'El dia que descubrieron un lugar donde ya vivia gente' repeats a topic posted in the last 14 days",
+        "held back: 'The largest machine ever built was knocked offline by a piece of bread' repeats a topic posted in the last 14 days",
+        "3 video(s) for 9 channel(s) - none this round for 6: acc-7d1e (tiktok_business), acc-3fe1 (tiktok_business), acc-d28e (tiktok_business), acc-6000 (tiktok_business), acc-2bf3 (tiktok_business), acc-0f17 (tiktok_business). They lead the next run."
       ],
       "errors": [],
       "dry_run": false,
@@ -72,9 +92,9 @@
         "acc-0f17",
         "acc-3cac"
       ],
-      "seconds": 1100.612283706665
+      "seconds": 1058.7444293498993
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33808427355",
-  "run_number": "20"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33823600968",
+  "run_number": "21"
 }
