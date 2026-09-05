@@ -1,30 +1,16 @@
 # Status
 
-🔴 **FAILED** - 2026-09-05 00:48 UTC
+🟢 **OK** - 2026-09-05 09:25 UTC
 
-- Videos rendered: **0**
-- Posts scheduled on Planly: **0**
-- [Open this run on GitHub](https://github.com/kowinvestor0/automation/actions/runs/33934133088)
+- Videos rendered: **1**
+- Posts scheduled on Planly: **1**
 
-## 🔴 US / English
+## 🟢 US / English
 
-- rendered: 0  ·  scheduled: 0  ·  took: 0s
-  - warning: Nothing to publish - every video repeated a recent topic, or output/ was empty.
-  - **error:** video 1 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)
-  - **error:** video 2 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)
-  - **error:** video 3 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)
-  - **error:** video 4 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)
-  - **error:** video 5 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)
-
-## 🔴 Mexico / Espanol
-
-- rendered: 0  ·  scheduled: 0  ·  took: 0s
-  - warning: Nothing to publish - every video repeated a recent topic, or output/ was empty.
-  - **error:** video 1 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)
-  - **error:** video 2 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)
-  - **error:** video 3 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)
-  - **error:** video 4 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)
-  - **error:** video 5 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)
+- rendered: 1  ·  scheduled: 1  ·  took: 71s
+  - The Truth Behind Sailing drone captures unbelievable video of ocean
+  - `ngay bay gio`  The Truth Behind Sailing drone captures unbelievable video of ocean -> acc-a35d (tiktok_business)
+  - warning: [outdoor_boys_us] 1 video(s) for 15 channel(s) - none this round for 14: acc-f23f (tiktok_business), acc-9356 (tiktok_business), acc-ada3 (tiktok_business), acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business), acc-7d1e (tiktok_business).... They lead the next run.
 
 ---
 

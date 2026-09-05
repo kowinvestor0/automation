@@ -1,56 +1,50 @@
 {
-  "status": "failed",
-  "finished_at": "2026-09-05 00:48 UTC",
-  "videos": 0,
-  "scheduled": 0,
+  "status": "ok",
+  "finished_at": "2026-09-05 09:25 UTC",
+  "videos": 1,
+  "scheduled": 1,
   "runs": [
     {
       "factory": "us",
       "label": "US / English",
-      "videos": 0,
-      "scheduled": 0,
-      "titles": [],
-      "calendar": [],
+      "videos": 1,
+      "scheduled": 1,
+      "titles": [
+        "The Truth Behind Sailing drone captures unbelievable video of ocean"
+      ],
+      "calendar": [
+        [
+          "ngay bay gio",
+          "The Truth Behind Sailing drone captures unbelievable video of ocean -> acc-a35d (tiktok_business)"
+        ]
+      ],
       "warnings": [
-        "Nothing to publish - every video repeated a recent topic, or output/ was empty."
+        "[outdoor_boys_us] 1 video(s) for 15 channel(s) - none this round for 14: acc-f23f (tiktok_business), acc-9356 (tiktok_business), acc-ada3 (tiktok_business), acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business), acc-7d1e (tiktok_business).... They lead the next run."
       ],
-      "errors": [
-        "video 1 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)",
-        "video 2 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)",
-        "video 3 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)",
-        "video 4 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)",
-        "video 5 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from mysteries, truecrime, facts, history, money, humor)"
-      ],
+      "errors": [],
       "dry_run": false,
-      "status": "failed",
+      "status": "ok",
       "route": "default",
-      "channel_names": [],
-      "seconds": 0.44850850105285645
-    },
-    {
-      "factory": "mx",
-      "label": "Mexico / Espanol",
-      "videos": 0,
-      "scheduled": 0,
-      "titles": [],
-      "calendar": [],
-      "warnings": [
-        "Nothing to publish - every video repeated a recent topic, or output/ was empty."
+      "channel_names": [
+        "acc-d9b6",
+        "acc-9106",
+        "acc-f23f",
+        "acc-7a7e",
+        "acc-9356",
+        "acc-7d1e",
+        "acc-a35d",
+        "acc-f583",
+        "acc-ada3",
+        "acc-2bf3",
+        "acc-3fe1",
+        "acc-6000",
+        "acc-d28e",
+        "acc-0f17",
+        "acc-3cac"
       ],
-      "errors": [
-        "video 1 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)",
-        "video 2 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)",
-        "video 3 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)",
-        "video 4 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)",
-        "video 5 exited 2:                [--voice VOICE] [--seconds SECONDS] [--bank] / main.py: error: argument --niche: invalid choice: 'commentary' (choose from misterios, humor, curiosidades, historia, lugares)"
-      ],
-      "dry_run": false,
-      "status": "failed",
-      "route": "default",
-      "channel_names": [],
-      "seconds": 0.4437682628631592
+      "seconds": 71.34858345985413
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33934133088",
-  "run_number": "27"
+  "run_url": "",
+  "run_number": ""
 }

@@ -29,6 +29,7 @@ from hub.paths import CODE
 def parse_args():
     parser = argparse.ArgumentParser(description="Viral Shorts Commentary Bot")
     parser.add_argument("--query", "-q", default="", help="Search query for viral shorts")
+    parser.add_argument("--file", "-f", default="", help="Direct path to a local video file (.mp4)")
     parser.add_argument("--url", "-u", default="", help="Direct URL of a YouTube Short or clip")
     parser.add_argument("--count", "-c", type=int, default=1, help="Number of videos to generate")
     parser.add_argument("--lang", "-l", choices=["us", "mx"], default="us", help="Target language/market")
@@ -56,7 +57,29 @@ def main():
     scraper = ViralScraper()
     clips = []
 
-    if args.url:
+    if args.file:
+        file_path = Path(args.file)
+        if not file_path.exists():
+            print(f"❌ File not found: {args.file}")
+            return 1
+        from factories.us.pipeline.util import ffprobe_duration, slugify
+        dur = round(ffprobe_duration(file_path), 2)
+        title_clean = file_path.stem
+        # Clean leading dates like '20260117 - '
+        import re
+        title_clean = re.sub(r"^\d{8}\s*-\s*", "", title_clean)
+        meta = {
+            "id": slugify(title_clean, 30) or "local_video",
+            "title": title_clean,
+            "video_path": str(file_path),
+            "duration": dur,
+            "url": str(file_path),
+            "uploader": "Local Video",
+            "view_count": 0,
+        }
+        print(f"\n[1/3] Using local video: {file_path.name}")
+        clips.append(meta)
+    elif args.url:
         print(f"\n[1/3] Downloading direct clip: {args.url}")
         meta = scraper.download_clip(args.url)
         if meta:
