@@ -30,6 +30,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Viral Shorts Commentary Bot")
     parser.add_argument("--query", "-q", default="", help="Search query for viral shorts")
     parser.add_argument("--file", "-f", default="", help="Direct path to a local video file (.mp4)")
+    parser.add_argument("--folder", "-d", default="", help="Directory of local videos (.mp4) to process in batch")
     parser.add_argument("--url", "-u", default="", help="Direct URL of a YouTube Short or clip")
     parser.add_argument("--count", "-c", type=int, default=1, help="Number of videos to generate")
     parser.add_argument("--lang", "-l", choices=["us", "mx"], default="us", help="Target language/market")
@@ -57,7 +58,32 @@ def main():
     scraper = ViralScraper()
     clips = []
 
-    if args.file:
+    if args.folder:
+        folder_path = Path(args.folder)
+        if not folder_path.is_dir():
+            print(f"❌ Folder not found: {args.folder}")
+            return 1
+        from factories.us.pipeline.util import ffprobe_duration, slugify
+        import re
+        all_vids = sorted(list(folder_path.glob("*.mp4")))
+        if not all_vids:
+            print(f"❌ No .mp4 files found in {args.folder}")
+            return 1
+        target_vids = all_vids[:args.count]
+        print(f"\n[1/3] Found {len(all_vids)} videos in '{folder_path.name}'. Processing first {len(target_vids)} video(s)...")
+        for f in target_vids:
+            dur = round(ffprobe_duration(f), 2)
+            title_clean = re.sub(r"^\d{8}\s*-\s*", "", f.stem)
+            clips.append({
+                "id": slugify(title_clean, 30) or f.stem[:30],
+                "title": title_clean,
+                "video_path": str(f),
+                "duration": dur,
+                "url": str(f),
+                "uploader": folder_path.name,
+                "view_count": 0,
+            })
+    elif args.file:
         file_path = Path(args.file)
         if not file_path.exists():
             print(f"❌ File not found: {args.file}")
