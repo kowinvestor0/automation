@@ -21,7 +21,7 @@ on:
       live:
         description: 'Really post to Planly (off = dry run)'
         type: boolean
-        default: false
+        default: true
 
 concurrency:
   group: generate-videos
@@ -191,6 +191,8 @@ jobs:
           args=(--all --publish-only)
           if [ "$IN_EVENT" = "workflow_dispatch" ]; then
             if [ "$IN_LIVE" = "true" ]; then args+=(--live); else args+=(--dry-run); fi
+          else
+            args+=(--live)
           fi
           echo "Running publish coordinator: run_factory ${args[*]}"
           python tools/run_factory.py "${args[@]}"
