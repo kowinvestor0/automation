@@ -1,35 +1,20 @@
-# The background worker. Renders videos on a schedule and hands them to Planly.
-#
-# Nothing here needs the user's PC to be switched on - that is the whole point
-# of the job. What it leaves behind for them to look at on a phone: the run's
-# step summary, STATUS.md committed to the repo front page, the videos as an
-# artifact, and a Telegram message if a bot token is set.
+# The background worker. High-throughput 2-stage parallel architecture:
+# Stage 1 (render): 4 parallel worker shards render videos concurrently with FFmpeg turbo.
+# Stage 2 (publish): Centralized coordinator downloads all batches, publishes across
+# all configured Planly accounts, books slots without race conditions, and commits STATUS.md.
 name: Generate videos
 
 on:
   schedule:
-    # The user is UTC+7. Every four hours, landing at 02:00, 06:00, 10:00,
-    # 14:00, 18:00 and 22:00 Vietnam time - so whenever they pick up the phone
-    # there is a recent batch. Ten videos a run takes about fifty minutes, well
-    # inside the four-hour gap, so runs never queue behind each other.
-    # GitHub's scheduler runs late under load; treat these as "some time
-    # after", not "on the dot".
-    - cron: '0 19 * * *'
-    - cron: '0 23 * * *'
-    - cron: '0 3 * * *'
-    - cron: '0 7 * * *'
-    - cron: '0 11 * * *'
-    - cron: '0 15 * * *'
+    # Every 3 hours: 00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00 UTC
+    # (07:00, 10:00, 13:00, 16:00, 19:00, 22:00, 01:00, 04:00 Vietnam time UTC+7)
+    # 8 runs/day * 24 videos = 192 videos/day (scalable to 288+)
+    - cron: '0 */3 * * *'
   workflow_dispatch:
     inputs:
-      factory:
-        description: 'Which factory'
-        type: choice
-        options: [all, us, mx]
-        default: all
       count:
-        description: 'Videos per factory'
-        default: '5'
+        description: 'Videos per worker shard (default 6)'
+        default: '6'
       niche:
         description: 'Force a niche (optional)'
         default: ''
@@ -38,19 +23,32 @@ on:
         type: boolean
         default: false
 
-# state.json records which posting slots are already booked. Two runs at once
-# would each plan against a stale copy and double-book the same minute.
 concurrency:
   group: generate-videos
   cancel-in-progress: false
 
 permissions:
-  contents: write        # to commit STATUS.md back
+  contents: write
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # STAGE 1: Parallel Video Rendering (4 Concurrent Matrix Workers)
+  # ---------------------------------------------------------------------------
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - factory: us
+            shard: 1
+          - factory: us
+            shard: 2
+          - factory: mx
+            shard: 1
+          - factory: mx
+            shard: 2
 
     steps:
       - uses: actions/checkout@v4
@@ -69,66 +67,125 @@ jobs:
       - name: Install dependencies
         run: pip install -q -r requirements.txt
 
-      # state.json remembers booked slots and which videos were already
-      # published; cache/ keeps us from re-downloading the same Wikimedia
-      # photos every run. A runner is wiped between jobs, so without this the
-      # scheduler would forget every slot it ever booked.
-      - name: Restore state and media cache
+      - name: Restore media cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            cache/viral_sources
+            factories/${{ matrix.factory }}/cache
+          key: media-cache-${{ matrix.factory }}-${{ github.run_id }}
+          restore-keys: |
+            media-cache-${{ matrix.factory }}-
+
+      - name: Render videos
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          IN_COUNT: ${{ inputs.count || '6' }}
+          IN_NICHE: ${{ inputs.niche || '' }}
+        run: |
+          args=(--factory "${{ matrix.factory }}" --no-publish)
+          [ -n "$IN_COUNT" ] && args+=(--count "$IN_COUNT")
+          [ -n "$IN_NICHE" ] && args+=(--niche "$IN_NICHE")
+          echo "=== Starting Worker Shard: ${{ matrix.factory }} #${{ matrix.shard }} (${args[*]}) ==="
+          python tools/run_factory.py "${args[@]}"
+
+      - name: Upload worker output
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-${{ matrix.factory }}-${{ matrix.shard }}
+          path: |
+            factories/${{ matrix.factory }}/output/**/video.mp4
+            factories/${{ matrix.factory }}/output/**/meta.json
+            factories/${{ matrix.factory }}/output/**/script.json
+            factories/${{ matrix.factory }}/output/**/credits.txt
+            factories/${{ matrix.factory }}/output/**/creditos.txt
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2: Centralized Publish Coordinator & Multi-Account Scheduler
+  # ---------------------------------------------------------------------------
+  publish:
+    needs: render
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -q -r requirements.txt
+
+      - name: Restore state cache
         uses: actions/cache/restore@v4
         with:
           path: |
             state.json
             factories/us/state.json
             factories/mx/state.json
-            factories/us/cache
-            factories/mx/cache
           key: hub-state-${{ github.run_id }}
           restore-keys: |
             hub-state-
 
-      - name: Preflight
-        run: python tools/preflight.py || true
+      - name: Download all worker batches
+        uses: actions/download-artifact@v4
+        with:
+          pattern: batch-*
+          path: downloaded_batches
 
-      - name: Render and schedule
+      - name: Merge downloaded batches into factory output
+        run: |
+          python -c "
+          from pathlib import Path
+          import shutil
+
+          dl = Path('downloaded_batches')
+          count = 0
+          if dl.exists():
+              for meta_path in sorted(dl.rglob('meta.json')):
+                  folder = meta_path.parent
+                  factory = 'mx' if ('mx' in str(meta_path).lower()) else 'us'
+                  dest = Path('factories') / factory / 'output' / folder.name
+                  dest.mkdir(parents=True, exist_ok=True)
+                  for item in folder.iterdir():
+                      if item.is_file():
+                          shutil.copy2(item, dest / item.name)
+                  count += 1
+          print(f'Merged {count} video batch folder(s) into factory outputs.')
+          "
+
+      - name: Publish all videos to Planly & Update schedule
         env:
-          # Gemini first: its free tier covers this workload.
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PLANLY_API_KEY: ${{ secrets.PLANLY_API_KEY }}
           PLANLY_TEAM_ID: ${{ secrets.PLANLY_TEAM_ID }}
+          PLANLY_API_KEY_2: ${{ secrets.PLANLY_API_KEY_2 }}
+          PLANLY_TEAM_ID_2: ${{ secrets.PLANLY_TEAM_ID_2 }}
+          PLANLY_API_KEY_3: ${{ secrets.PLANLY_API_KEY_3 }}
+          PLANLY_TEAM_ID_3: ${{ secrets.PLANLY_TEAM_ID_3 }}
+          PLANLY_API_KEY_4: ${{ secrets.PLANLY_API_KEY_4 }}
+          PLANLY_TEAM_ID_4: ${{ secrets.PLANLY_TEAM_ID_4 }}
+          PLANLY_API_KEY_5: ${{ secrets.PLANLY_API_KEY_5 }}
+          PLANLY_TEAM_ID_5: ${{ secrets.PLANLY_TEAM_ID_5 }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          WIKI_CONTACT: ${{ secrets.WIKI_CONTACT }}
-          # Inputs come in through the environment, never interpolated into the
-          # command line: a niche containing a quote must not be able to inject.
-          IN_FACTORY: ${{ inputs.factory || 'all' }}
-          IN_COUNT: ${{ inputs.count || '' }}
-          IN_NICHE: ${{ inputs.niche || '' }}
           IN_LIVE: ${{ inputs.live || 'false' }}
           IN_EVENT: ${{ github.event_name }}
         run: |
-          args=()
-          if [ "$IN_FACTORY" = "all" ] || [ -z "$IN_FACTORY" ]; then
-            args+=(--all)
-          else
-            args+=(--factory "$IN_FACTORY")
-          fi
-          [ -n "$IN_COUNT" ] && args+=(--count "$IN_COUNT")
-          [ -n "$IN_NICHE" ] && args+=(--niche "$IN_NICHE")
-          # A pressed button is always safe by default: it dry-runs unless the
-          # `live` box was ticked. The schedule is the opposite - it passes
-          # neither flag and lets settings.public.json decide, because a cron
-          # that could only ever dry-run would never post anything, which is
-          # the entire job. Flipping publish.enabled/dry_run in that committed
-          # file is the deliberate act that turns real posting on.
+          args=(--all --publish-only)
           if [ "$IN_EVENT" = "workflow_dispatch" ]; then
             if [ "$IN_LIVE" = "true" ]; then args+=(--live); else args+=(--dry-run); fi
           fi
-          echo "run_factory ${args[*]}"
+          echo "Running publish coordinator: run_factory ${args[*]}"
           python tools/run_factory.py "${args[@]}"
 
-      - name: Upload the videos
+      - name: Upload all finished videos
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -139,8 +196,6 @@ jobs:
             factories/*/output/**/credits.txt
             factories/*/output/**/creditos.txt
           retention-days: 30
-          # 'warn', not 'error': when the render failed the useful message is
-          # the one from the step above, not a second empty-artifact error.
           if-no-files-found: warn
 
       - name: Commit the status back
@@ -151,12 +206,10 @@ jobs:
           git add STATUS.md status.json 2>/dev/null || true
           git diff --cached --quiet && { echo 'status unchanged'; exit 0; }
           git commit -m 'status: run ${{ github.run_number }}'
-          # A push can lose a race with another run or with the heartbeat. That
-          # is not worth failing a job that already made the videos.
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
-          git push origin "HEAD:${GITHUB_REF_NAME}" || echo 'push lost a race, skipping'
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo 'push skipped race'
 
-      - name: Save state and media cache
+      - name: Save state cache
         if: always()
         uses: actions/cache/save@v4
         with:
@@ -164,6 +217,4 @@ jobs:
             state.json
             factories/us/state.json
             factories/mx/state.json
-            factories/us/cache
-            factories/mx/cache
           key: hub-state-${{ github.run_id }}

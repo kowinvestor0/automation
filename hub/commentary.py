@@ -250,7 +250,7 @@ def render_commentary_video(
         "-filter_complex", f"{fc_video};{fc_audio}",
         "-map", "[v]", "-map", "[a]",
         "-t", f"{voice_duration:.2f}",
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22", "-threads", "0",
         "-c:a", "aac", "-b:a", "192k",
         str(out_file)
     ]

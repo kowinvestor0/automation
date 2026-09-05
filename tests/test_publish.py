@@ -458,5 +458,43 @@ class ResultRecord(unittest.TestCase):
         self.assertTrue(result.dry_run)
 
 
+class TestMultiAccountPublishing(unittest.TestCase):
+
+    def test_multi_account_publishes_to_all_accounts(self):
+        cfg = {
+            "enabled": True,
+            "dry_run": True,
+            "accounts": [
+                {
+                    "name": "Acc 1",
+                    "key": "test_key_1",
+                    "team_id": "team_1",
+                    "channels": ["c1"],
+                },
+                {
+                    "name": "Acc 2",
+                    "key": "test_key_2",
+                    "team_id": "team_2",
+                    "channels": ["c2"],
+                },
+            ],
+        }
+        with mock.patch.object(publish, "collect_videos") as mock_collect, \
+             mock.patch.object(publish, "publish") as mock_pub:
+            mock_collect.return_value = [{"folder": "v1", "title": "Vid 1", "file": "v.mp4"}]
+            res1 = publish.PublishResult()
+            res1.entries = [{"channel": "c1", "video": "Vid 1"}]
+            res1.channel_names = ["Channel 1"]
+            res2 = publish.PublishResult()
+            res2.entries = [{"channel": "c2", "video": "Vid 1"}]
+            res2.channel_names = ["Channel 2"]
+            mock_pub.side_effect = [res1, res2]
+
+            combined = publish.run_for_factory(Path("."), cfg)
+            self.assertEqual(mock_pub.call_count, 2)
+            self.assertEqual(len(combined.entries), 2)
+            self.assertEqual(combined.channel_names, ["Channel 1", "Channel 2"])
+
+
 if __name__ == "__main__":
     unittest.main()

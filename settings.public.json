@@ -56,16 +56,53 @@
         "68a62f97-89a0-4f46-9726-5f5de7903ef8"
       ]
     },
+    "accounts": [
+      {
+        "name": "account_1",
+        "api_key_secret": "PLANLY_API_KEY",
+        "team_id_secret": "PLANLY_TEAM_ID",
+        "routes": {
+          "us": [
+            "35b5ff6c-86cd-4e8c-aa82-352e5d4f5fea",
+            "02e9c6f7-87cf-4690-a087-8b8e5005da2e",
+            "9115e771-d6ee-42bf-8dd6-53f550a16f9f",
+            "2bb52b81-94e4-4b2d-989e-5759c7af00b0",
+            "64fbe318-fa38-45a7-b638-9c2384a27a89",
+            "dd185c01-f011-47e9-a91a-0804d25cc69d"
+          ],
+          "mx": [
+            "cb80d987-f3a7-41d6-b314-1fcaab50a984",
+            "7dfb7a2f-647b-430d-8c29-bf43e752884b",
+            "e02eef57-f6f0-4484-8dd5-595f4a877490",
+            "52fd0a78-d5ee-4901-a0bb-ec911950d6f1",
+            "32b5c77d-316b-4a21-9b90-f12184c3a6f4",
+            "c146bb39-eb9e-4056-b85f-d1cf3a1bc219",
+            "0a0ec4bf-a395-47dd-a759-e580f7bfc3fe",
+            "64e17282-1ebc-47d3-b93a-7c0d91c9b6b7",
+            "68a62f97-89a0-4f46-9726-5f5de7903ef8"
+          ]
+        }
+      },
+      {
+        "name": "account_2",
+        "api_key_secret": "PLANLY_API_KEY_2",
+        "team_id_secret": "PLANLY_TEAM_ID_2",
+        "routes": {
+          "us": [],
+          "mx": []
+        }
+      }
+    ],
     "channel_options": {}
   },
   "run": {
     "us": {
-      "count": 5,
+      "count": 6,
       "niche": "commentary",
       "enabled": true
     },
     "mx": {
-      "count": 5,
+      "count": 6,
       "niche": "commentary",
       "enabled": true
     }

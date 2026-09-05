@@ -204,7 +204,11 @@ def export_env(cfg=None):
     """Push stored keys into os.environ so the factory subprocess inherits them."""
     cfg = cfg if cfg is not None else load()
     exported = []
-    for name in SECRET_NAMES:
+    names = list(SECRET_NAMES)
+    for k in (cfg.get("keys") or {}).keys():
+        if k.startswith("PLANLY_") and k not in names:
+            names.append(k)
+    for name in names:
         value = secret(name, cfg)
         if value:
             os.environ[name] = value

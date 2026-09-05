@@ -198,7 +198,7 @@ def route_for(cfg, factory=None, niche=None):
     return list(cfg.get("channels") or ["all"]), "default"
 
 
-def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
+def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None, account_name="default"):
     """Upload each video once, then schedule it on the channels it was dealt to."""
     result = PublishResult()
     result.dry_run = bool(cfg.get("dry_run", True))
@@ -245,7 +245,8 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
     # hand, and the folder is the instruction - there is nothing to deal.
     pinned = [v for v in videos if v.get("channel_id")]
     by_id = {c["id"]: c for c in chosen}
-    start = hub_state.channel_start(route)
+    start_key = f"{account_name}:{route}" if account_name != "default" else route
+    start = hub_state.channel_start(start_key)
     if pinned and len(pinned) == len(videos):
         rotating = False
         dealt = {c["id"]: [] for c in chosen}
@@ -354,7 +355,7 @@ def publish(videos, cfg, key, log=print, now=None, factory=None, niche=None):
                               state=st)
     if rotating and (cfg.get("distribute") or "unique") != "mirror":
         hub_state.remember_channel_start(
-            route, planly.next_start(start, len(videos), len(chosen)), state=st)
+            start_key, planly.next_start(start, len(videos), len(chosen)), state=st)
     hub_state.save(st)
 
     log(f"scheduled {len(entries)} post(s)")
@@ -374,7 +375,10 @@ def _local(iso, cfg):
 
 def run_for_factory(factory_dir, cfg, log=print, only_new=True,
                     factory=None, niche=None):
-    """Entry point used by the CLI and the GUI. Returns a PublishResult."""
+    """Entry point used by the CLI and the GUI. Returns a PublishResult.
+
+    Supports both single-account and multi-account configurations (via cfg['accounts']).
+    """
     result = PublishResult()
     result.dry_run = bool(cfg.get("dry_run", True))
 
@@ -382,16 +386,80 @@ def run_for_factory(factory_dir, cfg, log=print, only_new=True,
         result.warnings.append("Publishing is off (publish.enabled = false).")
         return result
 
-    key = secret("PLANLY_API_KEY")
-    if not key:
-        result.errors.append("Publishing is on but PLANLY_API_KEY is not set.")
+    # Check for multi-account configuration
+    accounts = cfg.get("accounts")
+    if not accounts:
+        key = secret("PLANLY_API_KEY")
+        if not key:
+            result.errors.append("Publishing is on but PLANLY_API_KEY is not set.")
+            return result
+        videos = collect_videos(factory_dir, only_new=only_new, log=log)
+        try:
+            return publish(videos, cfg, key, log=log, factory=factory, niche=niche)
+        except planly.PlanlyError as e:
+            result.errors.append(str(e))
+        except Exception as e:
+            result.errors.append(f"{type(e).__name__}: {str(e)[:200]}")
         return result
 
+    # Multi-account publishing
     videos = collect_videos(factory_dir, only_new=only_new, log=log)
-    try:
-        return publish(videos, cfg, key, log=log, factory=factory, niche=niche)
-    except planly.PlanlyError as e:
-        result.errors.append(str(e))
-    except Exception as e:
-        result.errors.append(f"{type(e).__name__}: {str(e)[:200]}")
-    return result
+    if not videos:
+        result.warnings.append("Nothing to publish - output/ was empty.")
+        return result
+
+    combined = PublishResult()
+    combined.dry_run = result.dry_run
+
+    is_split = (cfg.get("account_distribution") == "split") and len(accounts) > 1
+    if is_split:
+        import math
+        chunk_size = max(1, math.ceil(len(videos) / len(accounts)))
+        chunks = [videos[i * chunk_size:(i + 1) * chunk_size] for i in range(len(accounts))]
+    else:
+        chunks = [videos] * len(accounts)
+
+    for idx, acc in enumerate(accounts):
+        acc_name = acc.get("name") or f"account_{idx + 1}"
+        acc_key = acc.get("key") or secret(acc.get("api_key_secret") or (f"PLANLY_API_KEY_{idx + 1}" if idx > 0 else "PLANLY_API_KEY"))
+        if not acc_key and idx == 0:
+            acc_key = secret("PLANLY_API_KEY")
+
+        if not acc_key:
+            combined.errors.append(f"Account '{acc_name}': API key is missing.")
+            continue
+
+        acc_team = acc.get("team_id") or secret(acc.get("team_id_secret") or (f"PLANLY_TEAM_ID_{idx + 1}" if idx > 0 else "PLANLY_TEAM_ID"))
+        if not acc_team and idx == 0:
+            acc_team = cfg.get("team_id") or secret("PLANLY_TEAM_ID")
+
+        acc_cfg = dict(cfg)
+        if acc_team:
+            acc_cfg["team_id"] = acc_team
+        if "routes" in acc:
+            acc_cfg["routes"] = acc["routes"]
+        if "channels" in acc:
+            acc_cfg["channels"] = acc["channels"]
+
+        curr_videos = chunks[idx] if idx < len(chunks) else []
+        if not curr_videos:
+            combined.warnings.append(f"Account '{acc_name}': No videos assigned this run.")
+            continue
+
+        log(f"\n[Planly Account: {acc_name}] scheduling {len(curr_videos)} video(s)...")
+        try:
+            acc_res = publish(curr_videos, acc_cfg, acc_key, log=log,
+                              factory=factory, niche=niche, account_name=acc_name)
+            combined.entries.extend(acc_res.entries)
+            combined.warnings.extend([f"[{acc_name}] {w}" for w in acc_res.warnings])
+            combined.errors.extend([f"[{acc_name}] {e}" for e in acc_res.errors])
+            combined.uploaded += acc_res.uploaded
+            combined.skipped.extend(acc_res.skipped)
+            for cname in acc_res.channel_names:
+                if cname not in combined.channel_names:
+                    combined.channel_names.append(cname)
+            combined.channel_names.sort()
+        except Exception as e:
+            combined.errors.append(f"Account '{acc_name}' error ({type(e).__name__}: {str(e)[:200]})")
+
+    return combined
