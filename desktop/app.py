@@ -939,6 +939,7 @@ class ControlPanel:
         ttk.Entry(f_row, textvariable=self.v_library_root).pack(side="left", fill="x", expand=True)
         ttk.Button(f_row, text="Chọn...", width=6, command=self.pick_library_root).pack(side="left", padx=4)
         ttk.Button(f_row, text="Mở", width=4, command=lambda: self._open(self.v_library_root.get())).pack(side="left")
+        ttk.Button(f_row, text="Đăng ngay", command=self.publish_from_folder).pack(side="left", padx=4)
         self.lbl_folder_stat = ttk.Label(folder_frame, text="", style="Hint.TLabel", wraplength=330)
         self.lbl_folder_stat.pack(anchor="w", pady=(2, 0))
         self._update_folder_stat()
@@ -1508,6 +1509,56 @@ class ControlPanel:
         videos = [f for f in folder.rglob("*") if f.is_file() and f.suffix.lower() in exts]
         self.lbl_folder_stat.configure(
             text=f"Tìm thấy {len(videos)} video trong thư mục. Sẵn sàng xếp lịch!")
+
+    def publish_from_folder(self):
+        folder_str = (self.v_library_root.get() or "").strip()
+        if not folder_str or not Path(folder_str).is_dir():
+            self.warn("Chưa chọn thư mục", "Hãy chọn một thư mục chứa file .mp4 trên máy tính trước.")
+            return
+        folder = Path(folder_str)
+        vids = sorted(list(folder.glob("*.mp4")))
+        if not vids:
+            self.warn("Thư mục trống", f"Không tìm thấy file .mp4 nào trong thư mục {folder}.")
+            return
+        count = to_int(self.v_dispatch_count.get(), 15)
+        is_live = not self.v_dry_run.get()
+        confirm_msg = (
+            f"Bạn có chắc muốn đăng {min(count, len(vids))} video từ '{folder.name}' "
+            f"lên các kênh Planly ({'ĐĂNG THẬT' if is_live else 'CHẠY THỬ MÔ PHỎNG'})?\n\n"
+            "Video sẽ giữ NGUYÊN 100% âm thanh gốc, không lồng tiếng, không lặp lại hình ảnh."
+        )
+        if not messagebox.askyesno("Xác nhận đăng video", confirm_msg, parent=self.root):
+            return
+
+        def work():
+            from hub import state as hub_state, publish
+            seen = hub_state.seen_videos()
+            available = [f for f in vids if f.name not in seen and f"{folder.name}/{f.name}" not in seen]
+            if not available:
+                available = vids
+            chosen = available[:count]
+            items = []
+            for f in chosen:
+                clean_title = re.sub(r"^\d{8}\s*-\s*", "", f.stem)
+                clean_title = re.sub(r"#\S+", "", clean_title).strip()
+                items.append({
+                    "title": clean_title or f.stem,
+                    "description": f.stem,
+                    "folder": f"{folder.name}/{f.name}",
+                    "path": f,
+                    "duration_seconds": 30,
+                })
+            pub = self._publish_cfg()
+            key = self.secret("PLANLY_API_KEY")
+            return publish.publish(items, pub, key, log=self.log, factory="us")
+
+        def done(res):
+            self.log(f"Hoàn thành: Đã xếp lịch {res.scheduled} video lên các kênh.")
+            self.info("Hoàn tất", f"Đã xếp lịch thành công {res.scheduled} video lên các kênh Planly.")
+            self.schedule_preview()
+
+        run_async(self.root, work, done=done,
+                  fail=lambda e: self.warn("Lỗi đăng video", friendly(e)))
 
     def _preview_lines(self):
         cfg = self._publish_cfg()
