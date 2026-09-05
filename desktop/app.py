@@ -272,6 +272,22 @@ class ControlPanel:
         self.route_key = "default"
         pub0 = self.cfg["publish"]
         post0 = pub0.get("post_options") or {}
+        self.accounts = [dict(a) for a in (pub0.get("accounts") or [])]
+        if not self.accounts:
+            p_key = self.secret("PLANLY_API_KEY")
+            p_team = (pub0.get("team_id") or "").strip()
+            if p_key or p_team:
+                self.accounts.append({
+                    "name": "account_1",
+                    "key": p_key,
+                    "team_id": p_team,
+                    "api_key_secret": "PLANLY_API_KEY",
+                    "team_id_secret": "PLANLY_TEAM_ID",
+                    "routes": {k: list(v) for k, v in (pub0.get("routes") or {}).items() if v},
+                    "channels": [],
+                })
+        self.current_acc_idx = 0
+        self.v_account = tk.StringVar()
         self.v_when = tk.StringVar(value=pub0.get("when") or "now")
         self.v_duet = tk.StringVar(value=post0.get("duet") or "auto")
         self.v_stitch = tk.StringVar(value=post0.get("stitch") or "auto")
@@ -347,6 +363,7 @@ class ControlPanel:
         self.v_lead = tk.StringVar(value=str(pub.get("lead_minutes", 30)))
         self.v_max_seconds = tk.StringVar(value=str(pub.get("max_seconds", 60)))
         self.v_distribute = tk.StringVar(value=pub.get("distribute") or "unique")
+        self.v_library_root = tk.StringVar(value=pub.get("library_root") or "")
         self.times = list(pub.get("times") or [])
 
         self.v_run = {}
@@ -441,6 +458,9 @@ class ControlPanel:
         self.refresh_local_status()
         if (self.v_repo.get() or "").strip():
             self.refresh_runs(quiet=True)
+        self._refresh_account_combobox()
+        if self.accounts:
+            self._account_selected()
         self.schedule_preview()
         self.refresh_key_warnings()
 
@@ -471,6 +491,8 @@ class ControlPanel:
                    command=self.dispatch_run).pack(side="left")
         ttk.Button(actions, text="Mở trang Actions",
                    command=self.open_actions).pack(side="left", padx=6)
+        ttk.Button(actions, text="⚡ Đồng bộ lên GitHub",
+                   command=self.sync_to_github).pack(side="left", padx=6)
         ttk.Button(actions, text="Mở thư mục cài đặt",
                    command=lambda: self._open(hub_paths.data_dir())).pack(side="left")
 
@@ -865,37 +887,61 @@ class ControlPanel:
                        "lịch. Tắt ô này thì bài sẽ được xếp thật.").pack(
             anchor="w", pady=(4, 0))
 
-        channels = ttk.LabelFrame(left, text=" Kênh Planly ", padding=8)
+        channels = ttk.LabelFrame(left, text=" Quản lý Tài khoản & Kênh Planly ", padding=8)
         channels.pack(fill="x", pady=(8, 0))
-        row = ttk.Frame(channels)
-        row.pack(fill="x")
-        ttk.Button(row, text="Tải danh sách kênh",
-                   command=self.load_channels).pack(side="left")
-        ttk.Checkbutton(row, text="Tất cả", variable=self.v_all_channels,
-                        command=self._channels_toggled).pack(side="left", padx=8)
+
+        # Thanh chọn tài khoản và các thao tác thêm / xóa / nhập
+        acc_bar1 = ttk.Frame(channels)
+        acc_bar1.pack(fill="x", pady=(0, 4))
+        ttk.Label(acc_bar1, text="Tài khoản:").pack(side="left")
+        self.cmb_account = ttk.Combobox(acc_bar1, textvariable=self.v_account, state="readonly", width=18)
+        self.cmb_account.pack(side="left", padx=4)
+        self.cmb_account.bind("<<ComboboxSelected>>", self._account_selected)
+        ttk.Button(acc_bar1, text="+ Thêm", width=7, command=self.add_account_dialog).pack(side="left", padx=2)
+        ttk.Button(acc_bar1, text="Xóa", width=5, command=self.delete_current_account).pack(side="left", padx=2)
+
+        acc_bar2 = ttk.Frame(channels)
+        acc_bar2.pack(fill="x", pady=(2, 6))
+        ttk.Button(acc_bar2, text="Nhập từ UploadApp", command=self.import_upload_app_accounts).pack(side="left")
+        ttk.Button(acc_bar2, text="Tải lại kênh", command=self.load_channels).pack(side="left", padx=4)
+        ttk.Checkbutton(acc_bar2, text="Tất cả", variable=self.v_all_channels,
+                        command=self._channels_toggled).pack(side="left", padx=4)
+
         ttk.Label(channels, text="Mã nhóm (team id, bắt buộc):",
-                  style="Hint.TLabel").pack(anchor="w", pady=(6, 0))
+                  style="Hint.TLabel").pack(anchor="w", pady=(2, 0))
         ttk.Entry(channels, textvariable=self.v_team).pack(fill="x")
+
         route_row = ttk.Frame(channels)
-        route_row.pack(fill="x", pady=(8, 2))
+        route_row.pack(fill="x", pady=(6, 2))
         ttk.Label(route_row, text="Luồng video:").pack(side="left")
         self.v_route = tk.StringVar(value=ROUTE_LABEL["default"])
         self.cmb_route = ttk.Combobox(
-            route_row, textvariable=self.v_route, state="readonly", width=30,
+            route_row, textvariable=self.v_route, state="readonly", width=28,
             values=[label for _key, label in ROUTE_VI])
         self.cmb_route.pack(side="left", padx=6)
         self.cmb_route.bind("<<ComboboxSelected>>", self._route_changed)
+
         ttk.Label(channels, style="Hint.TLabel", wraplength=330,
-                  text="Chọn một luồng rồi tích những kênh mà luồng đó đăng lên. "
-                       "Luồng nào không tích riêng thì dùng danh sách Chung.").pack(
+                  text="Mỗi tài khoản chứa tối đa 16 kênh. Chọn luồng US rồi tích kênh muốn đăng.").pack(
             anchor="w")
 
-        outer, self.channel_box = scrollable(channels, height=150)
-        outer.pack(fill="x", pady=(6, 0))
+        outer, self.channel_box = scrollable(channels, height=140)
+        outer.pack(fill="x", pady=(4, 0))
         self.lbl_channels = ttk.Label(channels, text="", style="Hint.TLabel",
                                       wraplength=330)
         self.lbl_channels.pack(anchor="w", pady=(4, 0))
         self._render_channels()
+
+        folder_frame = ttk.LabelFrame(left, text=" 📁 Thư mục video trên máy (tùy chọn) ", padding=8)
+        folder_frame.pack(fill="x", pady=(8, 0))
+        f_row = ttk.Frame(folder_frame)
+        f_row.pack(fill="x")
+        ttk.Entry(f_row, textvariable=self.v_library_root).pack(side="left", fill="x", expand=True)
+        ttk.Button(f_row, text="Chọn...", width=6, command=self.pick_library_root).pack(side="left", padx=4)
+        ttk.Button(f_row, text="Mở", width=4, command=lambda: self._open(self.v_library_root.get())).pack(side="left")
+        self.lbl_folder_stat = ttk.Label(folder_frame, text="", style="Hint.TLabel", wraplength=330)
+        self.lbl_folder_stat.pack(anchor="w", pady=(2, 0))
+        self._update_folder_stat()
 
         timing = ttk.LabelFrame(left, text=" Giờ đăng ", padding=8)
         timing.pack(fill="x", pady=(8, 0))
@@ -954,13 +1000,15 @@ class ControlPanel:
                                 ("disable", "Luôn tắt")):
                 ttk.Radiobutton(row, text=text, value=value, variable=var,
                                 command=self.schedule_preview).pack(side="left")
-        cutoff = ttk.Frame(post)
-        cutoff.pack(fill="x", pady=(6, 0))
-        ttk.Label(cutoff, text="Tự tắt khi video dài hơn (giây):").pack(side="left")
-        ttk.Spinbox(cutoff, from_=1, to=600, width=6,
-                    textvariable=self.v_duet_limit).pack(side="left", padx=6)
-        ttk.Checkbutton(post, text="Tắt bình luận",
-                        variable=self.v_no_comment).pack(anchor="w", pady=(6, 0))
+        ttk.Checkbutton(post, text="Tắt bình luận (comments)",
+                        variable=self.v_no_comment,
+                        command=self.schedule_preview).pack(anchor="w", pady=(4, 0))
+        row = ttk.Frame(post)
+        row.pack(fill="x", pady=(4, 0))
+        ttk.Label(row, text="Tắt Duet/Stitch nếu video dài hơn (giây):",
+                  style="Hint.TLabel").pack(side="left")
+        ttk.Entry(row, textvariable=self.v_duet_limit, width=4).pack(
+            side="left", padx=4)
 
         deal = ttk.LabelFrame(left, text=" Chia video cho kênh ", padding=8)
         deal.pack(fill="x", pady=(8, 0))
@@ -969,7 +1017,7 @@ class ControlPanel:
         ttk.Radiobutton(deal, text="Tất cả kênh cùng video", value="mirror",
                         variable=self.v_distribute).pack(anchor="w")
 
-        numbers = ttk.LabelFrame(left, text=" Thông số ", padding=8)
+        numbers = ttk.LabelFrame(left, text=" Giới hạn & múi giờ ", padding=8)
         numbers.pack(fill="x", pady=(8, 0))
         numbers.columnconfigure(1, weight=1)
         for index, (text, var, low, high) in enumerate((
@@ -993,8 +1041,12 @@ class ControlPanel:
         ttk.Button(preview_head, text="Xem lịch đã xếp",
                    command=self.open_schedule_window).pack(side="right")
 
+        self.lbl_statbox = ttk.Label(right, text="", style="Hint.TLabel",
+                                     relief="groove", padding=6)
+        self.lbl_statbox.grid(row=1, column=0, sticky="ew", pady=(4, 2))
+
         pane = ttk.Frame(right)
-        pane.grid(row=1, column=0, sticky="nsew", pady=(6, 0))
+        pane.grid(row=2, column=0, sticky="nsew", pady=(4, 0))
         pane.columnconfigure(0, weight=1)
         pane.rowconfigure(0, weight=1)
         self.txt_preview, bar, hbar = text_pane(pane, height=24)
@@ -1144,13 +1196,211 @@ class ControlPanel:
                  for k, v in sorted(self.routes.items())]
         return "Đã chỉ định - " + "; ".join(parts)
 
+    def _refresh_account_combobox(self):
+        if not hasattr(self, "cmb_account"):
+            return
+        if not self.accounts:
+            self.cmb_account.configure(values=["(Chưa có tài khoản)"])
+            self.v_account.set("(Chưa có tài khoản)")
+            return
+        values = []
+        for idx, acc in enumerate(self.accounts):
+            name = acc.get("name") or f"account_{idx + 1}"
+            ch_count = len(acc.get("channels", []))
+            info = f"{name} ({ch_count} kênh)" if ch_count else f"{name}"
+            values.append(info)
+        self.cmb_account.configure(values=values)
+        if 0 <= self.current_acc_idx < len(values):
+            self.v_account.set(values[self.current_acc_idx])
+        else:
+            self.current_acc_idx = 0
+            self.v_account.set(values[0])
+
+    def _account_selected(self, _event=None):
+        idx = self.cmb_account.current() if hasattr(self, "cmb_account") else self.current_acc_idx
+        if idx < 0 or idx >= len(self.accounts):
+            idx = 0 if self.accounts else -1
+        if idx == -1:
+            return
+        self._sync_current_account_routes()
+        self.current_acc_idx = idx
+        acc = self.accounts[idx]
+        self.v_team.set(acc.get("team_id") or "")
+        self.channels = list(acc.get("channels") or [])
+        self.routes = {k: list(v) for k, v in (acc.get("routes") or {}).items() if v}
+        self.wanted_channels = list(self.routes.get("default") or ["all"])
+        self._load_route()
+
+    def _sync_current_account_routes(self):
+        if 0 <= self.current_acc_idx < len(self.accounts):
+            self._store_route()
+            self.accounts[self.current_acc_idx]["team_id"] = (self.v_team.get() or "").strip()
+            self.accounts[self.current_acc_idx]["routes"] = self._current_routes()
+            if self.channels:
+                self.accounts[self.current_acc_idx]["channels"] = self.channels
+
+    def add_account_dialog(self, edit_idx=None):
+        is_edit = edit_idx is not None and 0 <= edit_idx < len(self.accounts)
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Chỉnh sửa tài khoản" if is_edit else "Thêm tài khoản Planly mới")
+        dlg.geometry("460x280")
+        dlg.resizable(False, False)
+        dlg.transient(self.root)
+        dlg.grab_set()
+
+        acc = self.accounts[edit_idx] if is_edit else {}
+        v_name = tk.StringVar(value=acc.get("name") or f"account_{len(self.accounts) + 1}")
+        v_key = tk.StringVar(value=acc.get("key") or acc.get("token") or "")
+        v_tid = tk.StringVar(value=acc.get("team_id") or "")
+
+        f = ttk.Frame(dlg, padding=16)
+        f.pack(fill="both", expand=True)
+
+        ttk.Label(f, text="Tên tài khoản (ví dụ: acc_1, acc_us):").pack(anchor="w")
+        ttk.Entry(f, textvariable=v_name).pack(fill="x", pady=(2, 8))
+
+        ttk.Label(f, text="PLANLY_API_KEY (Token):").pack(anchor="w")
+        e_key = ttk.Entry(f, textvariable=v_key, show="*")
+        e_key.pack(fill="x", pady=(2, 8))
+
+        ttk.Label(f, text="Mã nhóm (Team ID, để trống sẽ tự dò từ API):").pack(anchor="w")
+        ttk.Entry(f, textvariable=v_tid).pack(fill="x", pady=(2, 12))
+
+        def save_acc():
+            name = v_name.get().strip() or f"account_{len(self.accounts) + 1}"
+            key = v_key.get().strip()
+            tid = v_tid.get().strip()
+            if not key:
+                messagebox.showwarning("Thiếu khóa", "Hãy điền API key / token Planly.", parent=dlg)
+                return
+            idx = edit_idx if is_edit else len(self.accounts)
+            secret_key_name = f"PLANLY_API_KEY_{idx + 1}" if idx > 0 else "PLANLY_API_KEY"
+            secret_team_name = f"PLANLY_TEAM_ID_{idx + 1}" if idx > 0 else "PLANLY_TEAM_ID"
+            record = {
+                "name": name,
+                "key": key,
+                "team_id": tid,
+                "api_key_secret": secret_key_name,
+                "team_id_secret": secret_team_name,
+                "routes": acc.get("routes") or {"us": [], "mx": []},
+                "channels": acc.get("channels") or [],
+            }
+            if is_edit:
+                self.accounts[edit_idx] = record
+            else:
+                self.accounts.append(record)
+                self.current_acc_idx = len(self.accounts) - 1
+            if idx == 0:
+                self.v_keys["PLANLY_API_KEY"].set(key)
+                if tid:
+                    self.v_keys["PLANLY_TEAM_ID"].set(tid)
+
+            dlg.destroy()
+            self._refresh_account_combobox()
+            self._account_selected()
+            self.save(quiet=True)
+            self.info("Thành công", f"Đã lưu tài khoản '{name}'. Bấm 'Tải lại kênh' để nạp danh sách kênh.")
+
+        btns = ttk.Frame(f)
+        btns.pack(fill="x", pady=(8, 0))
+        ttk.Button(btns, text="Lưu tài khoản", command=save_acc).pack(side="right")
+        ttk.Button(btns, text="Hủy", command=dlg.destroy).pack(side="right", padx=6)
+
+    def delete_current_account(self):
+        if not self.accounts:
+            return
+        acc = self.accounts[self.current_acc_idx]
+        name = acc.get("name") or f"account_{self.current_acc_idx + 1}"
+        if messagebox.askyesno("Xác nhận xóa", f"Bạn có chắc muốn xóa tài khoản '{name}' khỏi Hub?", parent=self.root):
+            self.accounts.pop(self.current_acc_idx)
+            self.current_acc_idx = max(0, self.current_acc_idx - 1)
+            self._refresh_account_combobox()
+            self._account_selected()
+            self.save(quiet=True)
+
+    def import_upload_app_accounts(self):
+        imported = hub_settings.import_from_upload_app()
+        if not imported:
+            self.info("Không tìm thấy",
+                      "Không tìm thấy tài khoản nào trong UploadApp (%APPDATA%/upload-app/planly-accounts.json).")
+            return
+        added = 0
+        existing_keys = {a.get("key") or a.get("token") for a in self.accounts}
+        for acc in imported:
+            if acc["key"] not in existing_keys:
+                self.accounts.append(acc)
+                existing_keys.add(acc["key"])
+                added += 1
+            else:
+                for ea in self.accounts:
+                    if (ea.get("key") or ea.get("token")) == acc["key"]:
+                        if not ea.get("team_id") and acc.get("team_id"):
+                            ea["team_id"] = acc["team_id"]
+        if self.accounts and not self.v_keys["PLANLY_API_KEY"].get():
+            self.v_keys["PLANLY_API_KEY"].set(self.accounts[0].get("key") or "")
+            self.v_team.set(self.accounts[0].get("team_id") or "")
+        self._refresh_account_combobox()
+        self._account_selected()
+        self.save(quiet=True)
+        self.info("Nhập hoàn tất",
+                  f"Đã quét và thêm {added} tài khoản Planly mới từ UploadApp. Tổng cộng: {len(self.accounts)} tài khoản.")
+        self.load_channels()
+
+    def sync_to_github(self):
+        repo = gh.normalise_repo(self.v_repo.get())
+        token = self.secret("GITHUB_TOKEN")
+        if not repo:
+            self.warn("Thiếu kho mã", "Hãy điền tên kho mã GitHub (owner/repo) ở tab 'Cài đặt'.")
+            return
+        if not token:
+            self.warn("Thiếu GITHUB_TOKEN", "Hãy điền GITHUB_TOKEN có quyền 'repo' ở tab 'Khóa API' rồi bấm Lưu cài đặt.")
+            return
+
+        self._sync_current_account_routes()
+        self.save(quiet=True)
+        cfg = self.collect()
+        secrets = hub_settings.get_syncable_secrets(cfg)
+        public_json_str = json.dumps(hub_settings.public_view(cfg), indent=2, ensure_ascii=False) + "\n"
+
+        self.lbl_test.configure(text="Đang đồng bộ lên GitHub...")
+        self.log(f"Bắt đầu đồng bộ {len(secrets)} secrets và cấu hình lên GitHub '{repo}'...")
+
+        def work():
+            # 1. Sync all secrets to GitHub Actions
+            synced_keys = gh.sync_secrets(repo, token, secrets)
+            # 2. Sync settings.public.json via Contents API
+            gh.update_file(repo, token, "settings.public.json", public_json_str,
+                           "settings: sync multi-accounts & US focus from AutomationHub GUI")
+            return synced_keys
+
+        def done(synced_keys):
+            msg = (f"Đồng bộ GitHub thành công!\n\n"
+                   f"- Đã cập nhật file settings.public.json trên GitHub\n"
+                   f"- Đã mã hóa và đẩy {len(synced_keys)} biến bí mật:\n"
+                   f"  ({', '.join(synced_keys)})\n\n"
+                   f"Tất cả tài khoản Planly và các luồng kênh US đã đồng bộ lên GitHub Actions!")
+            self.lbl_test.configure(text=f"Đã đồng bộ {len(synced_keys)} secrets lúc {dt.datetime.now().strftime('%H:%M')}")
+            self.log(f"GitHub Sync: Đã đồng bộ thành công {len(synced_keys)} secrets và settings.public.json.")
+            self.info("Đồng bộ thành công", msg)
+
+        run_async(self.root, work, done=done,
+                  fail=lambda e: (self.lbl_test.configure(text=f"Lỗi: {friendly(e)}"),
+                                  self.warn("Không đồng bộ được lên GitHub", friendly(e))))
+
     def load_channels(self):
-        key = self.secret("PLANLY_API_KEY")
+        if not self.accounts:
+            key = self.secret("PLANLY_API_KEY")
+        else:
+            acc = self.accounts[self.current_acc_idx]
+            key = acc.get("key") or acc.get("token") or self.secret(acc.get("api_key_secret") or "PLANLY_API_KEY")
+
         if not key:
             self.info("Chưa có khóa Planly",
-                      "Điền PLANLY_API_KEY ở tab \"Khóa API\" rồi lưu lại.")
+                      "Điền PLANLY_API_KEY hoặc chỉnh sửa tài khoản Planly để thêm khóa.")
             return
-        self.lbl_channels.configure(text="Đang tải danh sách kênh...")
+
+        acc_name = self.accounts[self.current_acc_idx].get("name", "Planly") if self.accounts else "Planly"
+        self.lbl_channels.configure(text=f"Đang tải danh sách kênh cho {acc_name}...")
         team_id = (self.v_team.get() or "").strip()
 
         def work():
@@ -1161,10 +1411,17 @@ class ControlPanel:
             team, channels = result
             self.v_team.set(team)
             self.channels = channels or []
+            if self.accounts and 0 <= self.current_acc_idx < len(self.accounts):
+                self.accounts[self.current_acc_idx]["team_id"] = team
+                self.accounts[self.current_acc_idx]["channels"] = self.channels
+            self._refresh_account_combobox()
             self._render_channels()
             if not self.channels:
                 self.lbl_channels.configure(
                     text="Nhóm này chưa nối kênh mạng xã hội nào.")
+            else:
+                self.lbl_channels.configure(
+                    text=f"Tài khoản '{acc_name}' có {len(self.channels)} kênh (tối đa 16 kênh).")
             self.schedule_preview()
 
         run_async(self.root, work, done=done, fail=self._channels_failed)
@@ -1203,9 +1460,52 @@ class ControlPanel:
     def refresh_preview(self):
         self.preview_job = None
         try:
-            set_text(self.txt_preview, "\n".join(self._preview_lines()))
+            lines = self._preview_lines()
+            set_text(self.txt_preview, "\n".join(lines))
+            self._update_statbox()
         except Exception as e:        # noqa: BLE001
             set_text(self.txt_preview, friendly(e))
+
+    def _update_statbox(self):
+        if not hasattr(self, "lbl_statbox"):
+            return
+        import math
+        cfg = self._publish_cfg()
+        channels, _ = self._preview_channels()
+        ch_count = len(channels)
+        t_count = len(cfg.get("times") or ["09:00"])
+        count = max(1, to_int(self.v_preview_count.get(), 6))
+        daily_needed = ch_count * t_count if cfg.get("distribute") == "mirror" else t_count
+        days = math.ceil(count / daily_needed) if daily_needed > 0 else 1
+        acc_name = self.accounts[self.current_acc_idx].get("name", "Mặc định") if (self.accounts and 0 <= self.current_acc_idx < len(self.accounts)) else "Mặc định"
+        self.lbl_statbox.configure(
+            text=f"📊 Tài khoản: {acc_name}  |  Kênh chọn: {ch_count}  |  "
+                 f"Khung giờ: {t_count} mốc/ngày  |  "
+                 f"Giả lập {count} video phủ: ~{max(1, days)} ngày")
+
+    def pick_library_root(self):
+        chosen = filedialog.askdirectory(
+            parent=self.root, title="Chọn thư mục chứa video trên máy",
+            initialdir=self.v_library_root.get() or "D:\\")
+        if chosen:
+            self.v_library_root.set(chosen)
+            self._update_folder_stat()
+
+    def _update_folder_stat(self):
+        if not hasattr(self, "lbl_folder_stat"):
+            return
+        folder_str = self.v_library_root.get() or ""
+        if not folder_str.strip():
+            self.lbl_folder_stat.configure(text="Để trống nếu chỉ đăng video do AI dựng tự động.")
+            return
+        folder = Path(folder_str)
+        if not folder.exists() or not folder.is_dir():
+            self.lbl_folder_stat.configure(text=f"Thư mục '{folder_str}' không tồn tại.")
+            return
+        exts = {".mp4", ".mov", ".mkv", ".webm"}
+        videos = [f for f in folder.rglob("*") if f.is_file() and f.suffix.lower() in exts]
+        self.lbl_folder_stat.configure(
+            text=f"Tìm thấy {len(videos)} video trong thư mục. Sẵn sàng xếp lịch!")
 
     def _preview_lines(self):
         cfg = self._publish_cfg()
@@ -1396,6 +1696,8 @@ class ControlPanel:
                    command=self.test_telegram).pack(side="left", padx=6)
         ttk.Button(tests, text="Thử GitHub",
                    command=self.test_github).pack(side="left")
+        ttk.Button(tests, text="⚡ Đồng bộ lên GitHub",
+                   command=self.sync_to_github).pack(side="left", padx=6)
         self.lbl_test = ttk.Label(tests, text="", style="Hint.TLabel")
         self.lbl_test.pack(side="left", padx=10)
 
@@ -1561,12 +1863,14 @@ class ControlPanel:
         return {k: list(v) for k, v in self.routes.items() if v}
 
     def _publish_cfg(self):
+        self._sync_current_account_routes()
         return {
             "enabled": bool(self.v_pub_enabled.get()),
             "dry_run": bool(self.v_dry_run.get()),
             "team_id": (self.v_team.get() or "").strip(),
             "channels": self._current_channels(),
             "routes": self._current_routes(),
+            "accounts": [dict(a) for a in self.accounts],
             "mode": self.v_mode.get() or "same_time",
             "times": sorted(self.times) or ["09:00"],
             "gap_minutes": max(1, to_int(self.v_gap.get(), 120)),
@@ -1583,6 +1887,7 @@ class ControlPanel:
                     1, to_int(self.v_duet_limit.get(), 60)),
             },
             "max_seconds": max(0, to_int(self.v_max_seconds.get(), 60)),
+            "library_root": (self.v_library_root.get() or "").strip(),
             "channel_options": (self.cfg["publish"].get("channel_options") or {}),
         }
 

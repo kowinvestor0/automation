@@ -42,9 +42,7 @@
         "9115e771-d6ee-42bf-8dd6-53f550a16f9f",
         "2bb52b81-94e4-4b2d-989e-5759c7af00b0",
         "64fbe318-fa38-45a7-b638-9c2384a27a89",
-        "dd185c01-f011-47e9-a91a-0804d25cc69d"
-      ],
-      "mx": [
+        "dd185c01-f011-47e9-a91a-0804d25cc69d",
         "cb80d987-f3a7-41d6-b314-1fcaab50a984",
         "7dfb7a2f-647b-430d-8c29-bf43e752884b",
         "e02eef57-f6f0-4484-8dd5-595f4a877490",
@@ -54,7 +52,8 @@
         "0a0ec4bf-a395-47dd-a759-e580f7bfc3fe",
         "64e17282-1ebc-47d3-b93a-7c0d91c9b6b7",
         "68a62f97-89a0-4f46-9726-5f5de7903ef8"
-      ]
+      ],
+      "mx": []
     },
     "accounts": [
       {
@@ -68,9 +67,7 @@
             "9115e771-d6ee-42bf-8dd6-53f550a16f9f",
             "2bb52b81-94e4-4b2d-989e-5759c7af00b0",
             "64fbe318-fa38-45a7-b638-9c2384a27a89",
-            "dd185c01-f011-47e9-a91a-0804d25cc69d"
-          ],
-          "mx": [
+            "dd185c01-f011-47e9-a91a-0804d25cc69d",
             "cb80d987-f3a7-41d6-b314-1fcaab50a984",
             "7dfb7a2f-647b-430d-8c29-bf43e752884b",
             "e02eef57-f6f0-4484-8dd5-595f4a877490",
@@ -80,7 +77,8 @@
             "0a0ec4bf-a395-47dd-a759-e580f7bfc3fe",
             "64e17282-1ebc-47d3-b93a-7c0d91c9b6b7",
             "68a62f97-89a0-4f46-9726-5f5de7903ef8"
-          ]
+          ],
+          "mx": []
         }
       },
       {
@@ -97,14 +95,14 @@
   },
   "run": {
     "us": {
-      "count": 6,
+      "count": 12,
       "niche": "commentary",
       "enabled": true
     },
     "mx": {
-      "count": 6,
-      "niche": "commentary",
-      "enabled": true
+      "count": 0,
+      "niche": "",
+      "enabled": false
     }
   },
   "notify": {

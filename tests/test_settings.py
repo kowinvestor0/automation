@@ -232,3 +232,32 @@ class PublicViewKeepsPrivateThingsOut(IsolatedHome):
         written = settings.public_path().read_text(encoding="utf-8")
         self.assertNotIn("secret-key", written)
         self.assertNotIn("team-uuid", written)
+
+    def test_public_view_strips_account_keys(self):
+        cfg = self.full()
+        cfg["publish"]["accounts"] = [
+            {"name": "acc_1", "key": "secret-key-1", "token": "tok", "team_id": "tid1", "routes": {}},
+            {"name": "acc_2", "key": "secret-key-2", "routes": {}},
+        ]
+        pub = settings.public_view(cfg)
+        accs = pub["publish"]["accounts"]
+        self.assertEqual(len(accs), 2)
+        for a in accs:
+            self.assertNotIn("key", a)
+            self.assertNotIn("token", a)
+        # Verify original wasn't mutated
+        self.assertEqual(cfg["publish"]["accounts"][0]["key"], "secret-key-1")
+
+    def test_get_syncable_secrets_collects_accounts(self):
+        cfg = self.full()
+        cfg["keys"]["GEMINI_API_KEY"] = "gem-key"
+        cfg["publish"]["accounts"] = [
+            {"name": "acc_1", "key": "planly-key-1", "team_id": "team-1"},
+            {"name": "acc_2", "key": "planly-key-2", "team_id": "team-2"},
+        ]
+        sec = settings.get_syncable_secrets(cfg)
+        self.assertEqual(sec.get("GEMINI_API_KEY"), "gem-key")
+        self.assertEqual(sec.get("PLANLY_API_KEY"), "planly-key-1")
+        self.assertEqual(sec.get("PLANLY_TEAM_ID"), "team-1")
+        self.assertEqual(sec.get("PLANLY_API_KEY_2"), "planly-key-2")
+        self.assertEqual(sec.get("PLANLY_TEAM_ID_2"), "team-2")

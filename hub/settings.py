@@ -157,7 +157,69 @@ def public_view(cfg):
     # from the PLANLY_TEAM_ID secret instead.
     if isinstance(out.get("publish"), dict):
         out["publish"]["team_id"] = ""
+        if "accounts" in out["publish"]:
+            clean_accs = []
+            for acc in out["publish"]["accounts"]:
+                a = copy.deepcopy(acc)
+                a.pop("key", None)
+                a.pop("token", None)
+                clean_accs.append(a)
+            out["publish"]["accounts"] = clean_accs
     return out
+
+
+def import_from_upload_app():
+    """Read existing Planly accounts from UploadApp (%APPDATA%/upload-app/planly-accounts.json)."""
+    appdata = os.environ.get("APPDATA") or ""
+    if not appdata:
+        return []
+    p = Path(appdata) / "upload-app" / "planly-accounts.json"
+    if not p.exists():
+        return []
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+        raw_accounts = data.get("accounts") or []
+        imported = []
+        for idx, acc in enumerate(raw_accounts):
+            token = (acc.get("token") or "").strip()
+            team_id = (acc.get("teamId") or acc.get("team_id") or "").strip()
+            name = (acc.get("name") or f"account_{idx + 1}").strip()
+            if token:
+                imported.append({
+                    "name": name,
+                    "key": token,
+                    "team_id": team_id,
+                    "api_key_secret": f"PLANLY_API_KEY_{idx + 1}" if idx > 0 else "PLANLY_API_KEY",
+                    "team_id_secret": f"PLANLY_TEAM_ID_{idx + 1}" if idx > 0 else "PLANLY_TEAM_ID",
+                    "routes": {"us": [], "mx": []},
+                })
+        return imported
+    except Exception:
+        return []
+
+
+def get_syncable_secrets(cfg):
+    """Collect all secret keys (LLMs, Pexels, Telegram, and Planly accounts) for GitHub Actions."""
+    secrets = {}
+    for name in SECRET_NAMES:
+        if name != "GITHUB_TOKEN":
+            val = secret(name, cfg)
+            if val:
+                secrets[name] = val
+
+    pub = cfg.get("publish") or {}
+    accounts = pub.get("accounts") or []
+    for idx, acc in enumerate(accounts):
+        key_name = acc.get("api_key_secret") or (f"PLANLY_API_KEY_{idx + 1}" if idx > 0 else "PLANLY_API_KEY")
+        team_name = acc.get("team_id_secret") or (f"PLANLY_TEAM_ID_{idx + 1}" if idx > 0 else "PLANLY_TEAM_ID")
+        key_val = acc.get("key") or acc.get("token") or secret(key_name, cfg)
+        team_val = acc.get("team_id") or secret(team_name, cfg)
+        if key_val:
+            secrets[key_name] = key_val
+        if team_val:
+            secrets[team_name] = team_val
+
+    return secrets
 
 
 def save_public(cfg):

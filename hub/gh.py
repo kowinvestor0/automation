@@ -30,6 +30,8 @@ def _request(path, token="", method="GET", body=None):
     request.add_header("Accept", "application/vnd.github+json")
     request.add_header("X-GitHub-Api-Version", "2022-11-28")
     request.add_header("User-Agent", UA)
+    if body is not None:
+        request.add_header("Content-Type", "application/json")
     if token:
         request.add_header("Authorization", f"Bearer {token}")
     try:
@@ -151,3 +153,83 @@ LABEL = {
 def label(run):
     return LABEL.get((run.get("status"), run.get("conclusion") or ""),
                      f"{run.get('status')} {run.get('conclusion')}".strip())
+
+
+def get_public_key(repo, token):
+    """Fetch repo public key for encrypting Actions secrets."""
+    repo = normalise_repo(repo)
+    if not token:
+        raise GitHubError("Setting secrets requires a GitHub token with 'repo' scope.")
+    return _request(f"/repos/{repo}/actions/secrets/public-key", token)
+
+
+def set_secret(repo, token, name, value, pub_key=None):
+    """Encrypt and set a secret in GitHub Actions."""
+    repo = normalise_repo(repo)
+    if not token:
+        raise GitHubError("Setting secrets requires a GitHub token with 'repo' scope.")
+    if not pub_key:
+        pub_key = get_public_key(repo, token)
+
+    key_id = pub_key.get("key_id")
+    pk_b64 = pub_key.get("key")
+    if not key_id or not pk_b64:
+        raise GitHubError("Could not retrieve repository public key.")
+
+    try:
+        import base64
+        from nacl import encoding, public
+        pk = public.PublicKey(pk_b64.encode("utf-8"), encoding.Base64Encoder())
+        box = public.SealedBox(pk)
+        encrypted = box.encrypt(value.encode("utf-8"))
+        encrypted_b64 = base64.b64encode(encrypted).decode("utf-8")
+    except Exception as e:
+        raise GitHubError(f"Failed to encrypt secret '{name}': {e}")
+
+    _request(f"/repos/{repo}/actions/secrets/{name}", token, method="PUT",
+             body={"encrypted_value": encrypted_b64, "key_id": key_id})
+    return True
+
+
+def sync_secrets(repo, token, secrets_dict):
+    """Sync a dictionary of secrets to GitHub Actions."""
+    repo = normalise_repo(repo)
+    if not repo:
+        raise GitHubError("No repository configured.")
+    if not token:
+        raise GitHubError("Syncing secrets requires a GitHub token with 'repo' scope.")
+    pub_key = get_public_key(repo, token)
+    synced = []
+    errors = []
+    for name, value in secrets_dict.items():
+        v = (value or "").strip()
+        if not v:
+            continue
+        try:
+            set_secret(repo, token, name, v, pub_key=pub_key)
+            synced.append(name)
+        except Exception as e:
+            errors.append(f"{name}: {e}")
+    if errors:
+        raise GitHubError(f"Synced {len(synced)} secret(s), but errors occurred:\n" + "\n".join(errors))
+    return synced
+
+
+def update_file(repo, token, file_path, content_str, commit_message, branch="main"):
+    """Update or create a file in the repository using the Contents API."""
+    import base64
+    repo = normalise_repo(repo)
+    if not token:
+        raise GitHubError("Updating files requires a GitHub token with 'repo' scope.")
+    encoded = base64.b64encode(content_str.encode("utf-8")).decode("utf-8")
+    body = {"message": commit_message, "content": encoded, "branch": branch}
+
+    # Check if file exists to include its sha for update
+    try:
+        data = _request(f"/repos/{repo}/contents/{file_path}?ref={urllib.parse.quote(branch)}", token)
+        if data.get("sha"):
+            body["sha"] = data["sha"]
+    except GitHubError:
+        pass  # file does not exist yet
+
+    return _request(f"/repos/{repo}/contents/{file_path}", token, method="PUT", body=body)

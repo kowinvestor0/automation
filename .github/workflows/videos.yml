@@ -45,10 +45,10 @@ jobs:
             shard: 1
           - factory: us
             shard: 2
-          - factory: mx
-            shard: 1
-          - factory: mx
-            shard: 2
+          - factory: us
+            shard: 3
+          - factory: us
+            shard: 4
 
     steps:
       - uses: actions/checkout@v4
@@ -173,6 +173,16 @@ jobs:
           PLANLY_TEAM_ID_4: ${{ secrets.PLANLY_TEAM_ID_4 }}
           PLANLY_API_KEY_5: ${{ secrets.PLANLY_API_KEY_5 }}
           PLANLY_TEAM_ID_5: ${{ secrets.PLANLY_TEAM_ID_5 }}
+          PLANLY_API_KEY_6: ${{ secrets.PLANLY_API_KEY_6 }}
+          PLANLY_TEAM_ID_6: ${{ secrets.PLANLY_TEAM_ID_6 }}
+          PLANLY_API_KEY_7: ${{ secrets.PLANLY_API_KEY_7 }}
+          PLANLY_TEAM_ID_7: ${{ secrets.PLANLY_TEAM_ID_7 }}
+          PLANLY_API_KEY_8: ${{ secrets.PLANLY_API_KEY_8 }}
+          PLANLY_TEAM_ID_8: ${{ secrets.PLANLY_TEAM_ID_8 }}
+          PLANLY_API_KEY_9: ${{ secrets.PLANLY_API_KEY_9 }}
+          PLANLY_TEAM_ID_9: ${{ secrets.PLANLY_TEAM_ID_9 }}
+          PLANLY_API_KEY_10: ${{ secrets.PLANLY_API_KEY_10 }}
+          PLANLY_TEAM_ID_10: ${{ secrets.PLANLY_TEAM_ID_10 }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           IN_LIVE: ${{ inputs.live || 'false' }}

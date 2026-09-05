@@ -89,3 +89,26 @@ class Label(unittest.TestCase):
         self.assertEqual(gh.label({"status": "completed",
                                    "conclusion": "timed_out"}),
                          "completed timed_out")
+
+
+class SecretSyncGuards(unittest.TestCase):
+
+    def test_get_public_key_without_token_raises(self):
+        with self.assertRaises(GitHubError) as caught:
+            gh.get_public_key("owner/name", "")
+        self.assertIn("token", str(caught.exception).lower())
+
+    def test_sync_secrets_without_repo_raises(self):
+        with self.assertRaises(GitHubError) as caught:
+            gh.sync_secrets("", "token", {"KEY": "VAL"})
+        self.assertIn("No repository configured", str(caught.exception))
+
+    def test_sync_secrets_without_token_raises(self):
+        with self.assertRaises(GitHubError) as caught:
+            gh.sync_secrets("owner/name", "", {"KEY": "VAL"})
+        self.assertIn("token", str(caught.exception).lower())
+
+    def test_update_file_without_token_raises(self):
+        with self.assertRaises(GitHubError) as caught:
+            gh.update_file("owner/name", "", "file.json", "{}", "commit")
+        self.assertIn("token", str(caught.exception).lower())
