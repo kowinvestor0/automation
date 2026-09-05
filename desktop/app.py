@@ -153,7 +153,7 @@ def run_async(widget, work, done=None, fail=None):
     def deliver(callback, value):
         try:
             widget.after(0, lambda: callback(value))
-        except tk.TclError:
+        except (tk.TclError, RuntimeError):
             pass                      # window closed while the worker ran
 
     def worker():
