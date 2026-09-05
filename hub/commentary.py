@@ -95,8 +95,49 @@ def generate_commentary_script(clip_meta: Dict[str, Any], language: str = "us") 
         except Exception as e:
             print(f"[commentary] Gemini API error ({e}), falling back to template")
 
-    # High-retention template fallback (tuned to ~175 words, ~65 seconds audio)
+    # High-retention topic-aware templates (tuned to ~175 words, ~65-72 seconds audio)
+    lower_t = (title + " " + desc).lower()
     if language == "us":
+        if any(w in lower_t for w in ("puente", "bridge", "vertigo", "altura", "height")):
+            return {
+                "hook_banner": "DON'T LOOK DOWN 😱",
+                "title": "Walking Across the Craziest Bridge on Earth",
+                "description": "Would you dare walk across this terrifying suspension bridge? #shorts #travel #bridge #insane #vertigo",
+                "scenes": [
+                    {"text": "Look at the sheer drop beneath his feet because ninety nine percent of people would freeze in pure terror.", "keywords": ["cliff height"]},
+                    {"text": "This heart stopping footage shows what it is actually like to walk across one of the most extreme suspension bridges in the world.", "keywords": ["bridge walking"]},
+                    {"text": "Suspended hundreds of feet above a jagged canyon, the narrow wooden walkway sways with every single step you take.", "keywords": ["wooden walkway"]},
+                    {"text": "High altitude mountain gusts slam into the structure, creating an intense motion that triggers instant vertigo.", "keywords": ["wind blowing"]},
+                    {"text": "Engineers designed this masterpiece using high tension steel cables anchored directly into solid granite mountain walls.", "keywords": ["steel cables"]},
+                    {"text": "Despite how terrifying it looks, the structure is built to support tons of weight even during severe alpine storms.", "keywords": ["mountain storm"]},
+                    {"text": "However, looking down through the gaps in the floorboards is enough to make even seasoned hikers lose their balance.", "keywords": ["looking down"]},
+                    {"text": "Park rangers report that tourists frequently freeze halfway across and have to be guided back step by cautious step.", "keywords": ["rescue hiker"]},
+                    {"text": "Crossing the entire span takes over ten minutes of intense focus while holding tightly to the safety railings.", "keywords": ["safety harness"]},
+                    {"text": "The panoramic view from the middle is breathtaking, but only if you have the stomach to look up.", "keywords": ["mountain peak"]},
+                    {"text": "Would you have the courage to cross this bridge? Follow right now and tell me in the comments if you would do it.", "keywords": ["subscribe"]},
+                ],
+                "hashtags": ["#shorts", "#viral", "#travel", "#bridge", "#vertigo", "#extreme", "#adventure"],
+            }
+        elif any(w in lower_t for w in ("coche", "auto", "car", "ilegal", "illegal")):
+            return {
+                "hook_banner": "CARS ARE BANNED HERE 🚫🚗",
+                "title": "The City Where Driving a Car is Completely Illegal",
+                "description": "Imagine a world with zero cars allowed on any street. #shorts #travel #curiosities #facts #didyouknow",
+                "scenes": [
+                    {"text": "Imagine living in a modern city where driving a car can literally land you straight in prison.", "keywords": ["city street"]},
+                    {"text": "This fascinating location decided to completely outlaw every single gasoline and diesel automobile inside its borders.", "keywords": ["empty road"]},
+                    {"text": "Instead of noisy traffic jams and exhaust fumes, the only transportation allowed are electric carts and bicycles.", "keywords": ["bicycle riding"]},
+                    {"text": "Local authorities introduced these strict rules to protect the fragile historic architecture and clean mountain air.", "keywords": ["historic town"]},
+                    {"text": "If you arrive by highway, you are legally forced to leave your vehicle in a massive parking terminal outside the city perimeter.", "keywords": ["parking terminal"]},
+                    {"text": "From there, visitors must continue on foot, catch a scenic mountain railway, or use traditional horse drawn carriages.", "keywords": ["mountain train"]},
+                    {"text": "Residents say the absolute peace and quiet completely transforms everyday living compared to ordinary noisy cities.", "keywords": ["peaceful neighborhood"]},
+                    {"text": "Air quality sensors in this town consistently register some of the cleanest atmospheric readings recorded on the planet.", "keywords": ["nature air"]},
+                    {"text": "Deliveries and emergency services use specially engineered micro electric vehicles designed to navigate narrow cobblestone alleys.", "keywords": ["small electric van"]},
+                    {"text": "Several other world capitals are now studying this radical model as urban traffic congestion worsens globally.", "keywords": ["city planners"]},
+                    {"text": "Could you survive living in a city with zero cars allowed? Follow for more insane travel secrets and let me know below.", "keywords": ["subscribe icon"]},
+                ],
+                "hashtags": ["#shorts", "#viral", "#travel", "#curiosities", "#citylife", "#future", "#greenenergy"],
+            }
         return {
             "hook_banner": "WAIT FOR THE END 😱",
             "title": f"The Truth Behind {title[:50]}",
