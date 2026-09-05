@@ -78,6 +78,13 @@ class ViralScraper:
             max_dur = self.cfg.get("max_duration", 60)
             min_views = self.cfg.get("min_views", 0)
 
+            recent_topics = set()
+            try:
+                from hub import state as hub_state
+                recent_topics = hub_state.recent_topics(60)
+            except Exception:
+                pass
+
             for entry in entries:
                 if not entry:
                     continue
@@ -86,6 +93,9 @@ class ViralScraper:
                 vid_id = entry.get("id")
                 title = entry.get("title", "")
                 if not vid_id:
+                    continue
+
+                if f"viral_{vid_id}" in recent_topics:
                     continue
 
                 # Filter duration: target Shorts (10s to 60s)
@@ -143,6 +153,14 @@ class ViralScraper:
                 return None
 
             vid_id = info.get("id")
+            dur = info.get("duration") or 0
+            if dur > 90:
+                print(f"[scraper] Clip {vid_id} is too long ({dur}s > 90s), skipping")
+                target_file = self.cache_dir / f"{vid_id}.mp4"
+                if target_file.exists():
+                    target_file.unlink(missing_ok=True)
+                return None
+
             target_file = self.cache_dir / f"{vid_id}.mp4"
             if not target_file.exists():
                 # Check for possible different extension
@@ -170,9 +188,15 @@ class ViralScraper:
             meta_file.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
             return meta
 
-    def fetch_batch(self, count: int = 1, query: Optional[str] = None) -> List[Dict[str, Any]]:
+    def fetch_batch(self, count: int = 1, query: Optional[str] = None, language: str = "us") -> List[Dict[str, Any]]:
         """Fetch a batch of fresh viral clips."""
-        queries = [query] if query else self.cfg.get("queries", ["unexpected caught on camera shorts"])
+        if query:
+            queries = [query]
+        elif language in ("mx", "es"):
+            queries = list(self.cfg.get("queries_mx", [])) or ["videos virales momentos insolitos shorts"]
+        else:
+            queries = list(self.cfg.get("queries", [])) or ["unexpected caught on camera shorts"]
+
         import random
         random.shuffle(queries)
 

@@ -66,7 +66,7 @@ def main():
             return 1
     else:
         print(f"\n[1/3] Searching and downloading {args.count} viral clip(s)...")
-        clips = scraper.fetch_batch(count=args.count, query=args.query or None)
+        clips = scraper.fetch_batch(count=args.count, query=args.query or None, language=args.lang)
 
     if not clips:
         print("❌ No clips found or downloaded.")

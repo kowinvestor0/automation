@@ -79,7 +79,10 @@ def generate_commentary_script(clip_meta: Dict[str, Any], language: str = "us") 
 
     if key and len(key) >= 20:
         try:
-            from factories.us.pipeline import gemini
+            if language in ("mx", "es"):
+                import factories.mx.pipeline.gemini as gemini
+            else:
+                import factories.us.pipeline.gemini as gemini
             system = PROMPT_SYSTEM_EN if language == "us" else PROMPT_SYSTEM_ES
             brief = (
                 f"Clip Title: {title}\n"
@@ -141,26 +144,43 @@ def render_commentary_video(
     out_file: Path,
     language: str = "us",
     workdir: Optional[Path] = None,
+    cfg: Optional[Dict[str, Any]] = None,
 ) -> Path:
     """Renders the final 9:16 commentary video with looped/scaled clip, TTS, ASS captions, and SFX."""
     source_video = Path(clip_meta["video_path"])
     if not source_video.exists():
         raise FileNotFoundError(f"Source video not found at {source_video}")
 
-    temp_dir = workdir or (out_file.parent / f"_temp_{source_video.stem}")
+    # Use a subfolder _render_tmp so cleaning up doesn't delete workdir contents
+    temp_dir = (workdir / "_render_tmp") if workdir else (out_file.parent / f"_temp_{source_video.stem}")
     temp_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Synthesize audio scenes via factory pipeline
-    from factories.us.pipeline import tts, subtitles, audio_fx
+    if language in ("mx", "es"):
+        import factories.mx.pipeline.tts as tts
+        import factories.mx.pipeline.subtitles as subtitles
+        import factories.mx.pipeline.audio_fx as audio_fx
+        default_voice = "es-MX-JorgeNeural"
+        font_file = CODE / "factories" / "mx" / "assets" / "fonts" / "Anton-Regular.ttf"
+        if not font_file.exists():
+            font_file = CODE / "factories" / "us" / "assets" / "fonts" / "Anton-Regular.ttf"
+    else:
+        import factories.us.pipeline.tts as tts
+        import factories.us.pipeline.subtitles as subtitles
+        import factories.us.pipeline.audio_fx as audio_fx
+        default_voice = "en-US-AndrewMultilingualNeural"
+        font_file = CODE / "factories" / "us" / "assets" / "fonts" / "Anton-Regular.ttf"
+
+    cfg_dict = dict(cfg or {})
     cfg_voice = {
-        "voice": "en-US-AndrewMultilingualNeural" if language == "us" else "es-MX-JorgeNeural",
-        "voice_rate": "+12%",
-        "voice_pitch": "+0Hz",
+        "voice": cfg_dict.get("voice") or default_voice,
+        "voice_rate": cfg_dict.get("voice_rate") or "+12%",
+        "voice_pitch": cfg_dict.get("voice_pitch") or "+0Hz",
         "scene_gap": 0.12,
-        "font": "Anton",
-        "font_size": 95,
-        "highlight_color": "&H0033E5FF&",
-        "words_per_caption": 3,
+        "font": cfg_dict.get("font") or "Anton",
+        "font_size": cfg_dict.get("font_size") or 95,
+        "highlight_color": cfg_dict.get("highlight_color") or "&H0033E5FF&",
+        "words_per_caption": cfg_dict.get("words_per_caption") or 3,
         "width": 1080,
         "height": 1920,
         "fps": 30,
@@ -179,13 +199,14 @@ def render_commentary_video(
     sfx_path = audio_fx.build_sfx_track(timeline, voice_duration, cfg_sfx, temp_dir)
 
     # 4. Escape paths and text for FFmpeg
-    raw_hook = script.get("hook_banner") or "WAIT FOR THE END"
+    raw_hook = script.get("hook_banner") or ("MIRA HASTA EL FINAL" if language in ("mx", "es") else "WAIT FOR THE END")
     import re
-    clean_hook = re.sub(r"[^A-Za-z0-9 !?]", "", raw_hook).strip() or "WAIT FOR IT"
-    clean_ass = str(ass_path).replace("\\", "/").replace(":", "\\:")
+    clean_hook = re.sub(r"[^\w\s!?¿¡-]", "", raw_hook).strip()
+    if not clean_hook:
+        clean_hook = "MIRA ESTO" if language in ("mx", "es") else "WAIT FOR IT"
+    clean_hook = clean_hook.replace("'", "").replace(":", "\\:").replace("%", "%%")
 
-    # Font path
-    font_file = CODE / "factories" / "us" / "assets" / "fonts" / "Anton-Regular.ttf"
+    clean_ass = str(ass_path).replace("\\", "/").replace(":", "\\:")
     font_arg = f":fontfile='{str(font_file).replace('\\', '/').replace(':', '\\:')}'" if font_file.exists() else ""
 
     # 5. Build FFmpeg Filter Complex:

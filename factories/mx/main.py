@@ -13,6 +13,13 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+FACTORY_DIR = Path(__file__).resolve().parent
+REPO_ROOT = FACTORY_DIR.parent.parent
+if str(FACTORY_DIR) not in sys.path:
+    sys.path.insert(0, str(FACTORY_DIR))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from pipeline.render import render
 from pipeline.script_gen import build_script
 from pipeline.subtitles import build_ass
@@ -24,7 +31,94 @@ from pipeline.visuals import fetch_for_timeline
 OUT = ROOT / "output"
 
 
+def make_viral_commentary(cfg, topic=None):
+    """Descarga un clip viral y produce un video de comentario transformativo (>60s)."""
+    t0 = time.time()
+    try:
+        from hub.scraper import ViralScraper
+        from hub.commentary import generate_commentary_script, render_commentary_video
+    except ImportError as e:
+        log(f"No se pudieron cargar modulos de comentario ({e})")
+        return None
+
+    step("1/5  Buscar clip viral")
+    scraper = ViralScraper()
+    clips = scraper.fetch_batch(count=1, query=topic, language="mx")
+    if not clips:
+        log("No se encontro clip viral via scraper, usando pipeline estandar")
+        return None
+
+    clip = clips[0]
+    log(f"Clip viral encontrado: {clip['title']} ({clip['url']})")
+
+    step("2/5  Guion de comentario transformativo")
+    script_data = generate_commentary_script(clip, language="mx")
+    script = {
+        "id": f"viral_{clip['id']}",
+        "title": script_data.get("title", f"La verdad detras de {clip['title'][:40]}"),
+        "description": script_data.get("description", ""),
+        "hashtags": script_data.get("hashtags", ["#shorts", "#viral", "#curiosidades"]),
+        "scenes": script_data.get("scenes", []),
+        "hook_banner": script_data.get("hook_banner", "MIRA HASTA EL FINAL 😱"),
+        "source": "viral_commentary",
+        "clip": clip,
+    }
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    workdir = OUT / f"{stamp}_{slugify(script['id'], 40)}"
+    workdir.mkdir(parents=True, exist_ok=True)
+    save_json(workdir / "script.json", script)
+
+    step("3/5  Renderizar video de comentario (Voz, Subtitulos, Audio Ducking, SFX)")
+    video_out = workdir / "video.mp4"
+    render_commentary_video(
+        clip_meta=clip,
+        script=script,
+        out_file=video_out,
+        language="mx",
+        workdir=workdir,
+        cfg=cfg,
+    )
+
+    dur = round(ffprobe_duration(video_out), 2)
+    meta = {
+        "title": script["title"],
+        "description": (script.get("description", "") + "\n\n" + " ".join(script.get("hashtags", []))).strip(),
+        "hashtags": script.get("hashtags", []),
+        "duration_seconds": dur,
+        "voice": cfg.get("voice"),
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "source": "viral_commentary",
+        "file": video_out.name,
+        "source_clip_url": clip.get("url"),
+        "attributions": [
+            f"Clip original: {clip.get('title')} por {clip.get('uploader', 'creador')} ({clip.get('url')})"
+        ],
+    }
+
+    (workdir / "creditos.txt").write_text(
+        f"Video de Comentario Transformativo\nMaterial original: {clip.get('title')} ({clip.get('url')})\nCreador: {clip.get('uploader')}\nBajo doctrina de Uso Legitimo (Fair Use) con fines de analisis y divulgacion.\n",
+        encoding="utf-8"
+    )
+
+    save_json(workdir / "meta.json", meta)
+
+    print(f"\nLISTO en {time.time() - t0:.1f}s  ({dur}s de video de comentario)")
+    print(f"   {video_out}")
+    print(f"   titulo: {meta['title']}")
+    print(f"   fuente: {clip.get('url')}")
+    return video_out
+
+
 def make_one(cfg, topic=None, force_bank=False):
+    if cfg.get("niche") == "commentary" and not force_bank:
+        try:
+            vid = make_viral_commentary(cfg, topic=topic)
+            if vid:
+                return vid
+        except Exception as e:
+            log(f"Fallo comentario viral ({type(e).__name__}: {e}), usando pipeline estandar")
+
     t0 = time.time()
 
     step("1/5  Guion")
@@ -81,7 +175,7 @@ def main():
     ap = argparse.ArgumentParser(description="Generador automatico de videos cortos (MX)")
     ap.add_argument("--count", type=int, default=1, help="cuantos videos generar")
     ap.add_argument("--topic", help="tema forzado (o id de topics.json en modo banco)")
-    ap.add_argument("--niche", choices=["misterios", "humor", "curiosidades", "historia", "lugares"])
+    ap.add_argument("--niche", help="nicho del guion (ej. commentary, misterios, humor...)")
     ap.add_argument("--voice", help="voz de Edge TTS, ej. es-MX-DaliaNeural")
     ap.add_argument("--seconds", type=int, help="duracion objetivo en segundos")
     ap.add_argument("--bank", action="store_true", help="usar solo topics.json, sin Claude")

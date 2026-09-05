@@ -27,6 +27,47 @@ class TestViralScraper(unittest.TestCase):
         self.assertTrue(opts["extract_flat"])
         self.assertTrue(opts["quiet"])
 
+    @patch.object(ViralScraper, "search_shorts")
+    @patch.object(ViralScraper, "download_clip")
+    def test_fetch_batch_language_queries(self, mock_dl, mock_search):
+        mock_search.return_value = [{"title": "test", "url": "https://youtu.be/123"}]
+        mock_dl.return_value = {"id": "123", "title": "test", "video_path": "test.mp4"}
+
+        # Test MX queries
+        res_mx = self.scraper.fetch_batch(count=1, language="mx")
+        self.assertEqual(len(res_mx), 1)
+        # Search query passed to search_shorts should come from queries_mx
+        called_q = mock_search.call_args[0][0]
+        mx_queries = self.scraper.cfg.get("queries_mx", [])
+        self.assertIn(called_q, mx_queries)
+
+    def test_duration_filter_skips_long_video(self):
+        with patch("yt_dlp.YoutubeDL") as mock_ydl_cls:
+            instance = mock_ydl_cls.return_value.__enter__.return_value
+            instance.extract_info.return_value = {
+                "id": "too_long",
+                "title": "1 Hour Long Video",
+                "duration": 3600,
+            }
+            res = self.scraper.download_clip("https://youtu.be/too_long")
+            self.assertIsNone(res)
+
+
+class TestFactoryIntegration(unittest.TestCase):
+    @patch("hub.scraper.ViralScraper.fetch_batch")
+    def test_us_fallback_when_no_clip(self, mock_fetch):
+        mock_fetch.return_value = []
+        from factories.us.main import make_viral_commentary
+        res = make_viral_commentary({"voice": "en-US-AndrewMultilingualNeural"})
+        self.assertIsNone(res)
+
+    @patch("hub.scraper.ViralScraper.fetch_batch")
+    def test_mx_fallback_when_no_clip(self, mock_fetch):
+        mock_fetch.return_value = []
+        from factories.mx.main import make_viral_commentary
+        res = make_viral_commentary({"voice": "es-MX-JorgeNeural"})
+        self.assertIsNone(res)
+
 
 class TestCommentaryScriptGen(unittest.TestCase):
     def test_fallback_template_structure_us(self):

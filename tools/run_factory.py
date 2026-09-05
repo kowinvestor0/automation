@@ -74,6 +74,7 @@ def render(name, count, niche, extra_args, cfg, bank=False):
             env[key] = os.environ[key]
     env["FACTORY_ROOT"] = str(directory)
     env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONPATH"] = str(CODE) + (os.pathsep + env["PYTHONPATH"] if "PYTHONPATH" in env else "")
     # The hub owns publishing now. Older factory configs carry their own
     # `planly` block; neutralise it so a video cannot be scheduled twice.
     env["FACTORY_SKIP_PLANLY"] = "1"
