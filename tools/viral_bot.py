@@ -35,6 +35,8 @@ def parse_args():
     parser.add_argument("--lang", "-l", choices=["us", "mx"], default="us", help="Target language/market")
     parser.add_argument("--out", "-o", default="", help="Output directory (default: output/commentary)")
     parser.add_argument("--skip-render", action="store_true", help="Only scrape and generate scripts")
+    parser.add_argument("--publish", "-p", action="store_true", help="Automatically schedule rendered videos to Planly")
+    parser.add_argument("--live", action="store_true", help="Post live to Planly (otherwise dry run)")
     return parser.parse_args()
 
 
@@ -127,6 +129,45 @@ def main():
     if rendered:
         print(f"📁 Output folder: {out_dir.resolve()}")
     print("=" * 60)
+
+    if args.publish and rendered:
+        print("\n" + "=" * 60)
+        print("PUBLISHING TO PLANLY")
+        print(f"Mode: {'LIVE POSTING' if args.live else 'DRY RUN (Simulation)'}")
+        print("=" * 60)
+        from hub import settings, publish
+        import os
+        cfg = settings.load()
+        pub_cfg = dict(cfg.get("publish", {}))
+        pub_cfg["dry_run"] = not args.live
+        pub_cfg["enabled"] = True
+        key = settings.secret("PLANLY_API_KEY", cfg) or os.environ.get("PLANLY_API_KEY", "")
+        if not key:
+            print("❌ PLANLY_API_KEY is not configured.")
+        else:
+            items = []
+            for final_path in rendered:
+                meta_json = final_path.with_suffix(".meta.json")
+                meta = {}
+                if meta_json.exists():
+                    try:
+                        meta = json.loads(meta_json.read_text(encoding="utf-8"))
+                    except Exception:
+                        pass
+                title = meta.get("title") or final_path.stem
+                desc = meta.get("description") or f"{title} #shorts #viral"
+                items.append({
+                    "title": title,
+                    "description": desc,
+                    "folder": f"commentary/{final_path.name}",
+                    "path": final_path,
+                    "duration_seconds": int(meta.get("duration", 30)),
+                })
+            res = publish.publish(items, pub_cfg, key, log=print, factory=args.lang)
+            print(f"\n🎉 Successfully scheduled {res.scheduled} video(s) across Planly channels!")
+            if res.errors:
+                print("⚠️ Errors encountered:", res.errors)
+
     return 0
 
 
