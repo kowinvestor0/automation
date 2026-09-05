@@ -1,0 +1,38 @@
+{
+  "queries": [
+    "unexpected caught on camera shorts",
+    "crazy science experiment shorts",
+    "wild animals unexpected encounters shorts",
+    "incredible human skill shorts",
+    "bizarre mystery phenomena shorts",
+    "satisfying machinery working shorts"
+  ],
+  "channels": [],
+  "min_duration": 15,
+  "max_duration": 60,
+  "min_views": 10000,
+  "output_target_seconds": 70,
+  "layout": "banner",
+  "anti_fingerprint": {
+    "zoom": 1.06,
+    "trim_start": 1.0,
+    "trim_end": 1.0,
+    "saturation": 1.12,
+    "contrast": 1.04,
+    "vignette": 0.2
+  },
+  "audio": {
+    "source_volume": 0.12,
+    "voice_volume": 1.0,
+    "music_volume": 0.2,
+    "sfx_volume": 0.35,
+    "ducking": true
+  },
+  "voice": {
+    "us": "en-US-AndrewMultilingualNeural",
+    "mx": "es-MX-JorgeNeural",
+    "rate": "+12%"
+  },
+  "cache_dir": "cache/viral_sources",
+  "output_dir": "output/commentary"
+}
