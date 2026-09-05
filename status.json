@@ -1,93 +1,64 @@
 {
   "status": "ok",
-  "finished_at": "2026-09-05 14:32 UTC",
+  "finished_at": "2026-09-05 17:27 UTC",
   "videos": 0,
-  "scheduled": 17,
+  "scheduled": 7,
   "runs": [
     {
       "factory": "us",
       "label": "US / English",
       "videos": 0,
-      "scheduled": 17,
+      "scheduled": 7,
       "titles": [],
       "calendar": [
         [
           "ngay bay gio",
-          "A man knocked through his basement wall and found eighteen floors of city below -> acc-f23f (tiktok_business)"
+          "Bananas are radioactive and scientists actually use them as a unit -> acc-f23f (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "The Amazon rainforest is fertilized by dust blown across the ocean from the Sahara -> acc-a35d (tiktok_business)"
+          "Bananas are radioactive and scientists actually use them as a unit -> acc-a35d (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "A dead man on an Australian beach carried two Persian words and no name -> acc-9356 (tiktok_business)"
+          "A book nobody on Earth can read has beaten codebreakers for a century -> acc-9356 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Sponge divers found a two thousand year old machine that predicted eclipses -> acc-ada3 (tiktok_business)"
+          "Three lighthouse keepers vanished and the spooky details were all invented later -> acc-f583 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "The self-checkout machine has decided you are a criminal -> acc-d9b6 (tiktok_business)"
+          "Three lighthouse keepers vanished and the spooky details were all invented later -> acc-6000 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "One employee ended a bank that had lasted two hundred and thirty years -> acc-7a7e (tiktok_business)"
+          "Police hunted one woman across three countries for sixteen years before learning she never existed -> acc-2bf3 (tiktok_business)"
         ],
         [
           "ngay bay gio",
-          "Australia sent soldiers with machine guns to deal with emus and the emus won -> acc-7d1e (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "The Bombay murder trial that is blamed for ending jury trials in India -> acc-3fe1 (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "A French court put the local rats on trial and assigned them a defense lawyer -> acc-d28e (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "Someone drew a giant hummingbird in the desert and left no reason why -> acc-9106 (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "The coin that costs four cents to make one cent -> acc-9106 (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "A dead man on an Australian beach carried two Persian words and no name -> acc-3cac (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "Russia once taxed beards and gave out metal tokens to prove you had paid -> acc-3cac (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "Sweden built the mightiest warship in Europe and it sank one mile into its first voyage -> acc-f583 (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "A man knocked through his basement wall and found eighteen floors of city below -> acc-6000 (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "The largest machine ever built was knocked offline by a piece of bread -> acc-2bf3 (tiktok_business)"
-        ],
-        [
-          "ngay bay gio",
-          "A rodent in East Africa can survive eighteen minutes with no oxygen at all -> acc-0f17 (tiktok_business)"
+          "An entire American colony vanished and left one word behind -> acc-0f17 (tiktok_business)"
         ]
       ],
       "warnings": [
-        "[account_1] held back: 'Roman concrete gets stronger in seawater while modern concrete falls apart' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'Australia sent soldiers with machine guns to deal with emus and the emus won' repeats a topic posted in the last 14 days",
         "[account_1] held back: 'One Soviet officer decided the missile alert on his screen was a lie' repeats a topic posted in the last 14 days",
-        "[account_1] held back: 'Sunlight crosses space in eight minutes after spending millennia trying to leave the sun' repeats a topic posted in the last 14 days",
-        "[account_1] held back: 'A volcano in Indonesia erupted and Europe lost the following summer' repeats a topic posted in the last 14 days",
-        "[account_1] held back: 'They were told to lick the brush. It was radium.' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'Raising the price to thirty nine dollars sold more, not less' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'A rodent in East Africa can survive eighteen minutes with no oxygen at all' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'The self-checkout machine has decided you are a criminal' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'The self-checkout machine has decided you are a criminal' repeats a topic posted in the last 14 days",
         "[account_1] held back: 'Nobody has ever successfully left a group chat' repeats a topic posted in the last 14 days",
-        "[account_1] held back: 'Australia declared war on birds and lost' repeats a topic posted in the last 14 days"
+        "[account_1] held back: 'Berlin built an airport nine years late with lights nobody could switch off' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'Australia sent soldiers with machine guns to deal with emus and the emus won' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'Ice is not slippery for the reason your science teacher gave you' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'The Bombay murder trial that is blamed for ending jury trials in India' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'A public family tree website named the Golden State Killer forty years later' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'Australia sent soldiers with machine guns to fight emus and the emus won' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'A dead man on an Australian beach carried two Persian words and no name' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'The biggest explosion before the atomic bomb happened in a Canadian harbor by accident' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'Someone drew a giant hummingbird in the desert and left no reason why' repeats a topic posted in the last 14 days",
+        "[account_1] held back: 'The biggest explosion before the atomic bomb happened in a Canadian harbor by accident' repeats a topic posted in the last 14 days",
+        "[account_1] 7 video(s) for 15 channel(s) - none this round for 8: acc-ada3 (tiktok_business), acc-d9b6 (tiktok_business), acc-7a7e (tiktok_business), acc-7d1e (tiktok_business), acc-3fe1 (tiktok_business), acc-d28e (tiktok_business).... They lead the next run."
       ],
       "errors": [
         "Account 'account_2': API key is missing."
@@ -112,9 +83,9 @@
         "acc-0f17",
         "acc-3cac"
       ],
-      "seconds": 46.49982285499573
+      "seconds": 19.591010808944702
     }
   ],
-  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33970714635",
-  "run_number": "29"
+  "run_url": "https://github.com/kowinvestor0/automation/actions/runs/33979500810",
+  "run_number": "30"
 }
