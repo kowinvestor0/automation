@@ -11,30 +11,6 @@
     "channels": [
       "all"
     ],
-    "mode": "same_time",
-    "times": [
-      "09:00",
-      "12:00",
-      "15:00",
-      "18:00",
-      "21:00",
-      "23:00"
-    ],
-    "gap_minutes": 120,
-    "timezone_offset": 7,
-    "lead_minutes": 30,
-    "distribute": "unique",
-    "when": "now",
-    "repeat_days": 3,
-    "max_seconds": 90,
-    "post_options": {
-      "duet": "auto",
-      "stitch": "auto",
-      "comment": "keep",
-      "privacy_level": "default",
-      "auto_disable_over_seconds": 60
-    },
-    "library_root": "D:\\dang-bai",
     "routes": {
       "us": [
         "35b5ff6c-86cd-4e8c-aa82-352e5d4f5fea",
@@ -52,8 +28,7 @@
         "0a0ec4bf-a395-47dd-a759-e580f7bfc3fe",
         "64e17282-1ebc-47d3-b93a-7c0d91c9b6b7",
         "68a62f97-89a0-4f46-9726-5f5de7903ef8"
-      ],
-      "mx": []
+      ]
     },
     "accounts": [
       {
@@ -77,9 +52,9 @@
             "0a0ec4bf-a395-47dd-a759-e580f7bfc3fe",
             "64e17282-1ebc-47d3-b93a-7c0d91c9b6b7",
             "68a62f97-89a0-4f46-9726-5f5de7903ef8"
-          ],
-          "mx": []
-        }
+          ]
+        },
+        "team_id": ""
       },
       {
         "name": "account_2",
@@ -91,6 +66,29 @@
         }
       }
     ],
+    "mode": "same_time",
+    "times": [
+      "09:00",
+      "12:00",
+      "15:00",
+      "18:00",
+      "21:00",
+      "23:00"
+    ],
+    "gap_minutes": 120,
+    "timezone_offset": 7,
+    "lead_minutes": 30,
+    "distribute": "unique",
+    "when": "now",
+    "post_options": {
+      "duet": "auto",
+      "stitch": "auto",
+      "comment": "keep",
+      "privacy_level": "default",
+      "auto_disable_over_seconds": 60
+    },
+    "max_seconds": 90,
+    "library_root": "D:\\dang-bai",
     "channel_options": {}
   },
   "run": {

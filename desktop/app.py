@@ -274,7 +274,7 @@ class ControlPanel:
         post0 = pub0.get("post_options") or {}
         self.accounts = [dict(a) for a in (pub0.get("accounts") or [])]
         if not self.accounts:
-            p_key = self.secret("PLANLY_API_KEY")
+            p_key = hub_settings.secret("PLANLY_API_KEY", self.cfg)
             p_team = (pub0.get("team_id") or "").strip()
             if p_key or p_team:
                 self.accounts.append({
@@ -1217,6 +1217,8 @@ class ControlPanel:
             self.v_account.set(values[0])
 
     def _account_selected(self, _event=None):
+        if not self.accounts:
+            return
         idx = self.cmb_account.current() if hasattr(self, "cmb_account") else self.current_acc_idx
         if idx < 0 or idx >= len(self.accounts):
             idx = 0 if self.accounts else -1
@@ -1917,10 +1919,23 @@ class ControlPanel:
 
     def secret(self, name):
         """A key as the rest of the hub would see it - environment first."""
-        try:
-            return hub_settings.secret(name, self.collect())
-        except Exception:             # noqa: BLE001
-            return (self.v_keys[name].get() or "").strip()
+        env_val = os.environ.get(name)
+        if env_val:
+            return env_val.strip()
+        if hasattr(self, "v_keys") and name in self.v_keys:
+            try:
+                val = (self.v_keys[name].get() or "").strip()
+                if val:
+                    return val
+            except Exception:
+                pass
+        cfg = getattr(self, "cfg", None)
+        if cfg:
+            try:
+                return hub_settings.secret(name, cfg)
+            except Exception:
+                pass
+        return ""
 
     def save(self, quiet=False):
         cfg = self.collect()
