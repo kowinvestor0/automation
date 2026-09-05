@@ -80,13 +80,18 @@ class TestCommentaryScriptGen(unittest.TestCase):
         self.assertIn("hook_banner", script)
         self.assertIn("title", script)
         self.assertIn("scenes", script)
-        self.assertEqual(len(script["scenes"]), 11)
+        self.assertGreaterEqual(len(script["scenes"]), 5)
         self.assertIn("hashtags", script)
         # Verify scenes have text and keywords
         for sc in script["scenes"]:
             self.assertIn("text", sc)
             self.assertIn("keywords", sc)
             self.assertIsInstance(sc["keywords"], list)
+
+        # For longer videos (> 45s), verify 11 scenes
+        meta_long = dict(meta, duration=65)
+        script_long = generate_commentary_script(meta_long, language="us")
+        self.assertEqual(len(script_long["scenes"]), 11)
 
     def test_fallback_template_structure_mx(self):
         meta = {

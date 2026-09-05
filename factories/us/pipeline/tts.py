@@ -10,27 +10,39 @@ TICKS = 10_000_000  # edge-tts reporta offsets en unidades de 100 ns
 async def _synth_one(text, voice, rate, pitch, out_path):
     import edge_tts
 
-    # edge-tts >= 7 defaults to SentenceBoundary; we need it word by word.
-    try:
-        comm = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch,
-                                    boundary="WordBoundary")
-    except TypeError:
-        comm = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
+    candidate_voices = [voice]
+    for backup in ("en-US-ChristopherNeural", "en-US-GuyNeural", "en-US-BrianMultilingualNeural"):
+        if backup not in candidate_voices:
+            candidate_voices.append(backup)
 
-    words = []
-    with open(out_path, "wb") as f:
-        async for chunk in comm.stream():
-            if chunk["type"] == "audio":
-                f.write(chunk["data"])
-            elif chunk["type"] == "WordBoundary":
-                words.append({
-                    "text": chunk["text"],
-                    "start": chunk["offset"] / TICKS,
-                    "end": (chunk["offset"] + chunk["duration"]) / TICKS,
-                })
-    if out_path.stat().st_size == 0:
-        raise RuntimeError("Edge TTS returned empty audio (check your connection)")
-    return words
+    last_err = None
+    for cv in candidate_voices:
+        try:
+            # edge-tts >= 7 defaults to SentenceBoundary; we need it word by word.
+            try:
+                comm = edge_tts.Communicate(text, cv, rate=rate, pitch=pitch,
+                                            boundary="WordBoundary")
+            except TypeError:
+                comm = edge_tts.Communicate(text, cv, rate=rate, pitch=pitch)
+
+            words = []
+            with open(out_path, "wb") as f:
+                async for chunk in comm.stream():
+                    if chunk["type"] == "audio":
+                        f.write(chunk["data"])
+                    elif chunk["type"] == "WordBoundary":
+                        words.append({
+                            "text": chunk["text"],
+                            "start": chunk["offset"] / TICKS,
+                            "end": (chunk["offset"] + chunk["duration"]) / TICKS,
+                        })
+            if out_path.exists() and out_path.stat().st_size > 0:
+                return words
+        except Exception as e:
+            last_err = e
+            continue
+
+    raise RuntimeError(f"Edge TTS failed for all candidate voices: {last_err}")
 
 
 def _estimate_words(text, duration):

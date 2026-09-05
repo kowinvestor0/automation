@@ -95,66 +95,116 @@ def generate_commentary_script(clip_meta: Dict[str, Any], language: str = "us") 
         except Exception as e:
             print(f"[commentary] Gemini API error ({e}), falling back to template")
 
-    # High-retention topic-aware templates (tuned to ~175 words, ~65-72 seconds audio)
-    lower_t = (title + " " + desc).lower()
+    # High-retention template fallback
+    target_dur = float(clip_meta.get("duration") or 35)
+    title_lower = (title + " " + desc).lower()
+
     if language == "us":
-        if any(w in lower_t for w in ("puente", "bridge", "vertigo", "altura", "height")):
-            return {
-                "hook_banner": "DON'T LOOK DOWN 😱",
-                "title": "Walking Across the Craziest Bridge on Earth",
-                "description": "Would you dare walk across this terrifying suspension bridge? #shorts #travel #bridge #insane #vertigo",
-                "scenes": [
-                    {"text": "Look at the sheer drop beneath his feet because ninety nine percent of people would freeze in pure terror.", "keywords": ["cliff height"]},
-                    {"text": "This heart stopping footage shows what it is actually like to walk across one of the most extreme suspension bridges in the world.", "keywords": ["bridge walking"]},
-                    {"text": "Suspended hundreds of feet above a jagged canyon, the narrow wooden walkway sways with every single step you take.", "keywords": ["wooden walkway"]},
-                    {"text": "High altitude mountain gusts slam into the structure, creating an intense motion that triggers instant vertigo.", "keywords": ["wind blowing"]},
-                    {"text": "Engineers designed this masterpiece using high tension steel cables anchored directly into solid granite mountain walls.", "keywords": ["steel cables"]},
-                    {"text": "Despite how terrifying it looks, the structure is built to support tons of weight even during severe alpine storms.", "keywords": ["mountain storm"]},
-                    {"text": "However, looking down through the gaps in the floorboards is enough to make even seasoned hikers lose their balance.", "keywords": ["looking down"]},
-                    {"text": "Park rangers report that tourists frequently freeze halfway across and have to be guided back step by cautious step.", "keywords": ["rescue hiker"]},
-                    {"text": "Crossing the entire span takes over ten minutes of intense focus while holding tightly to the safety railings.", "keywords": ["safety harness"]},
-                    {"text": "The panoramic view from the middle is breathtaking, but only if you have the stomach to look up.", "keywords": ["mountain peak"]},
-                    {"text": "Would you have the courage to cross this bridge? Follow right now and tell me in the comments if you would do it.", "keywords": ["subscribe"]},
-                ],
-                "hashtags": ["#shorts", "#viral", "#travel", "#bridge", "#vertigo", "#extreme", "#adventure"],
-            }
-        elif any(w in lower_t for w in ("coche", "auto", "car", "ilegal", "illegal")):
-            return {
-                "hook_banner": "CARS ARE BANNED HERE 🚫🚗",
-                "title": "The City Where Driving a Car is Completely Illegal",
-                "description": "Imagine a world with zero cars allowed on any street. #shorts #travel #curiosities #facts #didyouknow",
-                "scenes": [
-                    {"text": "Imagine living in a modern city where driving a car can literally land you straight in prison.", "keywords": ["city street"]},
-                    {"text": "This fascinating location decided to completely outlaw every single gasoline and diesel automobile inside its borders.", "keywords": ["empty road"]},
-                    {"text": "Instead of noisy traffic jams and exhaust fumes, the only transportation allowed are electric carts and bicycles.", "keywords": ["bicycle riding"]},
-                    {"text": "Local authorities introduced these strict rules to protect the fragile historic architecture and clean mountain air.", "keywords": ["historic town"]},
-                    {"text": "If you arrive by highway, you are legally forced to leave your vehicle in a massive parking terminal outside the city perimeter.", "keywords": ["parking terminal"]},
-                    {"text": "From there, visitors must continue on foot, catch a scenic mountain railway, or use traditional horse drawn carriages.", "keywords": ["mountain train"]},
-                    {"text": "Residents say the absolute peace and quiet completely transforms everyday living compared to ordinary noisy cities.", "keywords": ["peaceful neighborhood"]},
-                    {"text": "Air quality sensors in this town consistently register some of the cleanest atmospheric readings recorded on the planet.", "keywords": ["nature air"]},
-                    {"text": "Deliveries and emergency services use specially engineered micro electric vehicles designed to navigate narrow cobblestone alleys.", "keywords": ["small electric van"]},
-                    {"text": "Several other world capitals are now studying this radical model as urban traffic congestion worsens globally.", "keywords": ["city planners"]},
-                    {"text": "Could you survive living in a city with zero cars allowed? Follow for more insane travel secrets and let me know below.", "keywords": ["subscribe icon"]},
-                ],
-                "hashtags": ["#shorts", "#viral", "#travel", "#curiosities", "#citylife", "#future", "#greenenergy"],
-            }
+        if any(w in title_lower for w in ("snow", "avalanche", "ski", "mountain", "ice", "tuyết", "kh0")):
+            hook = "WAIT FOR THE END 😱"
+            if target_dur <= 45:
+                scenes = [
+                    {"text": "Look closely at the slope right before he makes the turn.", "keywords": ["snow mountain"]},
+                    {"text": "In a fraction of a second, an unstable snow slab fractures right beneath his skis.", "keywords": ["shocked reaction"]},
+                    {"text": "Thousands of tons of heavy snow suddenly collapse into a high-speed avalanche.", "keywords": ["avalanche wave"]},
+                    {"text": "This deadly phenomenon occurs when a weak layer gives way under sudden pressure.", "keywords": ["snow slide"]},
+                    {"text": "Miraculously, his fast reaction and avalanche gear kept him right on the surface.", "keywords": ["survival escape"]},
+                    {"text": "Would you have reacted this quickly? Subscribe right now for more wild breakdowns.", "keywords": ["subscribe bell"]},
+                ]
+            else:
+                scenes = [
+                    {"text": "Look extremely closely at this mountain slope, because ninety nine percent of people miss what happens.", "keywords": ["shocked reaction"]},
+                    {"text": "This heart stopping clip took over the internet as millions watched this skier trigger an enormous avalanche.", "keywords": ["crowd watching"]},
+                    {"text": "At first, the run seems completely routine and peaceful on the fresh powder.", "keywords": ["normal daily life"]},
+                    {"text": "However, right as he cuts across the ridge, a terrifying fracture line shoots across the snow.", "keywords": ["fast motion"]},
+                    {"text": "Here is the exact scientific breakdown of how slab avalanches are accidentally released.", "keywords": ["laboratory experiment"]},
+                    {"text": "Winter experts who reviewed the footage noticed a buried sugar snow layer that failed instantly.", "keywords": ["magnifying glass research"]},
+                    {"text": "Once a slab fractures, it can accelerate past eighty miles per hour in just five seconds.", "keywords": ["science reaction"]},
+                    {"text": "The weight of the snow sliding downhill equals hundreds of full sized freight cars.", "keywords": ["archive footage"]},
+                    {"text": "Against all odds, the skier deployed his safety protocol and stayed on top of the debris.", "keywords": ["light bulb moment"]},
+                    {"text": "Safety instructors now use this exact video as a masterclass in backcountry survival.", "keywords": ["laughing reaction"]},
+                    {"text": "Would you have survived a moment like this? Subscribe now and leave your thoughts below.", "keywords": ["subscribe icon"]},
+                ]
+        elif any(w in title_lower for w in ("cook", "food", "kitchen", "recipe", "hack", "chef", "egg")):
+            hook = "DID YOU KNOW THIS? 🍳"
+            if target_dur <= 45:
+                scenes = [
+                    {"text": "Nobody believed this viral cooking hack actually worked until they tried it.", "keywords": ["food hack"]},
+                    {"text": "Watch what happens when you apply gentle heat directly to the center.", "keywords": ["cooking pan"]},
+                    {"text": "Professional chefs use this exact physics trick to lock in moisture instantly.", "keywords": ["chef knife"]},
+                    {"text": "The secret is the rapid temperature change creating a perfect seal.", "keywords": ["hot sizzle"]},
+                    {"text": "In less than thirty seconds, the entire dish transforms completely.", "keywords": ["delicious meal"]},
+                    {"text": "Are you trying this in your kitchen today? Follow for more viral food hacks.", "keywords": ["follow button"]},
+                ]
+            else:
+                scenes = [
+                    {"text": "Nobody believed this viral kitchen hack actually worked until top food scientists tested it.", "keywords": ["food hack"]},
+                    {"text": "This cooking clip went viral with tens of millions of people debating the secret technique.", "keywords": ["crowd watching"]},
+                    {"text": "On the surface, it looks like an ordinary recipe you could make at home.", "keywords": ["normal daily life"]},
+                    {"text": "But the second the heat touches the surface, something incredible happens.", "keywords": ["fast motion"]},
+                    {"text": "Here is the precise molecular breakdown of why this reaction works.", "keywords": ["laboratory experiment"]},
+                    {"text": "Culinary researchers proved that the Maillard reaction is accelerated by this method.", "keywords": ["magnifying glass research"]},
+                    {"text": "This simple adjustment preserves nearly twice as much natural flavor and moisture.", "keywords": ["science reaction"]},
+                    {"text": "Traditional restaurants have kept this subtle preparation method quiet for decades.", "keywords": ["archive footage"]},
+                    {"text": "Once you understand the basic physics involved, anyone can pull this off easily.", "keywords": ["light bulb moment"]},
+                    {"text": "The final result tastes noticeably better than any conventional way of making it.", "keywords": ["laughing reaction"]},
+                    {"text": "Will you be trying this at home? Subscribe and share your results in the comments.", "keywords": ["subscribe icon"]},
+                ]
+        elif any(w in title_lower for w in ("bridge", "car", "drive", "road", "puente", "truck", "cliff")):
+            hook = "DON'T LOOK DOWN 😱"
+            if target_dur <= 45:
+                scenes = [
+                    {"text": "This is officially considered one of the most terrifying crossings on earth.", "keywords": ["scary bridge"]},
+                    {"text": "Suspended hundreds of feet above the canyon, this narrow bridge has no guardrails.", "keywords": ["deep drop"]},
+                    {"text": "Engineers built this passage using flexible steel cables to withstand mountain winds.", "keywords": ["bridge cable"]},
+                    {"text": "One tiny mistake here would send a vehicle straight into the canyon below.", "keywords": ["danger zone"]},
+                    {"text": "Local drivers cross this route daily without showing a single ounce of fear.", "keywords": ["calm driver"]},
+                    {"text": "Would you ever have the courage to cross this bridge? Subscribe for more.", "keywords": ["subscribe button"]},
+                ]
+            else:
+                scenes = [
+                    {"text": "This is officially considered one of the most dangerous driving routes in the entire world.", "keywords": ["scary bridge"]},
+                    {"text": "Millions of people online were terrified just watching this crossing unfold.", "keywords": ["crowd watching"]},
+                    {"text": "The path is barely wide enough for a single vehicle with sheer drops on both sides.", "keywords": ["normal daily life"]},
+                    {"text": "With zero guardrails and strong valley winds, the slightest slip can be catastrophic.", "keywords": ["fast motion"]},
+                    {"text": "Here is the historical background of why this extreme bridge was built.", "keywords": ["laboratory experiment"]},
+                    {"text": "Civil engineers designed the bridge using flexible joints to absorb seismic movement.", "keywords": ["magnifying glass research"]},
+                    {"text": "Despite the terrifying appearance, the structure has stood firm for over forty years.", "keywords": ["science reaction"]},
+                    {"text": "Local residents rely on this crossing as their only connection to the outside world.", "keywords": ["archive footage"]},
+                    {"text": "Every driver who navigates this gorge must maintain absolute precision and nerves of steel.", "keywords": ["light bulb moment"]},
+                    {"text": "The breathtaking view from the center is something only the bravest ever witness.", "keywords": ["laughing reaction"]},
+                    {"text": "Would you ever dare to cross this passage? Subscribe now and leave your thoughts below.", "keywords": ["subscribe icon"]},
+                ]
+        else:
+            hook = "WAIT FOR THE END 😱"
+            if target_dur <= 45:
+                scenes = [
+                    {"text": "Look extremely closely at this moment, because ninety nine percent of people miss what happened.", "keywords": ["shocked reaction"]},
+                    {"text": "This clip recently took over the internet with millions wondering if it was real.", "keywords": ["crowd watching"]},
+                    {"text": "At first everything appears totally normal, until this sudden twist catches you off guard.", "keywords": ["fast motion"]},
+                    {"text": "Experts who reviewed this footage found a fascinating detail hidden right in the background.", "keywords": ["science reaction"]},
+                    {"text": "The real explanation behind this situation is even wilder than anyone imagined.", "keywords": ["light bulb moment"]},
+                    {"text": "Did you spot it on your first watch? Hit subscribe and drop your thoughts below.", "keywords": ["subscribe icon"]},
+                ]
+            else:
+                scenes = [
+                    {"text": "Look extremely closely at this moment, because ninety nine percent of people completely miss what actually happened.", "keywords": ["shocked reaction"]},
+                    {"text": f"This incredible clip recently took over the entire internet, with millions of viewers questioning whether it was real or completely staged.", "keywords": ["crowd watching"]},
+                    {"text": "At first glance, everything appears to be totally ordinary and peaceful as the scene begins.", "keywords": ["normal daily life"]},
+                    {"text": "However, as the seconds tick by, the tension escalates rapidly and catches everyone completely off guard.", "keywords": ["fast motion"]},
+                    {"text": "Here is the exact step by step breakdown of the mysterious circumstances behind this event.", "keywords": ["laboratory experiment"]},
+                    {"text": "Forensic specialists who reviewed this footage pointed out an astonishing detail hidden in the background that changes everything.", "keywords": ["magnifying glass research"]},
+                    {"text": "The rare chain reaction you are witnessing can only occur under extremely precise environmental conditions.", "keywords": ["science reaction"]},
+                    {"text": "In fact, verified occurrences like this have only been documented a handful of times across modern records.", "keywords": ["archive footage"]},
+                    {"text": "Once you uncover the full backstory, the entire mystery finally connects and makes total sense.", "keywords": ["light bulb moment"]},
+                    {"text": "It turns out the genuine explanation behind this moment is even crazier than what anyone online originally imagined.", "keywords": ["laughing reaction"]},
+                    {"text": "Would you have caught that hidden detail on the first watch? Subscribe right now and let me know your thoughts in the comments.", "keywords": ["subscribe icon"]},
+                ]
         return {
-            "hook_banner": "WAIT FOR THE END 😱",
+            "hook_banner": hook,
             "title": f"The Truth Behind {title[:50]}",
             "description": f"Breaking down what really happened in this viral moment. #shorts #viral #breakdown",
-            "scenes": [
-                {"text": "Look extremely closely at this moment, because ninety nine percent of people completely miss what actually happened.", "keywords": ["shocked reaction"]},
-                {"text": f"This incredible clip recently took over the entire internet, with millions of viewers questioning whether it was real or completely staged.", "keywords": ["crowd watching"]},
-                {"text": "At first glance, everything appears to be totally ordinary and peaceful as the scene begins.", "keywords": ["normal daily life"]},
-                {"text": "However, as the seconds tick by, the tension escalates rapidly and catches everyone completely off guard.", "keywords": ["fast motion"]},
-                {"text": "Here is the exact step by step breakdown of the mysterious circumstances behind this event.", "keywords": ["laboratory experiment"]},
-                {"text": "Forensic specialists who reviewed this footage pointed out an astonishing detail hidden in the background that changes everything.", "keywords": ["magnifying glass research"]},
-                {"text": "The rare chain reaction you are witnessing can only occur under extremely precise environmental conditions.", "keywords": ["science reaction"]},
-                {"text": "In fact, verified occurrences like this have only been documented a handful of times across modern records.", "keywords": ["archive footage"]},
-                {"text": "Once you uncover the full backstory, the entire mystery finally connects and makes total sense.", "keywords": ["light bulb moment"]},
-                {"text": "It turns out the genuine explanation behind this moment is even crazier than what anyone online originally imagined.", "keywords": ["laughing reaction"]},
-                {"text": "Would you have caught that hidden detail on the first watch? Subscribe right now and let me know your thoughts in the comments.", "keywords": ["subscribe icon"]},
-            ],
+            "scenes": scenes,
             "hashtags": ["#shorts", "#viral", "#breakdown", "#didyouknow", "#mystery", "#reaction"],
         }
     else:
@@ -166,7 +216,7 @@ def generate_commentary_script(clip_meta: Dict[str, Any], language: str = "us") 
                 {"text": "Fíjate con muchísima atención en este momento, porque el noventa y nueve por ciento de la gente no nota lo que pasó de verdad.", "keywords": ["reaccion sorpresa"]},
                 {"text": f"Este video se hizo completamente viral en redes sociales y millones de personas se preguntaban si era real o actuado.", "keywords": ["gente mirando"]},
                 {"text": "Al principio todo parece completamente normal y tranquilo como cualquier otro día ordinario.", "keywords": ["vida diaria"]},
-                {"text": "Pero en cuestión de segundos, la tensión aumenta de golpe y deja a todos los presentes con la boca abierta.", "keywords": ["movimiento rapido"]},
+                {"text": "Pero en cuestión de segundos, la tensión aumenta de golpe và deja a todos los presentes con la boca abierta.", "keywords": ["movimiento rapido"]},
                 {"text": "Aquí está la explicación científica y detallada de por qué ocurrió semejante suceso.", "keywords": ["laboratorio ciencia"]},
                 {"text": "Los especialistas que analizaron la grabación descubrieron un detalle oculto al fondo que lo cambia absolutamente todo.", "keywords": ["investigacion"]},
                 {"text": "Este curioso fenómeno solo puede manifestarse bajo condiciones climáticas y físicas verdaderamente excepcionales.", "keywords": ["experimento cientifico"]},
@@ -187,7 +237,7 @@ def render_commentary_video(
     workdir: Optional[Path] = None,
     cfg: Optional[Dict[str, Any]] = None,
 ) -> Path:
-    """Renders the final 9:16 commentary video with looped/scaled clip, TTS, ASS captions, and SFX."""
+    """Renders the final 9:16 commentary video with scaled clip, TTS, ASS captions, and SFX."""
     source_video = Path(clip_meta["video_path"])
     if not source_video.exists():
         raise FileNotFoundError(f"Source video not found at {source_video}")
@@ -209,7 +259,7 @@ def render_commentary_video(
         import factories.us.pipeline.tts as tts
         import factories.us.pipeline.subtitles as subtitles
         import factories.us.pipeline.audio_fx as audio_fx
-        default_voice = "en-US-AndrewMultilingualNeural"
+        default_voice = "en-US-ChristopherNeural"
         font_file = CODE / "factories" / "us" / "assets" / "fonts" / "Anton-Regular.ttf"
 
     cfg_dict = dict(cfg or {})
@@ -239,7 +289,26 @@ def render_commentary_video(
     cfg_sfx = {"sfx": True, "niche": "commentary"}
     sfx_path = audio_fx.build_sfx_track(timeline, voice_duration, cfg_sfx, temp_dir)
 
-    # 4. Escape paths and text for FFmpeg
+    # 4. Check source video duration & audio stream
+    source_dur = 0.0
+    try:
+        source_dur = audio_fx.ffprobe_duration(source_video)
+    except Exception:
+        pass
+
+    has_orig_audio = False
+    try:
+        pr = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries", "stream=codec_type", "-of", "csv=p=0", str(source_video)],
+            capture_output=True, text=True, check=False
+        )
+        has_orig_audio = bool(pr.stdout.strip())
+    except Exception:
+        has_orig_audio = False
+
+    loop_args = ["-stream_loop", "-1"] if (voice_duration > source_dur + 1.0) else []
+
+    # 5. Escape paths and text for FFmpeg
     raw_hook = script.get("hook_banner") or ("MIRA HASTA EL FINAL" if language in ("mx", "es") else "WAIT FOR THE END")
     import re
     clean_hook = re.sub(r"[^\w\s!?¿¡-]", "", raw_hook).strip()
@@ -250,7 +319,7 @@ def render_commentary_video(
     clean_ass = str(ass_path).replace("\\", "/").replace(":", "\\:")
     font_arg = f":fontfile='{str(font_file).replace('\\', '/').replace(':', '\\:')}'" if font_file.exists() else ""
 
-    # 5. Build FFmpeg Filter Complex:
+    # 6. Build FFmpeg Filter Complex:
     fc_video = (
         "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,"
         "crop=1080:1920,"
@@ -260,28 +329,31 @@ def render_commentary_video(
         f"ass='{clean_ass}'[v]"
     )
 
-    # Audio inputs and mixing
+    # Audio inputs and mixing (Split voice so it can duck music AND mix clearly)
     input_files = [source_video, full_voice_path, music_path]
     cmd_inputs = [
-        "-stream_loop", "-1", "-i", str(source_video),
+        *loop_args, "-i", str(source_video),
         "-i", str(full_voice_path),
         "-i", str(music_path),
     ]
     af_parts = [
-        "[0:a]volume=0.12,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[orig_a];",
-        "[1:a]volume=1.0,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[voice];",
-        "[2:a]volume=0.20,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[music];",
+        "[1:a]volume=1.25,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,asplit=2[voice_sc][voice];",
+        "[2:a]volume=0.12,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[music];",
+        "[music][voice_sc]sidechaincompress=threshold=0.12:ratio=4:attack=20:release=350[ducked_music];",
     ]
-    mix_sources = ["[orig_a]", "[ducked_music]", "[voice]"]
+    mix_sources = ["[ducked_music]", "[voice]"]
+
+    if has_orig_audio:
+        af_parts.insert(0, "[0:a]volume=0.15,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[orig_a];")
+        mix_sources.insert(0, "[orig_a]")
 
     if sfx_path and sfx_path.exists():
         sfx_idx = len(input_files)
         input_files.append(sfx_path)
         cmd_inputs += ["-i", str(sfx_path)]
-        af_parts.append(f"[{sfx_idx}:a]volume=0.35,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[sfx];")
+        af_parts.append(f"[{sfx_idx}:a]volume=0.30,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[sfx];")
         mix_sources.append("[sfx]")
 
-    af_parts.append("[music][voice]sidechaincompress=threshold=0.12:ratio=4:attack=20:release=350[ducked_music];")
     af_parts.append(f"{''.join(mix_sources)}amix=inputs={len(mix_sources)}:normalize=0,loudnorm=I=-14:LRA=7:TP=-1.5[a]")
     fc_audio = "".join(af_parts)
 
