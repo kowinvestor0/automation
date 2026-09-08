@@ -97,7 +97,7 @@ def acquire_lock() -> bool:
             # Native Windows check if process is still alive without psutil
             cmd = ["tasklist", "/FI", f"PID eq {pid}", "/NH"]
             res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            if str(pid) in res.stdout:
+            if "No tasks are running" not in res.stdout and str(pid) in res.stdout:
                 return False
         except Exception:
             pass
@@ -119,7 +119,7 @@ def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota
     slots = []
     for idx in range(quota):
         h, m = US_VIRAL_PEAK_HOURS_ET[idx % len(US_VIRAL_PEAK_HOURS_ET)]
-        jitter = ((channel_index * 3) + random.randint(2, 8)) % 14
+        jitter = ((channel_index * 3) + (idx * 2) + 5) % 15
         slot_dt = dt.datetime(
             target_date.year, target_date.month, target_date.day,
             h, m, tzinfo=tz
@@ -131,9 +131,10 @@ def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota
 
 
 def get_channel_scheduled_counts_by_date(client: PlanlyClient) -> Dict[str, Dict[str, int]]:
-    """Inspects Planly calendar and counts how many posts are scheduled per channel per date.
+    """Inspects Planly calendar and counts how many posts are scheduled per channel per date in US Eastern Time.
     Returns: {channel_id: {"YYYY-MM-DD": count, ...}}
     """
+    tz = get_us_eastern_tz()
     counts: Dict[str, Dict[str, int]] = {}
     try:
         groups = client.list_scheduled_groups()
@@ -141,10 +142,17 @@ def get_channel_scheduled_counts_by_date(client: PlanlyClient) -> Dict[str, Dict
             publish_on = g.get("publishOn")
             if not publish_on:
                 continue
-            date_str = publish_on[:10]
+            clean_iso = publish_on.replace("Z", "+00:00")
+            try:
+                dt_utc = dt.datetime.fromisoformat(clean_iso)
+                dt_local = dt_utc.astimezone(tz)
+                date_str = dt_local.strftime("%Y-%m-%d")
+            except Exception:
+                date_str = publish_on[:10]
+
             schedules = g.get("schedules") or []
             for s in schedules:
-                ch_id = s.get("channelId")
+                ch_id = s.get("channelId") or (s.get("channel") or {}).get("id")
                 if not ch_id:
                     continue
                 if ch_id not in counts:
@@ -172,6 +180,18 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
         return 0
 
     client = PlanlyClient(target_acc["token"], target_acc["team_id"])
+
+    # Auto-sync channels dynamically from Planly API on every cycle
+    try:
+        live_channels = client.list_channels()
+        if live_channels:
+            if len(live_channels) != len(channels) or {c["id"] for c in live_channels} != {c["id"] for c in channels}:
+                target_acc["channels"] = live_channels
+                mgr.save_all(accounts)
+                logger.info(f"🔄 Đã phát hiện và đồng bộ kênh mới từ Planly: Hiện có {len(live_channels)} kênh!")
+            channels = live_channels
+    except Exception as e:
+        logger.warning(f"Không thể cập nhật danh sách kênh trực tiếp từ Planly: {e}")
     tz = get_us_eastern_tz()
     today_et = dt.datetime.now(tz).date()
 
@@ -195,7 +215,13 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
 
         logger.info(f"--- Kiểm tra lịch ngày: {target_date.strftime('%d/%m/%Y')} (Day +{day_offset}) ---")
 
-        for ch_idx, ch in enumerate(channels):
+        # Sort channels so channels with fewest scheduled posts (such as new channels) are served first
+        sorted_channels = sorted(
+            channels,
+            key=lambda c: schedule_counts.get(c["id"], {}).get(target_date_str, 0)
+        )
+
+        for ch in sorted_channels:
             if is_stop_requested():
                 break
 
@@ -209,8 +235,13 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                 logger.info(f"  Kênh '{ch_name}': Đã đủ {current_scheduled}/{quota_per_day} video cho ngày {target_date_str}. Bỏ qua.")
                 continue
 
+            ch_idx = next((i for i, c in enumerate(channels) if c["id"] == ch_id), 0)
             all_slots = build_channel_slots_for_date(target_date, channel_index=ch_idx, quota=quota_per_day)
-            missing_slots = all_slots[current_scheduled:]
+            if current_scheduled >= len(all_slots):
+                logger.info(f"  Kênh '{ch_name}': Không còn slot khả dụng cho ngày {target_date_str} (đã có {current_scheduled} video).")
+                continue
+
+            missing_slots = all_slots[current_scheduled : current_scheduled + needed]
             if not missing_slots:
                 continue
 

@@ -476,6 +476,11 @@ def render_hybrid_commentary_video(
     }
     meta_path.write_text(json.dumps(meta_data, indent=2, ensure_ascii=False), encoding="utf-8")
     log(f"[Commentary Engine] Rendered hybrid commentary video: {out_file.name} ({meta_data['duration']:.1f}s)")
+    try:
+        import shutil
+        shutil.rmtree(workdir, ignore_errors=True)
+    except Exception:
+        pass
     return out_file
 
 

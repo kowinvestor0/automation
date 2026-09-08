@@ -24,38 +24,44 @@ def main():
     print("KIEM TRA TRANG THAI HE THONG AUTO MAKE MONEY")
     print("====================================================================")
 
+    import subprocess
+    is_running = False
     lock = ROOT_DIR / "data" / "worker.lock"
     if lock.exists():
         try:
             pid = lock.read_text(encoding="utf-8").strip()
-            print(f"Background Worker: DANG CHAY NGAM (PID: {pid})")
+            cmd = ["tasklist", "/FI", f"PID eq {pid}", "/NH"]
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if "No tasks are running" not in res.stdout and str(pid) in res.stdout:
+                is_running = True
+                print(f"Background Worker: ĐANG CHẠY NGẦM 24/7 (PID: {pid})")
+            else:
+                print(f"Background Worker: ĐÃ DỪNG (Stale lock file PID {pid})")
         except Exception:
-            print("Background Worker: DANG CHAY NGAM")
+            print("Background Worker: ĐANG DỪNG")
     else:
-        print("Background Worker: DANG DUNG")
+        print("Background Worker: ĐANG DỪNG")
 
     mgr = AccountManager()
     accounts = mgr.load_all()
     if accounts:
         acc = accounts[0]
         channels = acc.get("channels", [])
-        print(f"Account: {acc.get('name')} | So kenh TikTok: {len(channels)}")
+        print(f"Account: {acc.get('name')} | Tổng số kênh TikTok: {len(channels)}")
         try:
+            from core.background_worker import get_channel_scheduled_counts_by_date
             client = PlanlyClient(acc["token"], acc["team_id"])
             groups = client.list_scheduled_groups()
-            print(f"Tong so bai viet dang xep lich tren Planly: {len(groups)} bai")
-            dates = {}
-            for g in groups:
-                p = (g.get("publishOn") or "")[:10]
-                if p:
-                    dates[p] = dates.get(p, 0) + 1
-            if dates:
-                for d, c in sorted(dates.items()):
-                    print(f"   -> Ngay {d}: {c} video")
-            else:
-                print("   -> Chua co video nao dang xep lich.")
+            print(f"Tổng số bài viết đang xếp lịch trên Planly: {len(groups)} bài")
+            counts = get_channel_scheduled_counts_by_date(client)
+            for c in channels:
+                cid = c["id"]
+                cname = c.get("name", cid)
+                cdates = counts.get(cid, {})
+                cdetail = ", ".join([f"{d}: {cnt} video" for d, cnt in sorted(cdates.items())]) if cdates else "Chưa có video"
+                print(f"   • {cname:<24}: {cdetail}")
         except Exception as e:
-            print(f"Loi kiem tra Planly: {e}")
+            print(f"Lỗi kiểm tra Planly: {e}")
 
     log_p = ROOT_DIR / "logs" / "background_worker.log"
     if log_p.exists():
