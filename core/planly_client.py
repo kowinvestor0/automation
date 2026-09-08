@@ -156,3 +156,49 @@ class PlanlyClient:
             all_results.append(res)
 
         return {"status": "success", "batches": len(all_results), "data": all_results}
+
+    def list_scheduled_groups(self) -> List[Dict[str, Any]]:
+        """List all scheduled groups currently waiting on Planly calendar."""
+        all_groups = []
+        next_token = None
+        while True:
+            body = {"teamId": self.team_id, "status": "scheduled"}
+            if next_token:
+                body["next"] = next_token
+            res = self._post("/schedule-groups/list", body)
+            data = res.get("data") or {}
+            rows = data.get("rows") or []
+            all_groups.extend(rows)
+            next_token = data.get("next")
+            if not next_token or not rows:
+                break
+        return all_groups
+
+    def delete_schedule_group(self, group_id: str) -> bool:
+        """Delete a single schedule group from Planly."""
+        res = self._post("/schedule-groups/delete", {
+            "teamId": self.team_id,
+            "id": group_id
+        })
+        return bool(res.get("data", False))
+
+    def clear_all_scheduled_posts(self, log=print) -> int:
+        """Deletes all scheduled posts from Planly calendar."""
+        groups = self.list_scheduled_groups()
+        if not groups:
+            log("[Planly] Không có bài viết nào đang xếp lịch cần xóa.")
+            return 0
+        log(f"[Planly] Đang xóa {len(groups)} bài viết đang xếp lịch trên Planly...")
+        deleted_count = 0
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            futures = {ex.submit(self.delete_schedule_group, g["id"]): g["id"] for g in groups}
+            for fut in as_completed(futures):
+                gid = futures[fut]
+                try:
+                    if fut.result():
+                        deleted_count += 1
+                except Exception as e:
+                    log(f"[Planly] Lỗi xóa nhóm {gid}: {e}")
+        log(f"[Planly] Đã xóa thành công {deleted_count}/{len(groups)} bài viết trên Planly.")
+        return deleted_count

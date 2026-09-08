@@ -21,6 +21,12 @@ from core.planly_client import PlanlyClient
 from core.config_manager import load_config
 from core.scraper import VideoScraper
 from core.video_commentary import render_hybrid_commentary_video, generate_commentary_script
+from core.infinite_content import (
+    load_used_viral_clips,
+    save_used_viral_clips,
+    get_next_unique_viral_clip,
+    VIRAL_KNOWLEDGE_BASE
+)
 from core.scheduler import get_us_eastern_tz, US_VIRAL_PEAK_HOURS_ET, mark_posted, load_media_cache, save_media_cache
 
 # Configure UTF-8 console output for Windows
@@ -29,51 +35,6 @@ for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8", errors="replace")
     except (AttributeError, ValueError):
         pass
-
-USED_CLIPS_FILE = DATA_DIR / "used_viral_clips.json"
-
-VIRAL_NICHES = [
-    ("Hydraulic Press & Destruction", "hydraulic press crushing experiment"),
-    ("Crazy Science Tests", "crazy science experiment reactions"),
-    ("Wild Apex Predators", "unbelievable wild animal encounters"),
-    ("Mega Machines & Engineering", "extreme engineering mega machines"),
-    ("Unexplained Mysteries", "bizarre mystery phenomena caught on camera"),
-    ("Master Craftsmanship", "satisfying craftsmanship restoration"),
-    ("Deep Ocean Wonders", "deep ocean strange creatures discovery"),
-    ("Extreme Survival Tactics", "deadly survival situations explained"),
-    ("Crazy Physics Moments", "unexpected sports physics moments"),
-    ("Chemical Reactions", "crazy chemical reaction slow motion"),
-    ("Strange Natural Events", "unusual nature phenomena caught on camera"),
-    ("Futuristic Machines", "amazing futuristic machines and inventions")
-]
-
-
-def load_used_viral_clips() -> set:
-    if USED_CLIPS_FILE.exists():
-        try:
-            return set(json.loads(USED_CLIPS_FILE.read_text(encoding="utf-8")))
-        except Exception:
-            return set()
-    return set()
-
-
-def save_used_viral_clips(clips_set: set):
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    USED_CLIPS_FILE.write_text(json.dumps(list(clips_set), indent=2), encoding="utf-8")
-
-
-def get_unique_viral_source(niche_query: str, used_ids: set, scraper: VideoScraper, log=print) -> Optional[Dict[str, Any]]:
-    """Searches YouTube and downloads a unique viral clip (prioritizing duration >= 60s)."""
-    candidates = scraper.search_viral_clips(niche_query, limit=10)
-    for c in candidates:
-        if c["id"] in used_ids:
-            continue
-        clip_meta = scraper.download_clip(c["url"])
-        if clip_meta and Path(clip_meta["video_path"]).exists():
-            used_ids.add(c["id"])
-            save_used_viral_clips(used_ids)
-            return clip_meta
-    return None
 
 
 def build_channel_daily_slots(target_date: dt.date, channel_index: int, quota: int = 6) -> List[str]:
@@ -146,25 +107,30 @@ def run_auto_publisher_batch(
             if max_videos and video_idx >= max_videos:
                 break
 
-            niche_name, niche_query = VIRAL_NICHES[video_idx % len(VIRAL_NICHES)]
             video_idx += 1
+            niche_obj = VIRAL_KNOWLEDGE_BASE[(video_idx - 1) % len(VIRAL_KNOWLEDGE_BASE)]
+            niche_name = niche_obj["category"]
 
-            log(f"   [{video_idx}/{total_slots_needed}] [{niche_name}] Đang tìm clip viral độc quyền...")
-            src_clip = get_unique_viral_source(niche_query, used_viral_ids, scraper, log=log)
-            if not src_clip:
-                src_clip = get_unique_viral_source("unbelievable viral moments caught on camera", used_viral_ids, scraper, log=log)
+            log(f"   [{video_idx}/{total_slots_needed}] [{niche_name}] Đang tìm clip viral độc quyền từ kho vô hạn...")
+            src_clip = get_next_unique_viral_clip(
+                scraper=scraper,
+                used_ids=used_viral_ids,
+                preferred_category=niche_name,
+                log=log
+            )
 
             if not src_clip:
-                log(f"   ⚠️ Không tìm được clip viral cho slot {slot_idx+1}, bỏ qua...")
+                log(f"   ⚠️ Không tìm được clip viral mới cho slot {slot_idx+1}, bỏ qua...")
                 continue
 
             clean_t = re.sub(r"[^\w]+", "_", src_clip["title"][:25]).strip("_")
             stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
             out_file = OUTPUT_DIR / f"commentary_{stamp}_{ch_name}_{slot_idx+1}_{clean_t}.mp4"
 
-            log(f"       -> Nguồn mạng: '{src_clip['title'][:50]}' ({src_clip.get('duration', 0):.1f}s)")
+            log(f"       -> Nguồn mạng độc quyền: '{src_clip['title'][:50]}' ({src_clip.get('duration', 0):.1f}s)")
 
             try:
+                # Render 1 single continuous video commentary (>60s)
                 render_hybrid_commentary_video(
                     source_video_info=src_clip,
                     out_file=out_file,
@@ -179,6 +145,7 @@ def run_auto_publisher_batch(
                 else:
                     meta_info = {"title": src_clip["title"], "hashtags": ["#shorts", "#viral", "#commentary"]}
 
+                # Upload to Planly Cloud Storage
                 vpath_str = str(out_file.resolve())
                 if vpath_str not in media_cache:
                     log(f"       -> Đang tải video lên Planly Cloud Storage...")
@@ -188,9 +155,11 @@ def run_auto_publisher_batch(
                 else:
                     media_id = media_cache[vpath_str]
 
+                # Safe high-engagement caption
                 tags_str = " ".join(meta_info.get("hashtags", ["#viral", "#commentary", "#shorts"]))
                 caption = f"{meta_info.get('title', src_clip['title'])}! What are your thoughts on this? React below! 💬\n\n{tags_str}"
 
+                # Schedule post on Planly (Duet and Stitch strictly disabled for >60s monetization)
                 post_entry = {
                     "channel_id": ch_id,
                     "media_id": media_id,

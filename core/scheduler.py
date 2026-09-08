@@ -201,8 +201,11 @@ def schedule_channel_quota(
         log(f"[Scheduler] Kênh #{global_ch_idx+1} '{ch_name}' [{ch_tier.upper()}]: gán {len(ch_slots)} khung giờ vàng Mỹ (Giờ đầu: {ch_slots[0]})...")
 
         for slot_idx, slot_time in enumerate(ch_slots):
-            # Unique non-overlapping video assignment
-            vid_idx = (global_ch_idx * videos_per_channel + slot_idx) % len(active_pool)
+            # Strict unique non-overlapping video assignment (Zero repetition across channels!)
+            vid_idx = (global_ch_idx * videos_per_channel + slot_idx)
+            if vid_idx >= len(active_pool):
+                log(f"[Scheduler] ⚠️ Cảnh báo: Kho video không đủ video độc quyền cho kênh '{ch_name}' (Slot {slot_idx+1}). Cần tạo thêm video mới, tuyệt đối không dùng lại video cũ!")
+                break
             vid = active_pool[vid_idx]
             vpath = Path(vid["path"])
 
