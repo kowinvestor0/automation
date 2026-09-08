@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Make Money - Planly Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 text-gray-800 p-4 sm:p-8 flex flex-col justify-between">
+
+  <!-- MAIN CARD CONTAINER -->
+  <div class="mx-auto max-w-4xl w-full rounded-2xl bg-white p-6 sm:p-8 shadow-xl border border-gray-100 mb-8">
+    
+    <!-- HEADER -->
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md">
+          <i class="fa-solid fa-play text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 tracking-tight">Auto Make Money</h1>
+          <p class="mt-0.5 text-xs sm:text-sm text-gray-500">
+            Sản xuất video commentary bám cảnh & tự động lên lịch Planly (6 video/kênh/ngày)
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center gap-2.5">
+        <button onclick="openOutputFolder()" class="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs sm:text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition shadow-xs" title="Mở thư mục video lưu trên máy (D:\auto make money\output)">
+          <i class="fa-solid fa-folder-open"></i> Mở Thư Mục Video
+        </button>
+        <button onclick="openModal('libraryModal')" class="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs sm:text-sm font-medium text-purple-700 hover:bg-purple-100 transition shadow-xs">
+          <i class="fa-solid fa-calendar-days"></i> Kho Video & Lịch
+        </button>
+        <button onclick="openModal('settingsModal')" class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition shadow-xs">
+          <i class="fa-solid fa-gear"></i> Cài Đặt API
+        </button>
+      </div>
+    </header>
+
+    <!-- STEPPER (1-2-3-4 connected with line bars) -->
+    <div class="mb-8 flex items-center justify-center">
+      <!-- Step 1 Indicator -->
+      <div class="flex flex-col items-center">
+        <button onclick="goToStep(1)" id="step-badge-1" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition bg-blue-600 text-white shadow-sm">
+          1
+        </button>
+        <span class="mt-1 text-[11px] font-medium text-gray-600 hidden sm:block">Kênh Planly</span>
+      </div>
+      <div id="step-line-1" class="h-1 w-16 sm:w-24 transition bg-gray-200 mb-4 sm:mb-5"></div>
+
+      <!-- Step 2 Indicator -->
+      <div class="flex flex-col items-center">
+        <button onclick="goToStep(2)" id="step-badge-2" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition bg-gray-200 text-gray-500 shadow-xs">
+          2
+        </button>
+        <span class="mt-1 text-[11px] font-medium text-gray-500 hidden sm:block">Video Nguồn</span>
+      </div>
+      <div id="step-line-2" class="h-1 w-16 sm:w-24 transition bg-gray-200 mb-4 sm:mb-5"></div>
+
+      <!-- Step 3 Indicator -->
+      <div class="flex flex-col items-center">
+        <button onclick="goToStep(3)" id="step-badge-3" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition bg-gray-200 text-gray-500 shadow-xs">
+          3
+        </button>
+        <span class="mt-1 text-[11px] font-medium text-gray-500 hidden sm:block">Lời Bình Video</span>
+      </div>
+      <div id="step-line-3" class="h-1 w-16 sm:w-24 transition bg-gray-200 mb-4 sm:mb-5"></div>
+
+      <!-- Step 4 Indicator -->
+      <div class="flex flex-col items-center">
+        <button onclick="goToStep(4)" id="step-badge-4" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition bg-gray-200 text-gray-500 shadow-xs">
+          4
+        </button>
+        <span class="mt-1 text-[11px] font-medium text-gray-500 hidden sm:block">Sản Xuất & Lịch</span>
+      </div>
+    </div>
+
+    <!-- NOTIFICATION BANNER -->
+    <div id="alertBox" class="hidden mb-6 p-4 rounded-xl text-sm flex items-start gap-3 transition">
+      <i id="alertIcon" class="fa-solid fa-circle-info mt-0.5"></i>
+      <div id="alertMsg" class="flex-1 font-medium"></div>
+      <button onclick="hideAlert()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- ==================== STEP 1: KẾT NỐI PLANLY & CHỌN KÊNH ==================== -->
+    <div id="step-1" class="step-view space-y-6">
+      <div class="mb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Bước 1: Kết nối Planly & Chọn kênh</h2>
+        <p class="mt-1 text-sm text-gray-600">
+          Chọn các kênh bạn muốn phân phối video. Tự động nhận biết kênh đã bật kiếm tiền (&gt;60s) hoặc kênh tăng trưởng (&lt;45s).
+        </p>
+      </div>
+
+      <!-- Account Selection Bar -->
+      <div class="rounded-xl bg-gray-50 p-5 border border-gray-200">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <i class="fa-solid fa-user-circle text-blue-600"></i> Tài khoản Planly đã lưu
+          </label>
+          <button onclick="openModal('addAccountModal')" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+            <i class="fa-solid fa-plus"></i> Thêm tài khoản mới
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <select id="accountSelect" onchange="onAccountChange()" class="flex-1 min-w-[200px] rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+            <option value="">-- Đang tải tài khoản... --</option>
+          </select>
+          <button onclick="syncCurrentAccount()" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 flex items-center gap-1.5 shadow-xs">
+            <i class="fa-solid fa-rotate"></i> Đồng bộ kênh
+          </button>
+        </div>
+      </div>
+
+      <!-- Channels List Panel -->
+      <div class="rounded-xl bg-gray-50 p-5 border border-gray-200">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-gray-700">Danh sách kênh</span>
+            <span id="selectedChannelCount" class="text-xs font-bold bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full">
+              0 đã chọn
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="text" id="channelSearch" oninput="filterChannels()" placeholder="Tìm kiếm kênh..." class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-800 outline-none focus:border-blue-500 w-44">
+            <button onclick="toggleSelectAllChannels()" id="btnSelectAll" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 shadow-xs">
+              ✓ Chọn tất cả
+            </button>
+          </div>
+        </div>
+
+        <!-- Channels Grid -->
+        <div id="channelsContainer" class="max-h-80 space-y-2.5 overflow-y-auto pr-2 custom-scroll">
+          <div class="text-center py-8 text-sm text-gray-400">Chưa có kênh nào. Vui lòng chọn tài khoản Planly.</div>
+        </div>
+      </div>
+
+      <!-- Step 1 Footer -->
+      <div class="flex justify-end pt-2">
+        <button onclick="validateAndGoStep2()" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 text-sm font-semibold shadow-md transition flex items-center gap-2">
+          Tiếp tục: Chọn Video Nguồn <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== STEP 2: CHỌN VIDEO NGUỒN ==================== -->
+    <div id="step-2" class="step-view hidden space-y-6">
+      <div class="mb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Bước 2: Chọn Video Nguồn (Làm Theo Video)</h2>
+        <p class="mt-1 text-sm text-gray-600">
+          Nhập URL Shorts/TikTok hoặc video clip. Hệ thống sẽ bám sát nội dung từng phân cảnh để tạo commentary kịch tính.
+        </p>
+      </div>
+
+      <!-- Source Video Input Panel -->
+      <div class="rounded-xl bg-gray-50 p-5 border border-gray-200 space-y-4">
+        <label class="block text-sm font-semibold text-gray-700">
+          🔗 Link video YouTube / Shorts / TikTok hoặc đường dẫn file
+        </label>
+        <div class="flex flex-col sm:flex-row gap-2.5">
+          <input type="text" id="videoUrlInput" placeholder="Ví dụ: https://www.youtube.com/shorts/Z271a6fKmno hoặc file .mp4..." class="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+          <button onclick="inspectSourceVideo()" id="btnInspect" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 text-sm font-semibold shadow-sm transition flex items-center justify-center gap-2 shrink-0">
+            <i class="fa-solid fa-magnifying-glass"></i> Kiểm Tra & Tải Video
+          </button>
+        </div>
+
+        <!-- Quick Viral Ideas -->
+        <div>
+          <span class="text-xs font-semibold text-gray-500 block mb-2">Gợi ý video viral có sẵn:</span>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <button onclick="setSampleVideo('https://www.youtube.com/shorts/Z271a6fKmno')" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-gray-700 hover:border-blue-400 hover:text-blue-600 transition shadow-2xs">
+              🐯 Hổ leo cây (Never Climb a Tree)
+            </button>
+            <button onclick="setSampleVideo('https://www.youtube.com/shorts/J0_RvwzGQ8I')" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-gray-700 hover:border-blue-400 hover:text-blue-600 transition shadow-2xs">
+              ⚠️ Vùng nước nguy hiểm nhất
+            </button>
+            <button onclick="setSampleVideo('https://www.youtube.com/shorts/7nK20W48T1k')" class="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-gray-700 hover:border-blue-400 hover:text-blue-600 transition shadow-2xs">
+              💥 Máy ép thủy lực 100 tấn
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cut Segment Settings (If Video is Long) -->
+      <div id="cutSettingsPanel" class="hidden rounded-xl bg-blue-50/60 p-5 border border-blue-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-blue-900 flex items-center gap-2">
+            <i class="fa-solid fa-scissors text-blue-600"></i> Video dài hơn 90s - Cắt phân đoạn hấp dẫn
+          </h3>
+          <span class="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded font-medium">Tự động chọn đoạn hay</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Giây bắt đầu cắt (-ss):</label>
+            <input type="number" id="cutStartInput" value="0" min="0" step="1" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Thời lượng lấy (giây):</label>
+            <input type="number" id="cutDurationInput" value="65" min="15" max="180" step="1" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm">
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Inspection Result Card -->
+      <div id="videoInspectCard" class="hidden rounded-xl bg-white p-5 border-2 border-emerald-500 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row gap-4 items-start">
+          <div class="w-full sm:w-48 h-28 bg-gray-900 rounded-lg flex items-center justify-center text-white shrink-0 overflow-hidden relative">
+            <i class="fa-solid fa-film text-3xl text-emerald-400"></i>
+            <span id="inspectDurationBadge" class="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
+              00:00
+            </span>
+          </div>
+          <div class="flex-1 min-w-0 space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span id="inspectTierBadge" class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                Tăng Trưởng (&lt;45s)
+              </span>
+              <span class="text-xs text-gray-500">Đã tải về bộ nhớ đệm</span>
+            </div>
+            <h3 id="inspectTitle" class="text-base font-bold text-gray-800 truncate">Tiêu đề video</h3>
+            <p id="inspectTranscript" class="text-xs text-gray-600 line-clamp-3 bg-gray-50 p-2.5 rounded border border-gray-200">
+              Trích xuất âm thanh/phụ đề...
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 Footer Navigation -->
+      <div class="flex justify-between items-center pt-2">
+        <button onclick="goToStep(1)" class="rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-5 py-2.5 text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </button>
+        <button onclick="validateAndGoStep3()" id="btnGoStep3" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 text-sm font-semibold shadow-md transition flex items-center gap-2">
+          Tiếp tục: Soạn Lời Bình <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== STEP 3: LỜI BÌNH VIDEO (COMMENTARY) ==================== -->
+    <div id="step-3" class="step-view hidden space-y-6">
+      <div class="mb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Bước 3: Lời Bình Video (Commentary Bám Cảnh)</h2>
+        <p class="mt-1 text-sm text-gray-600">
+          Kịch bản được viết bám sát 100% tình huống trong video nguồn. Tự động chia cặp thoại reaction đối đáp cuốn hút.
+        </p>
+      </div>
+
+      <!-- Commentary Configuration Bar -->
+      <div class="rounded-xl bg-gray-50 p-5 border border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">🔥 Hook Banner (Chữ Vàng Nổi Bật)</label>
+          <input type="text" id="scriptHookBanner" placeholder="VD: NEVER DO THIS 💀" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">🎤 Giọng Q (Người Hỏi / Bất Ngờ)</label>
+          <select id="scriptVoiceQ" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-blue-500">
+            <option value="en-US-BrianNeural">Brian (Nam Trầm Năng Lượng)</option>
+            <option value="en-US-GuyNeural">Guy (Nam Trẻ Hào Hứng)</option>
+            <option value="en-US-JennyNeural">Jenny (Nữ Tự Nhiên)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">🎙️ Giọng A (Chuyên Gia Phân Tích)</label>
+          <select id="scriptVoiceA" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 outline-none focus:border-blue-500">
+            <option value="en-US-ChristopherNeural" selected>Christopher (Nam Hóm Hỉnh, Thuyết Phục)</option>
+            <option value="en-US-EricNeural">Eric (Nam Điềm Đạm Chuyên Sâu)</option>
+            <option value="en-US-AriaNeural">Aria (Nữ Tự Tin)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Dialogue Scenes Panel -->
+      <div class="rounded-xl bg-gray-50 p-5 border border-gray-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <i class="fa-solid fa-comments text-blue-600"></i> Các Phân Cảnh Lời Thoại (Bám sát video)
+          </label>
+          <div class="flex items-center gap-2">
+            <button onclick="generateScriptAI()" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded border border-blue-200">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> AI Viết Lại
+            </button>
+            <button onclick="addSceneRow()" class="text-xs font-semibold text-gray-600 hover:text-gray-800 flex items-center gap-1 bg-white px-2.5 py-1 rounded border border-gray-300">
+              <i class="fa-solid fa-plus"></i> Thêm cảnh
+            </button>
+          </div>
+        </div>
+
+        <div id="scenesContainer" class="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scroll">
+          <!-- Scene cards injected via JS -->
+        </div>
+      </div>
+
+      <!-- Step 3 Footer Navigation -->
+      <div class="flex justify-between items-center pt-2">
+        <button onclick="goToStep(2)" class="rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-5 py-2.5 text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </button>
+        <button onclick="goToStep(4)" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 text-sm font-semibold shadow-md transition flex items-center gap-2">
+          Tiếp tục: Sản Xuất & Lên Lịch <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== STEP 4: SẢN XUẤT & LÊN LỊCH PLANLY ==================== -->
+    <div id="step-4" class="step-view hidden space-y-6">
+      <div class="mb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">Bước 4: Sản Xuất Video & Lên Lịch Planly</h2>
+        <p class="mt-1 text-sm text-gray-600">
+          Render video 9:16 chuẩn viral (tách thoại, phụ đề Karaoke neon, mix âm thanh ducking) và tự động xếp lịch Planly.
+        </p>
+      </div>
+
+      <!-- Summary Card -->
+      <div class="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-5 border border-blue-200 space-y-3">
+        <h3 class="text-sm font-bold text-blue-900 uppercase tracking-wider flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-blue-600"></i> Tổng Quan Quy Trình
+        </h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div class="bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+            <span class="text-gray-500 block">Kênh nhận bài:</span>
+            <b id="sumChannels" class="text-blue-600 font-bold text-sm">0 kênh</b>
+          </div>
+          <div class="bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+            <span class="text-gray-500 block">Thời lượng video:</span>
+            <b id="sumDuration" class="text-emerald-600 font-bold text-sm">~35 giây</b>
+          </div>
+          <div class="bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+            <span class="text-gray-500 block">Tần suất đăng:</span>
+            <b class="text-purple-600 font-bold text-sm">6 video/kênh/ngày</b>
+          </div>
+          <div class="bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+            <span class="text-gray-500 block">Giờ đăng chuẩn:</span>
+            <b class="text-gray-800 font-bold text-sm">09:00 Sáng (+7)</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scheduling Rules Box -->
+      <div class="rounded-xl bg-gray-50 p-5 border border-gray-200 space-y-3">
+        <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <i class="fa-solid fa-clock text-blue-600"></i> Cấu hình lên lịch Planly tự động
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div>
+            <label class="block text-gray-600 mb-1 font-medium">Chế độ đăng cho các kênh:</label>
+            <select id="scheduleMode" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs text-gray-800 outline-none focus:border-blue-500">
+              <option value="same_time">Đăng cùng lúc (Tất cả kênh lúc 09:00 AM)</option>
+              <option value="staggered">Đăng so le (Cách nhau 30 phút)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-600 mb-1 font-medium">Quy tắc phân bổ số lượng:</label>
+            <div class="p-2 bg-white rounded border border-gray-200 text-gray-600">
+              Tối đa 6 video/kênh/ngày. Nếu vượt quá, tự động xếp sang 09:00 sáng ngày hôm sau.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
+        <button onclick="startProduction(true)" id="btnRenderAndPublish" class="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-6 text-sm font-bold shadow-lg transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-rocket"></i> Bắt Đầu Render & Tự Động Lên Lịch Planly
+        </button>
+        <button onclick="startProduction(false)" id="btnRenderOnly" class="rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 py-3.5 px-6 text-sm font-semibold transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-download"></i> Chỉ Render Video (Lưu Output)
+        </button>
+      </div>
+
+      <!-- Real-time Terminal Log Console -->
+      <div class="rounded-xl bg-slate-900 text-slate-100 p-5 shadow-inner space-y-2">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <span class="text-xs font-mono text-emerald-400 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            LIVE LOG CONSOLE
+          </span>
+          <span id="jobStatusText" class="text-[11px] font-mono text-slate-400">Sẵn sàng</span>
+        </div>
+        <div id="logConsole" class="h-44 overflow-y-auto font-mono text-xs space-y-1 text-slate-300 custom-scroll pr-2">
+          <div class="text-slate-500">[Hệ thống sẵn sàng cho tác vụ sản xuất video và lên lịch Planly]</div>
+        </div>
+      </div>
+
+      <!-- Step 4 Footer Back Button -->
+      <div class="flex justify-start">
+        <button onclick="goToStep(3)" class="rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-5 py-2.5 text-sm font-medium transition flex items-center gap-2">
+          <i class="fa-solid fa-arrow-left"></i> Quay lại chỉnh kịch bản
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-xs text-gray-400 py-2">
+    Auto Make Money Desktop Studio • Version 1.0.0 • Connected with Planly API
+  </footer>
+
+  <!-- ==================== MODAL: KHO VIDEO & LỊCH ĐÃ XẾP ==================== -->
+  <div id="libraryModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-gray-100 space-y-5 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-film text-purple-600"></i> Kho Video Đã Tạo & Lịch Đã Xếp
+        </h3>
+        <button onclick="closeModal('libraryModal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div id="libraryList" class="flex-1 overflow-y-auto space-y-3 custom-scroll pr-1">
+        <div class="text-center py-10 text-sm text-gray-400">Đang tải danh sách video...</div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-gray-100">
+        <button onclick="closeModal('libraryModal')" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: THÊM TÀI KHOẢN PLANLY ==================== -->
+  <div id="addAccountModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-blue-600"></i> Thêm Tài Khoản Planly
+        </h3>
+        <button onclick="closeModal('addAccountModal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">Tên tài khoản gợi nhớ:</label>
+          <input type="text" id="modalAccName" placeholder="VD: Planly Chính (15 kênh)" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">Bearer Token:</label>
+          <input type="password" id="modalAccToken" placeholder="Nhập token Planly..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">Team ID:</label>
+          <input type="text" id="modalAccTeamId" placeholder="VD: 54109..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+        <button onclick="closeModal('addAccountModal')" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
+          Hủy
+        </button>
+        <button onclick="saveNewAccount()" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-semibold shadow-xs">
+          Lưu & Đồng Bộ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CÀI ĐẶT API ==================== -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 space-y-4">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-gray-700"></i> Cài Đặt Hệ Thống & API Keys
+        </h3>
+        <button onclick="closeModal('settingsModal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">Google Gemini API Key (Viết kịch bản theo video):</label>
+          <input type="password" id="cfgGeminiKey" placeholder="AIzaSy..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">Pexels API Key (Kho B-roll 9:16 bổ trợ):</label>
+          <input type="password" id="cfgPexelsKey" placeholder="API key Pexels..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">Múi giờ đăng (Timezone Offset):</label>
+          <input type="number" id="cfgTzOffset" value="7" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+        <button onclick="closeModal('settingsModal')" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
+          Đóng
+        </button>
+        <button onclick="saveSettings()" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-semibold shadow-xs">
+          Lưu Cài Đặt
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC JAVASCRIPT -->
+  <script>
+    // State management
+    let currentStep = 1;
+    let accountsData = [];
+    let currentChannels = [];
+    let selectedChannelIds = new Set();
+    let inspectedVideo = null;
+    let currentScript = null;
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadAccounts();
+      loadConfigSettings();
+      startPollingLogs();
+    });
+
+    // Alert banner helper
+    function showAlert(msg, type = 'info') {
+      const box = document.getElementById('alertBox');
+      const text = document.getElementById('alertMsg');
+      const icon = document.getElementById('alertIcon');
+      box.className = 'mb-6 p-4 rounded-xl text-sm flex items-start gap-3 transition ' + 
+        (type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 
+         type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 
+         'bg-blue-50 text-blue-700 border border-blue-200');
+      icon.className = 'mt-0.5 fa-solid ' + 
+        (type === 'error' ? 'fa-triangle-exclamation' : type === 'success' ? 'fa-circle-check' : 'fa-circle-info');
+      text.textContent = msg;
+      box.classList.remove('hidden');
+    }
+
+    function hideAlert() {
+      document.getElementById('alertBox').classList.add('hidden');
+    }
+
+    // Navigation Stepper
+    function goToStep(step) {
+      currentStep = step;
+      document.querySelectorAll('.step-view').forEach(el => el.classList.add('hidden'));
+      const target = document.getElementById(`step-${step}`);
+      if (target) target.classList.remove('hidden');
+
+      // Update Stepper badges and connecting lines
+      for (let i = 1; i <= 4; i++) {
+        const badge = document.getElementById(`step-badge-${i}`);
+        if (i < step) {
+          badge.className = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition bg-blue-600 text-white shadow-sm';
+          badge.innerHTML = '✓';
+        } else if (i === step) {
+          badge.className = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition bg-blue-600 text-white shadow-md ring-4 ring-blue-100';
+          badge.innerHTML = i;
+        } else {
+          badge.className = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition bg-gray-200 text-gray-500 shadow-xs';
+          badge.innerHTML = i;
+        }
+
+        if (i < 4) {
+          const line = document.getElementById(`step-line-${i}`);
+          if (line) {
+            line.className = `h-1 w-16 sm:w-24 transition mb-4 sm:mb-5 ${i < step ? 'bg-blue-600' : 'bg-gray-200'}`;
+          }
+        }
+      }
+
+      // Update Step 4 summaries
+      if (step === 4) {
+        document.getElementById('sumChannels').textContent = `${selectedChannelIds.size} kênh`;
+        const dur = inspectedVideo ? inspectedVideo.duration : 35;
+        document.getElementById('sumDuration').textContent = `~${dur.toFixed(1)} giây (${dur >= 60 ? 'Kiếm tiền' : 'Tăng trưởng'})`;
+      }
+    }
+
+    // Modal helpers
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+      if (id === 'libraryModal') loadLibraryVideos();
+    }
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    }
+
+    async function openOutputFolder() {
+      try {
+        const res = await fetch('/api/open-output-folder', { method: 'POST' });
+        const d = await res.json();
+        if (d.ok) {
+          showAlert('Đã mở thư mục video trên máy (D:\\auto make money\\output)', 'success');
+        }
+      } catch (e) {
+        showAlert('Không thể mở thư mục: ' + e.message, 'error');
+      }
+    }
+
+    // Step 1: Load and manage accounts
+    async function loadAccounts() {
+      try {
+        const res = await fetch('/api/accounts');
+        const data = await res.json();
+        accountsData = data.accounts || [];
+        const select = document.getElementById('accountSelect');
+        select.innerHTML = '';
+        if (accountsData.length === 0) {
+          select.innerHTML = '<option value="">-- Chưa có tài khoản Planly nào --</option>';
+          return;
+        }
+        accountsData.forEach(acc => {
+          const opt = document.createElement('option');
+          opt.value = acc.id;
+          opt.textContent = `${acc.name} (${(acc.channels || []).length} kênh)`;
+          select.appendChild(opt);
+        });
+        onAccountChange();
+      } catch (err) {
+        console.error("Error loading accounts:", err);
+      }
+    }
+
+    function onAccountChange() {
+      const select = document.getElementById('accountSelect');
+      const acc = accountsData.find(a => a.id === select.value);
+      if (acc) {
+        currentChannels = acc.channels || [];
+        // Default select all channels
+        selectedChannelIds = new Set(currentChannels.map(c => c.id));
+        renderChannelsList();
+      } else {
+        currentChannels = [];
+        selectedChannelIds.clear();
+        renderChannelsList();
+      }
+    }
+
+    function renderChannelsList() {
+      const container = document.getElementById('channelsContainer');
+      const countEl = document.getElementById('selectedChannelCount');
+      countEl.textContent = `${selectedChannelIds.size} đã chọn`;
+
+      const q = document.getElementById('channelSearch').value.trim().toLowerCase();
+      const filtered = q ? currentChannels.filter(c => (c.name || '').toLowerCase().includes(q) || (c.platform || '').toLowerCase().includes(q)) : currentChannels;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-sm text-gray-400">Không tìm thấy kênh nào.</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      filtered.forEach(ch => {
+        const isChecked = selectedChannelIds.has(ch.id);
+        const tier = ch.tier || 'growth'; // 'monetized' or 'growth'
+        const isMonetized = tier === 'monetized';
+
+        const row = document.createElement('div');
+        row.className = `flex items-center justify-between p-3 rounded-lg border transition ${isChecked ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200 bg-white hover:border-gray-300'}`;
+
+        row.innerHTML = `
+          <label class="flex items-center gap-3 cursor-pointer flex-1 min-w-0 mr-3">
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleChannel('${ch.id}')" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <div class="truncate">
+              <span class="block text-sm font-semibold text-gray-800 truncate">${ch.name}</span>
+              <span class="block text-[11px] text-gray-500 uppercase">${ch.platform || 'TikTok'} • ID: ${ch.id}</span>
+            </div>
+          </label>
+          <button onclick="toggleChannelTier('${ch.id}')" title="Nhấp để chuyển đổi điều kiện thời lượng" class="px-2.5 py-1 rounded text-[11px] font-bold transition flex items-center gap-1.5 shrink-0 ${isMonetized ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}">
+            <i class="fa-solid ${isMonetized ? 'fa-coins' : 'fa-chart-line'}"></i>
+            ${isMonetized ? 'Kiếm Tiền (&gt;60s)' : 'Tăng Trưởng (&lt;45s)'}
+          </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function toggleChannel(id) {
+      if (selectedChannelIds.has(id)) selectedChannelIds.delete(id);
+      else selectedChannelIds.add(id);
+      renderChannelsList();
+    }
+
+    function toggleSelectAllChannels() {
+      if (selectedChannelIds.size === currentChannels.length) {
+        selectedChannelIds.clear();
+      } else {
+        selectedChannelIds = new Set(currentChannels.map(c => c.id));
+      }
+      renderChannelsList();
+    }
+
+    function filterChannels() {
+      renderChannelsList();
+    }
+
+    async function toggleChannelTier(channelId) {
+      try {
+        const res = await fetch('/api/channels/toggle_tier', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ channel_id: channelId })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const target = currentChannels.find(c => c.id === channelId);
+          if (target) target.tier = data.tier;
+          renderChannelsList();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function syncCurrentAccount() {
+      const select = document.getElementById('accountSelect');
+      if (!select.value) return;
+      showAlert("Đang đồng bộ danh sách kênh từ Planly...", "info");
+      try {
+        const res = await fetch('/api/accounts/sync', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ id: select.value })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showAlert(`Đồng bộ thành công ${data.channels.length} kênh từ Planly!`, "success");
+          await loadAccounts();
+        } else {
+          showAlert(`Lỗi đồng bộ: ${data.message}`, "error");
+        }
+      } catch (e) {
+        showAlert(`Lỗi kết nối máy chủ: ${e.message}`, "error");
+      }
+    }
+
+    function validateAndGoStep2() {
+      if (selectedChannelIds.size === 0) {
+        showAlert("Vui lòng chọn ít nhất 1 kênh để phân phối video!", "error");
+        return;
+      }
+      hideAlert();
+      goToStep(2);
+    }
+
+    // Step 2: Source Video Inspection
+    function setSampleVideo(url) {
+      document.getElementById('videoUrlInput').value = url;
+      inspectSourceVideo();
+    }
+
+    async function inspectSourceVideo() {
+      const url = document.getElementById('videoUrlInput').value.trim();
+      if (!url) {
+        showAlert("Vui lòng nhập link video YouTube / TikTok hoặc đường dẫn file!", "error");
+        return;
+      }
+      const btn = document.getElementById('btnInspect');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Đang tải...';
+      showAlert("Đang phân tích và tải dữ liệu video nguồn...", "info");
+
+      try {
+        const res = await fetch('/api/commentary/inspect', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            url: url,
+            target_tier: 'growth',
+            cut_start: parseFloat(document.getElementById('cutStartInput').value || 0),
+            cut_duration: parseFloat(document.getElementById('cutDurationInput').value || 65)
+          })
+        });
+        const data = await res.json();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Kiểm Tra & Tải Video';
+
+        if (data.ok && data.video) {
+          inspectedVideo = data.video;
+          showAlert("Đã tải video nguồn thành công!", "success");
+
+          // Display Inspect Card
+          document.getElementById('videoInspectCard').classList.remove('hidden');
+          document.getElementById('inspectTitle').textContent = inspectedVideo.title;
+          document.getElementById('inspectDurationBadge').textContent = `${inspectedVideo.duration.toFixed(1)}s`;
+          document.getElementById('inspectTranscript').textContent = inspectedVideo.transcript || inspectedVideo.description || "Video footage sẵn sàng làm lời bình trực tiếp.";
+
+          const tierBadge = document.getElementById('inspectTierBadge');
+          if (inspectedVideo.duration >= 60) {
+            tierBadge.className = 'text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800';
+            tierBadge.textContent = `Kiếm Tiền (${inspectedVideo.duration.toFixed(1)}s)`;
+          } else {
+            tierBadge.className = 'text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800';
+            tierBadge.textContent = `Tăng Trưởng (${inspectedVideo.duration.toFixed(1)}s)`;
+          }
+
+          if (inspectedVideo.duration > 90) {
+            document.getElementById('cutSettingsPanel').classList.remove('hidden');
+          }
+        } else {
+          showAlert(`Không thể phân tích video: ${data.message}`, "error");
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Kiểm Tra & Tải Video';
+        showAlert(`Lỗi mạng: ${err.message}`, "error");
+      }
+    }
+
+    async function validateAndGoStep3() {
+      if (!inspectedVideo) {
+        showAlert("Vui lòng tải hoặc kiểm tra video nguồn trước!", "error");
+        return;
+      }
+      hideAlert();
+      await generateScriptAI();
+      goToStep(3);
+    }
+
+    // Step 3: Script & Dialogue Generation
+    async function generateScriptAI() {
+      if (!inspectedVideo) return;
+      showAlert("Đang viết kịch bản commentary bám cảnh...", "info");
+      try {
+        const res = await fetch('/api/commentary/generate_script', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            video_info: inspectedVideo,
+            voice_q: document.getElementById('scriptVoiceQ').value,
+            voice_a: document.getElementById('scriptVoiceA').value,
+            language: 'en'
+          })
+        });
+        const data = await res.json();
+        if (data.ok && data.script) {
+          currentScript = data.script;
+          document.getElementById('scriptHookBanner').value = currentScript.hook_banner || 'WATCH CAREFULLY 😱';
+          renderScenes();
+          showAlert("Đã hoàn thiện kịch bản commentary bám sát cảnh video!", "success");
+        }
+      } catch (e) {
+        showAlert(`Lỗi tạo kịch bản: ${e.message}`, "error");
+      }
+    }
+
+    function renderScenes() {
+      const container = document.getElementById('scenesContainer');
+      container.innerHTML = '';
+      if (!currentScript || !currentScript.scenes) return;
+
+      currentScript.scenes.forEach((sc, idx) => {
+        const isQ = sc.role === 'q';
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-lg border text-xs space-y-1.5 ${isQ ? 'border-blue-200 bg-blue-50/70' : 'border-purple-200 bg-purple-50/70'}`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between font-semibold">
+            <span class="flex items-center gap-1.5 ${isQ ? 'text-blue-700' : 'text-purple-700'}">
+              <i class="fa-solid ${isQ ? 'fa-user' : 'fa-robot'}"></i>
+              Cảnh #${idx + 1} - ${isQ ? 'Người Hỏi (Reaction)' : 'Chuyên Gia (Analyst)'}
+            </span>
+            <button onclick="removeSceneRow(${idx})" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <textarea onchange="updateSceneText(${idx}, this.value)" rows="2" class="w-full rounded-md border border-gray-300 bg-white p-2 text-xs text-gray-800 outline-none focus:border-blue-500">${sc.text}</textarea>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateSceneText(idx, val) {
+      if (currentScript && currentScript.scenes[idx]) {
+        currentScript.scenes[idx].text = val;
+      }
+    }
+
+    function removeSceneRow(idx) {
+      if (currentScript && currentScript.scenes) {
+        currentScript.scenes.splice(idx, 1);
+        renderScenes();
+      }
+    }
+
+    function addSceneRow() {
+      if (!currentScript) currentScript = { scenes: [] };
+      const lastRole = currentScript.scenes.length > 0 ? currentScript.scenes[currentScript.scenes.length - 1].role : 'a';
+      const newRole = lastRole === 'q' ? 'a' : 'q';
+      currentScript.scenes.push({ role: newRole, text: "Wait, look closely at what happened right here!" });
+      renderScenes();
+    }
+
+    // Step 4: Render & Publishing
+    async function startProduction(autoPublish) {
+      if (!inspectedVideo) {
+        showAlert("Chưa có video nguồn!", "error");
+        return;
+      }
+      if (!currentScript) {
+        showAlert("Chưa có kịch bản lời bình!", "error");
+        return;
+      }
+
+      // Sync latest values from inputs
+      currentScript.hook_banner = document.getElementById('scriptHookBanner').value.trim();
+      currentScript.voice_q = document.getElementById('scriptVoiceQ').value;
+      currentScript.voice_a = document.getElementById('scriptVoiceA').value;
+
+      const accId = document.getElementById('accountSelect').value;
+      const channelIds = Array.from(selectedChannelIds);
+
+      const btn1 = document.getElementById('btnRenderAndPublish');
+      const btn2 = document.getElementById('btnRenderOnly');
+      btn1.disabled = true;
+      btn2.disabled = true;
+
+      showAlert("Tiến trình sản xuất đã bắt đầu trong nền. Bạn có thể theo dõi live log bên dưới!", "info");
+
+      try {
+        const res = await fetch('/api/commentary/render', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            video_info: inspectedVideo,
+            script: currentScript,
+            auto_publish: autoPublish,
+            account_id: accId,
+            channel_ids: channelIds,
+            schedule_time: "09:00"
+          })
+        });
+        const data = await res.json();
+        btn1.disabled = false;
+        btn2.disabled = false;
+
+        if (data.ok) {
+          showAlert("Tác vụ render đã được khởi động! Theo dõi tiến trình bên dưới.", "success");
+        } else {
+          showAlert(`Không thể bắt đầu: ${data.message}`, "error");
+        }
+      } catch (err) {
+        btn1.disabled = false;
+        btn2.disabled = false;
+        showAlert(`Lỗi kết nối: ${err.message}`, "error");
+      }
+    }
+
+    // Polling real-time logs and job status
+    function startPollingLogs() {
+      setInterval(async () => {
+        try {
+          const res = await fetch('/api/status');
+          const data = await res.json();
+          document.getElementById('jobStatusText').textContent = data.job_message || 'Sẵn sàng';
+          
+          const consoleEl = document.getElementById('logConsole');
+          if (data.logs && data.logs.length > 0) {
+            consoleEl.innerHTML = data.logs.map(line => `<div>${line}</div>`).join('');
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+          }
+        } catch (e) {
+          // Keep silent on network blip
+        }
+      }, 2500);
+    }
+
+    // Library Modal
+    async function loadLibraryVideos() {
+      const container = document.getElementById('libraryList');
+      container.innerHTML = '<div class="text-center py-6 text-sm text-gray-400">Đang tải danh sách video...</div>';
+      try {
+        const res = await fetch('/api/videos');
+        const data = await res.json();
+        const vids = data.videos || [];
+        if (vids.length === 0) {
+          container.innerHTML = '<div class="text-center py-10 text-sm text-gray-500">Chưa có video nào trong thư mục output.</div>';
+          return;
+        }
+
+        container.innerHTML = vids.map(v => `
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-white transition text-xs">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-10 h-10 rounded bg-blue-600 text-white flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-play"></i>
+              </div>
+              <div class="truncate">
+                <span class="block font-semibold text-gray-800 truncate">${v.title || v.filename}</span>
+                <span class="block text-gray-500">${v.duration}s • ${v.monetizable ? 'Kiếm tiền (>60s)' : 'Tăng trưởng'}</span>
+              </div>
+            </div>
+            <a href="/api/video/${v.filename}" target="_blank" class="px-3 py-1.5 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium shrink-0 ml-3">
+              Xem Video
+            </a>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = '<div class="text-center py-6 text-sm text-red-500">Lỗi khi tải danh sách video.</div>';
+      }
+    }
+
+    // Settings Modal
+    async function loadConfigSettings() {
+      try {
+        const res = await fetch('/api/config');
+        const cfg = await res.json();
+        document.getElementById('cfgGeminiKey').value = cfg.gemini_api_key || '';
+        document.getElementById('cfgPexelsKey').value = cfg.pexels_api_key || '';
+        document.getElementById('cfgTzOffset').value = (cfg.publishing && cfg.publishing.timezone_offset) || 7;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function saveSettings() {
+      const gKey = document.getElementById('cfgGeminiKey').value.trim();
+      const pKey = document.getElementById('cfgPexelsKey').value.trim();
+      const tz = parseInt(document.getElementById('cfgTzOffset').value || 7);
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            gemini_api_key: gKey,
+            pexels_api_key: pKey,
+            publishing: { timezone_offset: tz }
+          })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          closeModal('settingsModal');
+          showAlert("Đã lưu cài đặt API thành công!", "success");
+        }
+      } catch (e) {
+        showAlert(`Lỗi lưu cài đặt: ${e.message}`, "error");
+      }
+    }
+
+    // Add Account Modal
+    async function saveNewAccount() {
+      const name = document.getElementById('modalAccName').value.trim();
+      const token = document.getElementById('modalAccToken').value.trim();
+      const teamId = document.getElementById('modalAccTeamId').value.trim();
+
+      if (!name || !token) {
+        showAlert("Vui lòng nhập tên tài khoản và Bearer Token!", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/accounts/save', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ name, token, team_id: teamId })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          closeModal('addAccountModal');
+          showAlert(`Đã lưu tài khoản ${name}! Đang đồng bộ kênh...`, "success");
+          await loadAccounts();
+        }
+      } catch (e) {
+        showAlert(`Lỗi lưu tài khoản: ${e.message}`, "error");
+      }
+    }
+  </script>
+</body>
+</html>

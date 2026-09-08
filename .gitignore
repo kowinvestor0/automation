@@ -1,0 +1,51 @@
+# ====================================================================
+# AUTO MAKE MONEY - SECURITY & GITIGNORE
+# TUYET DOI KHONG DAY API KEYS HOAC TAI KHOAN LEN GITHUB!
+# ====================================================================
+
+# Secrets & Configs with sensitive credentials
+config.json
+.env
+.env.*
+*.secret
+accounts.json
+accounts.db
+data/
+
+# Cache & Downloaded clips
+cache/
+_temp/
+_render_tmp/
+*.tmp
+
+# Rendered output videos & metadata
+output/
+videos/
+*.mp4
+*.m4a
+*.ass
+*.meta.json
+
+# Python bytecode & environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+
+# OS specific
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Build artifacts & Executables
+dist/
+build/
+*.exe
+*.spec.bak
+
+# Logs
+logs/
+*.log
