@@ -162,10 +162,10 @@ class PlanlyClient:
         all_groups = []
         seen_ids = set()
         next_token = None
-        for _ in range(50):  # Safety bound
+        for _ in range(50):  # Safety bound (up to 2,500 posts)
             body = {"teamId": self.team_id, "status": "scheduled"}
             if next_token:
-                body["next"] = next_token
+                body["pagination"] = {"cursor": next_token}
             res = self._post("/schedule-groups/list", body)
             data = res.get("data") or {}
             rows = data.get("rows") or []

@@ -24,15 +24,13 @@ def main():
     print("KIEM TRA TRANG THAI HE THONG AUTO MAKE MONEY")
     print("====================================================================")
 
-    import subprocess
+    from core.background_worker import is_pid_alive
     is_running = False
     lock = ROOT_DIR / "data" / "worker.lock"
     if lock.exists():
         try:
-            pid = lock.read_text(encoding="utf-8").strip()
-            cmd = ["tasklist", "/FI", f"PID eq {pid}", "/NH"]
-            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            if "No tasks are running" not in res.stdout and str(pid) in res.stdout:
+            pid = int(lock.read_text(encoding="utf-8").strip())
+            if is_pid_alive(pid):
                 is_running = True
                 print(f"Background Worker: ĐANG CHẠY NGẦM 24/7 (PID: {pid})")
             else:

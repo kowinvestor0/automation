@@ -1,3 +1,3 @@
 Set WshShell = CreateObject("WScript.Shell")
 WshShell.CurrentDirectory = "D:\auto make money"
-WshShell.Run """C:\Users\H\AppData\Local\Programs\Python\Python312\pythonw.exe"" ""D:\auto make money\core\background_worker.py""", 0, False
+WshShell.Run "powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command ""Start-Process python.exe -ArgumentList 'core\background_worker.py' -WorkingDirectory 'D:\auto make money'""", 0, False

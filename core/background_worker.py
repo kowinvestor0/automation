@@ -51,23 +51,41 @@ LOG_FILE = LOGS_DIR / "background_worker.log"
 LOCK_FILE = DATA_DIR / "worker.lock"
 STOP_SIGNAL_FILE = DATA_DIR / "worker.stop"
 
-# Reconfigure stdout/stderr for utf-8 if running in console
-if sys.stdout is not None:
+# Crucial for pythonw.exe: redirect None stdout/stderr to files so print() and yt_dlp never crash
+import io
+if sys.stdout is None:
+    try:
+        sys.stdout = open(LOGS_DIR / "worker_stdout.log", "a", encoding="utf-8", errors="replace", buffering=1)
+    except Exception:
+        sys.stdout = io.StringIO()
+else:
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
-if sys.stderr is not None:
+
+if sys.stderr is None:
+    try:
+        sys.stderr = open(LOGS_DIR / "worker_stderr.log", "a", encoding="utf-8", errors="replace", buffering=1)
+    except Exception:
+        sys.stderr = io.StringIO()
+else:
     try:
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
 
+if sys.stdin is None:
+    sys.stdin = io.StringIO()
+
 log_handlers = [
     logging.FileHandler(str(LOG_FILE), encoding="utf-8")
 ]
 if sys.stdout is not None:
-    log_handlers.append(logging.StreamHandler(sys.stdout))
+    try:
+        log_handlers.append(logging.StreamHandler(sys.stdout))
+    except Exception:
+        pass
 
 logging.basicConfig(
     level=logging.INFO,
@@ -89,15 +107,33 @@ def clear_stop_signal() -> None:
             pass
 
 
+import ctypes
+
+def is_pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, pid)
+        if not handle:
+            return kernel32.GetLastError() == 5  # ERROR_ACCESS_DENIED
+        try:
+            exit_code = ctypes.c_ulong()
+            if kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                return exit_code.value == 259  # STILL_ACTIVE
+            return False
+        finally:
+            kernel32.CloseHandle(handle)
+    except Exception:
+        return False
+
+
 def acquire_lock() -> bool:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if LOCK_FILE.exists():
         try:
             pid = int(LOCK_FILE.read_text().strip())
-            # Native Windows check if process is still alive without psutil
-            cmd = ["tasklist", "/FI", f"PID eq {pid}", "/NH"]
-            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            if "No tasks are running" not in res.stdout and str(pid) in res.stdout:
+            if is_pid_alive(pid):
                 return False
         except Exception:
             pass
@@ -344,14 +380,23 @@ def main():
 
     try:
         while not is_stop_requested():
-            scheduled = run_worker_cycle(lookahead_days=3, quota_per_day=6)
-            if is_stop_requested():
-                break
+            try:
+                scheduled = run_worker_cycle(lookahead_days=7, quota_per_day=6)
+                if is_stop_requested():
+                    break
 
-            if scheduled > 0:
-                logger.info(f"🎉 Hoàn thành chu kỳ sản xuất. Đã xếp lịch thêm {scheduled} video độc quyền!")
-            else:
-                logger.info("✅ Tất cả các kênh đã có đủ 6 video/ngày cho 3 ngày tới.")
+                if scheduled > 0:
+                    logger.info(f"🎉 Hoàn thành chu kỳ sản xuất. Đã xếp lịch thêm {scheduled} video độc quyền!")
+                else:
+                    logger.info("✅ Tất cả các kênh đã có đủ 6 video/ngày cho 7 ngày tới.")
+            except Exception as cycle_err:
+                logger.error(f"⚠️ Lỗi trong chu kỳ worker: {cycle_err}", exc_info=True)
+                logger.info("🔄 Tự động thử lại sau 30 giây...")
+                for _ in range(3):
+                    if is_stop_requested():
+                        break
+                    time.sleep(10)
+                continue
 
             # Sleep 15 minutes between health checks
             logger.info("💤 Chờ 15 phút trước chu kỳ kiểm tra tiếp theo...")
