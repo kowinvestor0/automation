@@ -130,7 +130,9 @@ def generate_commentary_script(
     title = video_info.get("title", "Viral Clip")
     desc = video_info.get("description", "")
     transcript = video_info.get("transcript", "")
-    dur = float(video_info.get("duration", 30.0))
+    # Enforce minimum 62 seconds for TikTok Creator Rewards monetization
+    raw_dur = float(video_info.get("duration", 62.0))
+    dur = max(62.0, min(90.0, raw_dur if raw_dur >= 60.0 else 64.0))
     full_context = f"{title} {desc} {transcript}".lower()
 
     clean_title = re.sub(r"[^\w\s-]", "", title).strip()[:45]
@@ -141,7 +143,7 @@ def generate_commentary_script(
         try:
             import requests
             word_target = int(dur * 2.3)
-            scene_target = max(2, min(10, int(dur / 8.0)))
+            scene_target = max(6, min(10, int(dur / 8.0)))
             prompt = f"""You are an elite viral video commentary creator (like Adam Rose or Daily Dose of Internet).
 Write an electrifying, witty English commentary reacting directly to this video:
 Video Title: {title}

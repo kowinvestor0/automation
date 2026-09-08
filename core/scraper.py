@@ -20,7 +20,7 @@ class VideoScraper:
     def _ydl_base_opts(self, out_template: str, download: bool = True) -> Dict[str, Any]:
         return {
             "outtmpl": out_template,
-            "format": "bestvideo[height<=1920][ext=mp4]+bestaudio[ext=m4a]/best[height<=1920][ext=mp4]/best",
+            "format": "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]/best",
             "merge_output_format": "mp4",
             "quiet": True,
             "no_warnings": True,
@@ -54,8 +54,8 @@ class VideoScraper:
 
                 if not vid_id:
                     continue
-                # Accept clips from 20s to 360s
-                if dur is not None and (dur < 20 or dur > 360):
+                # Accept clips from 25s to 180s (optimal for 60s+ TikTok commentary)
+                if dur is not None and (dur < 25 or dur > 180):
                     continue
 
                 candidates.append({

@@ -9,11 +9,12 @@ echo  📌 Tu dong tim Shorts tren mang, binh luan >60s, xep lich cho tat ca nga
 echo  📌 Chay ngam khong can mo may / khong can giu cua so console
 echo ====================================================================
 
-start "" pythonw core\background_worker.py
+python "%~dp0core\launch_daemon.py"
 
 echo.
 echo [OK] Tien trinh chay ngam da duoc kich hoat thanh cong!
 echo Nhat ky hoat dong: logs\background_worker.log
 echo De dung tien trinh, chay file: stop_background.bat
+echo De kiem tra trang thai, chay file: check_status.bat
 echo.
-timeout /t 5 >nul
+ping 127.0.0.1 -n 3 >nul

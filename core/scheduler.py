@@ -59,7 +59,11 @@ def get_us_eastern_tz() -> dt.timezone:
 def load_history() -> Dict[str, Any]:
     if HISTORY_FILE.exists():
         try:
-            return json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+            data = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                data.setdefault("posted_videos", [])
+                data.setdefault("last_run", None)
+                return data
         except Exception:
             pass
     return {"posted_videos": [], "last_run": None}

@@ -14,6 +14,7 @@ import logging
 import os
 import random
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -50,13 +51,28 @@ LOG_FILE = LOGS_DIR / "background_worker.log"
 LOCK_FILE = DATA_DIR / "worker.lock"
 STOP_SIGNAL_FILE = DATA_DIR / "worker.stop"
 
+# Reconfigure stdout/stderr for utf-8 if running in console
+if sys.stdout is not None:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if sys.stderr is not None:
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+log_handlers = [
+    logging.FileHandler(str(LOG_FILE), encoding="utf-8")
+]
+if sys.stdout is not None:
+    log_handlers.append(logging.StreamHandler(sys.stdout))
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(str(LOG_FILE), encoding="utf-8"),
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=log_handlers
 )
 logger = logging.getLogger("BackgroundWorker")
 
@@ -78,9 +94,10 @@ def acquire_lock() -> bool:
     if LOCK_FILE.exists():
         try:
             pid = int(LOCK_FILE.read_text().strip())
-            # Check if process is still alive on Windows
-            import psutil
-            if psutil.pid_exists(pid):
+            # Native Windows check if process is still alive without psutil
+            cmd = ["tasklist", "/FI", f"PID eq {pid}", "/NH"]
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if str(pid) in res.stdout:
                 return False
         except Exception:
             pass
@@ -98,6 +115,7 @@ def release_lock() -> None:
 
 def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota: int = 6) -> List[str]:
     tz = get_us_eastern_tz()
+    now_utc = dt.datetime.now(dt.timezone.utc)
     slots = []
     for idx in range(quota):
         h, m = US_VIRAL_PEAK_HOURS_ET[idx % len(US_VIRAL_PEAK_HOURS_ET)]
@@ -106,7 +124,9 @@ def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota
             target_date.year, target_date.month, target_date.day,
             h, m, tzinfo=tz
         ) + dt.timedelta(minutes=jitter)
-        slots.append(slot_dt.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+        slot_utc = slot_dt.astimezone(dt.timezone.utc)
+        if slot_utc > now_utc + dt.timedelta(minutes=10):
+            slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
     return slots
 
 
@@ -164,8 +184,8 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
     schedule_counts = get_channel_scheduled_counts_by_date(client)
     total_scheduled_this_cycle = 0
 
-    # Scan through days into the future
-    for day_offset in range(1, lookahead_days + 1):
+    # Scan from today (Day 0) to lookahead days into the future
+    for day_offset in range(0, lookahead_days + 1):
         if is_stop_requested():
             logger.info("Stop signal detected. Exiting worker cycle.")
             break
@@ -181,6 +201,7 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
 
             ch_id = ch["id"]
             ch_name = ch.get("name") or ch_id
+            safe_ch_name = re.sub(r"[^\w]+", "_", str(ch_name)).strip("_")
             current_scheduled = schedule_counts.get(ch_id, {}).get(target_date_str, 0)
             needed = quota_per_day - current_scheduled
 
@@ -188,9 +209,12 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                 logger.info(f"  Kênh '{ch_name}': Đã đủ {current_scheduled}/{quota_per_day} video cho ngày {target_date_str}. Bỏ qua.")
                 continue
 
-            logger.info(f"  ⚡ Kênh '{ch_name}': Đang có {current_scheduled}/{quota_per_day} video. Cần tạo thêm {needed} video mới...")
             all_slots = build_channel_slots_for_date(target_date, channel_index=ch_idx, quota=quota_per_day)
-            missing_slots = all_slots[current_scheduled:quota_per_day]
+            missing_slots = all_slots[current_scheduled:]
+            if not missing_slots:
+                continue
+
+            logger.info(f"  ⚡ Kênh '{ch_name}': Đang có {current_scheduled}/{quota_per_day} video. Cần tạo thêm {len(missing_slots)} video mới...")
 
             for slot_idx, slot_time in enumerate(missing_slots):
                 if is_stop_requested():
@@ -215,7 +239,7 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
 
                 clean_t = re.sub(r"[^\w]+", "_", src_clip["title"][:25]).strip("_")
                 stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-                out_file = OUTPUT_DIR / f"commentary_{stamp}_{ch_name}_{slot_idx+1}_{clean_t}.mp4"
+                out_file = OUTPUT_DIR / f"commentary_{stamp}_{safe_ch_name}_{slot_idx+1}_{clean_t}.mp4"
 
                 logger.info(f"    -> Đang render video commentary độc quyền: '{src_clip['title'][:50]}' ({src_clip.get('duration', 0):.1f}s)...")
                 try:

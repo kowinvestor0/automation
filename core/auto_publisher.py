@@ -124,8 +124,9 @@ def run_auto_publisher_batch(
                 continue
 
             clean_t = re.sub(r"[^\w]+", "_", src_clip["title"][:25]).strip("_")
+            safe_ch_name = re.sub(r"[^\w]+", "_", str(ch_name)).strip("_")
             stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-            out_file = OUTPUT_DIR / f"commentary_{stamp}_{ch_name}_{slot_idx+1}_{clean_t}.mp4"
+            out_file = OUTPUT_DIR / f"commentary_{stamp}_{safe_ch_name}_{slot_idx+1}_{clean_t}.mp4"
 
             log(f"       -> Nguồn mạng độc quyền: '{src_clip['title'][:50]}' ({src_clip.get('duration', 0):.1f}s)")
 

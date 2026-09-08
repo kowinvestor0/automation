@@ -290,16 +290,16 @@ def get_next_unique_viral_clip(
         cat = item["category"]
         q = item["query"]
         candidates = scraper.search_viral_clips(q, limit=8)
-        for cand in candidates:
-            cand_id = cand.get("id")
-            if not cand_id or cand_id in used_ids:
-                continue
+        valid_candidates = [
+            c for c in candidates
+            if c.get("id") and c["id"] not in used_ids and c.get("duration", 0) >= 25.0
+        ]
+        # Prioritize >=60s clips first, then longest available
+        valid_candidates.sort(key=lambda c: (c.get("duration", 0) >= 60.0, c.get("duration", 0)), reverse=True)
 
-            # Prioritize duration >= 60s
+        for cand in valid_candidates:
+            cand_id = cand["id"]
             dur = cand.get("duration", 0)
-            if dur < 30.0:
-                continue
-
             log(f"   [InfiniteContent] Found fresh viral candidate in [{cat}]: '{cand.get('title', '')[:45]}' ({dur:.1f}s)")
             downloaded = scraper.download_clip(cand["url"])
             if downloaded and Path(downloaded.get("video_path", "")).exists():
