@@ -127,140 +127,17 @@ def generate_commentary_script(
     voice_a: str = "en-US-ChristopherNeural",
     language: str = "en"
 ) -> Dict[str, Any]:
-    title = video_info.get("title", "Viral Clip")
-    desc = video_info.get("description", "")
-    transcript = video_info.get("transcript", "")
-    # Enforce minimum 62 seconds for TikTok Creator Rewards monetization
-    raw_dur = float(video_info.get("duration", 62.0))
-    dur = max(62.0, min(90.0, raw_dur if raw_dur >= 60.0 else 64.0))
-    full_context = f"{title} {desc} {transcript}".lower()
+    """Generates an electrifying, 100% video-matched dual-voice commentary (>60s).
+    Powered by core.script_synthesizer with 22 specialized domains and Gemini API support.
+    """
+    from core.script_synthesizer import generate_intelligent_script
+    return generate_intelligent_script(
+        video_info=video_info,
+        voice_q=voice_q,
+        voice_a=voice_a,
+        language=language
+    )
 
-    clean_title = re.sub(r"[^\w\s-]", "", title).strip()[:45]
-
-    # Try Gemini if key configured
-    key = get_api_key("gemini_api_key")
-    if key and len(key) >= 20:
-        try:
-            import requests
-            word_target = int(dur * 2.3)
-            scene_target = max(6, min(10, int(dur / 8.0)))
-            prompt = f"""You are an elite viral video commentary creator (like Adam Rose or Daily Dose of Internet).
-Write an electrifying, witty English commentary reacting directly to this video:
-Video Title: {title}
-Context / Subtitles: {transcript or desc[:300]}
-Video Duration: {dur:.1f} seconds.
-
-RULES:
-1. Speak DIRECTLY about what is happening on screen in this specific clip!
-2. Match the exact duration of {dur:.1f} seconds (Total words must be approximately {word_target} words across {scene_target} dialogue scenes).
-3. Alternate between role 'q' (amazed reactor) and role 'a' (expert/witty analyst).
-4. Do NOT use generic placeholder words. Mention the exact subjects from the title/video!
-5. Output ONLY valid JSON:
-{{
-  "hook_banner": "3-4 WORDS IN ALL CAPS",
-  "scenes": [
-    {{"role": "q", "text": "..."}},
-    {{"role": "a", "text": "..."}}
-  ]
-}}"""
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
-            res = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseMimeType": "application/json"}}, timeout=20)
-            if res.status_code == 200:
-                data = res.json()
-                parsed = json.loads(data["candidates"][0]["content"]["parts"][0]["text"])
-                if parsed.get("scenes") and len(parsed["scenes"]) >= 2:
-                    return {
-                        "hook_banner": parsed.get("hook_banner", "WATCH CAREFULLY 😱"),
-                        "title": f"The Truth Behind {clean_title}",
-                        "voice_q": voice_q,
-                        "voice_a": voice_a,
-                        "scenes": parsed["scenes"],
-                        "target_duration": dur,
-                        "hashtags": ["#shorts", "#viral", "#commentary", "#breakdown", "#trending"]
-                    }
-        except Exception as e:
-            print(f"[VideoCommentary] Gemini call skipped: {e}")
-
-    # Dynamic Video-Matching Commentary Engine (Guaranteed >60s Monetization Threshold)
-    is_tiger_animal = any(w in full_context for w in ("tiger", "lion", "tree", "bear", "climb", "animal", "shark", "predator", "danger", "dog", "cat", "snake", "crocodile"))
-    is_water_nature = any(w in full_context for w in ("water", "swimming", "nuoc", "nguy hiem", "lake", "pool", "spillway", "vortex", "sinkhole", "acid", "ocean", "river", "flood"))
-    is_experiment = any(w in full_context for w in ("press", "hydraulic", "experiment", "crush", "explosion", "science", "lava", "fire", "reaction", "chemical", "shatter", "test"))
-    is_craft_satisfying = any(w in full_context for w in ("satisfying", "restoration", "restore", "craft", "wood", "metal", "lathe", "clean", "carving", "polish", "handmade"))
-
-    if is_tiger_animal:
-        hook_banner = "NEVER DO THIS 💀"
-        scenes = [
-            {"role": "q", "text": f"Watch closely right here when this person thinks climbing a tree is the best way to escape an apex predator!"},
-            {"role": "a", "text": "Are you out of your mind?! That is one of the most fatal survival mistakes anyone can ever make in the wild!"},
-            {"role": "q", "text": "Wait, can big cats and wild predators actually climb vertical trees that fast?"},
-            {"role": "a", "text": "Tigers and leopards are armed with massive five-inch retractable claws and dense muscle fiber. They can sprint straight up a thirty-foot vertical trunk in under two seconds!"},
-            {"role": "q", "text": "Look at how effortlessly it reaches the upper canopy branches right there!"},
-            {"role": "a", "text": "By climbing upward, you have completely trapped yourself high off the ground with zero escape routes left. The predator now holds all the leverage, balance, and reach."},
-            {"role": "q", "text": "What is the only proven survival tactic if you ever find yourself facing a wild predator in real life?"},
-            {"role": "a", "text": "Never turn your back and never run. Stand as tall as possible, maintain direct unblinking eye contact, make deep aggressive noise, and slowly back away step by step. Would you have survived this encounter? Leave your thoughts below and subscribe for more survival facts!"}
-        ]
-
-    elif is_water_nature:
-        hook_banner = "DO NOT SWIM HERE ⚠️"
-        scenes = [
-            {"role": "q", "text": "Can I take a quick swim right here? The water looks completely calm and peaceful on the surface!"},
-            {"role": "a", "text": "Stop right there! Back away immediately! That seemingly calm surface is concealing an extreme downward suction vortex!"},
-            {"role": "q", "text": "What makes these innocent looking pools and spillways so extraordinarily deadly?"},
-            {"role": "a", "text": "This is a giant bell-mouth spillway system. Once the drainage gates open underneath, thousands of tons of rushing water create a crushing whirlpool that drags anything down with zero escape!"},
-            {"role": "q", "text": "What about that colorful geothermal mineral lake over there in the distance?"},
-            {"role": "a", "text": "That is Lake Dallol! It is boiling toxic sulfuric acid and hyper-saline sludge. Even inhaling the chemical fumes will scorch your lungs, and touching the liquid causes immediate chemical burns!"},
-            {"role": "q", "text": "Why do so many tourists still underestimate the danger of these natural traps?"},
-            {"role": "a", "text": "People overlook hidden underwater rip currents and zero-buoyancy aeration. One tiny slip, and you are trapped fighting for your life against immense hydraulic tonnage. Would you dare swim here? Drop your reaction below and follow!"}
-        ]
-
-    elif is_experiment:
-        hook_banner = "WAIT FOR THE END 😱"
-        scenes = [
-            {"role": "q", "text": f"Look extremely closely at what they just placed under this heavy industrial hydraulic press!"},
-            {"role": "a", "text": "This machine is capable of delivering over one hundred and fifty tons of concentrated downward force, and what happens next shocked millions of people online!"},
-            {"role": "q", "text": "At first, the material appears completely solid and almost indestructible against the hardened steel piston."},
-            {"role": "a", "text": "However, as the digital pressure gauge crosses fifty tons, internal molecular lattice stress builds up rapidly until the entire structure suddenly fractures in a violent shockwave!"},
-            {"role": "q", "text": "Did you see how those high-speed fragments deflected off the protective polycarbonate blast shielding?"},
-            {"role": "a", "text": "That instantaneous kinetic release created localized friction temperatures exceeding two hundred degrees in just a few milliseconds."},
-            {"role": "q", "text": "Why did it withstand so much pressure before suddenly detonating all at once like that?"},
-            {"role": "a", "text": "Under high compression, brittle materials store enormous elastic energy until catastrophic structural shear failure occurs. Did you expect that ending? Drop your guess in the comments and subscribe for more insane lab tests!"}
-        ]
-
-    elif is_craft_satisfying:
-        hook_banner = "ODDLY SATISFYING ✨"
-        scenes = [
-            {"role": "q", "text": f"Take a close look at this precision restoration process right as the master craftsman begins!"},
-            {"role": "a", "text": "This piece was completely buried under decades of heavy rust, corrosion, and grime, but what it looks like after twenty hours of work is unbelievable!"},
-            {"role": "q", "text": "Watch how smoothly the specialized rotary carbide bit peels away the damaged oxidized layer."},
-            {"role": "a", "text": "Notice the steady hand pressure. Even a half-millimeter deviation could permanently score the antique metal casing and ruin its historic balance."},
-            {"role": "q", "text": "Look at the high-grit diamond paste polish bringing out the original mirror reflection right now!"},
-            {"role": "a", "text": "By combining ultrasonic cleaning baths with hand-applied micro-crystalline wax, the surface is sealed against moisture for the next fifty years."},
-            {"role": "q", "text": "Is it better to preserve the original weathered patina or restore it to pristine factory condition?"},
-            {"role": "a", "text": "True collectors debate this constantly, but seeing this level of craftsmanship brought back to life is pure therapy. What would you have done with this? Let us know below and subscribe!"}
-        ]
-
-    else:
-        hook_banner = "WATCH THIS CAREFULLY 🤔"
-        scenes = [
-            {"role": "q", "text": f"Pay extremely close attention to what happens right here in this viral clip of {clean_title}!"},
-            {"role": "a", "text": "Ninety nine percent of casual viewers completely miss the critical detail that occurs within the first three seconds of the footage."},
-            {"role": "q", "text": "What is the real scientific explanation behind this unbelievable moment caught on camera?"},
-            {"role": "a", "text": "When you slow down and break down the video frame by frame, you realize the situation escalated ten times faster than anyone on the scene could anticipate."},
-            {"role": "q", "text": "Look at the immediate kinetic reaction of everyone involved right as the sequence unfolds!"},
-            {"role": "a", "text": "Physics experts who analyzed this viral phenomenon pointed out that an instant split-second reaction was the only reason this did not turn into an absolute disaster."},
-            {"role": "q", "text": "Would you have been able to keep your composure if you were standing right there in that exact spot?"},
-            {"role": "a", "text": "Most people panic under sudden unexpected pressure, but observing how momentum shifted here is fascinating. Did you catch that hidden detail? Drop your thoughts below and subscribe for more breakdowns!"}
-        ]
-
-    return {
-        "hook_banner": hook_banner,
-        "title": f"Commentary: {clean_title}",
-        "voice_q": voice_q,
-        "voice_a": voice_a,
-        "scenes": scenes,
-        "target_duration": dur,
-        "hashtags": ["#shorts", "#viral", "#commentary", "#breakdown", "#trending"]
-    }
 
 def fetch_viral_batch_sources(count: int = 6, log=print) -> List[Dict[str, Any]]:
     """Fetches a batch of completely distinct viral source clips across diverse categories.

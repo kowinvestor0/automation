@@ -1,46 +1,39 @@
-import os
+"""Launch the background worker daemon IN-PROCESS.
+This script is designed to be called by the VBS launcher which hides the console window.
+It directly runs the worker's main() function - NO subprocess spawning needed.
+"""
 import sys
-import subprocess
+import os
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-pythonw_path = sys.executable.replace("python.exe", "pythonw.exe")
-worker_script = str(ROOT_DIR / "core" / "background_worker.py")
+LOGS_DIR = ROOT_DIR / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
+os.chdir(str(ROOT_DIR))
 sys.path.insert(0, str(ROOT_DIR))
-from core.background_worker import is_pid_alive
 
-# Clear any stale stop signal or dead lock file
-stop_signal = ROOT_DIR / "data" / "worker.stop"
-if stop_signal.exists():
-    try:
-        stop_signal.unlink()
-    except Exception:
-        pass
+# Redirect stdout/stderr to log files for when running under VBS hidden window
+import io
+log_out = open(LOGS_DIR / "daemon_stdout.log", "a", encoding="utf-8", errors="replace", buffering=1)
+log_err = open(LOGS_DIR / "daemon_stderr.log", "a", encoding="utf-8", errors="replace", buffering=1)
+sys.stdout = log_out
+sys.stderr = log_err
 
-lock_file = ROOT_DIR / "data" / "worker.lock"
-if lock_file.exists():
-    try:
-        pid = int(lock_file.read_text().strip())
-        if is_pid_alive(pid):
-            print(f"Background worker is already running with PID: {pid}")
-            sys.exit(0)
-        else:
-            lock_file.unlink()
-    except Exception:
-        pass
+import traceback
+import datetime
 
-DETACHED_PROCESS = 0x00000008
-CREATE_NEW_PROCESS_GROUP = 0x00000200
-flags = DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
-
-p = subprocess.Popen(
-    [pythonw_path, worker_script],
-    cwd=str(ROOT_DIR),
-    creationflags=flags,
-    close_fds=True,
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-    stdin=subprocess.DEVNULL
-)
-print(f"Background worker daemon launched with PID: {p.pid}")
+try:
+    print(f"\n[{datetime.datetime.now()}] === launch_daemon.py starting ===", flush=True)
+    from core.background_worker import main
+    print(f"[{datetime.datetime.now()}] === Calling worker main() ===", flush=True)
+    main()
+except SystemExit as e:
+    print(f"[{datetime.datetime.now()}] Worker exited with code: {e.code}", flush=True)
+except BaseException as e:
+    print(f"[{datetime.datetime.now()}] FATAL CRASH: {type(e).__name__}: {e}", flush=True)
+    traceback.print_exc(file=sys.stderr)
+finally:
+    print(f"[{datetime.datetime.now()}] === launch_daemon.py ended ===", flush=True)
+    log_out.flush()
+    log_err.flush()
