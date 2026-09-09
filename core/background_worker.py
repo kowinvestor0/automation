@@ -144,27 +144,28 @@ def release_lock() -> None:
 
 
 def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota: int = 6) -> List[str]:
-    tz = get_us_eastern_tz()
+    # Vietnam timezone GMT+7
+    tz_vn = dt.timezone(dt.timedelta(hours=7))
     now_utc = dt.datetime.now(dt.timezone.utc)
     slots = []
     for idx in range(quota):
-        h, m = US_VIRAL_PEAK_HOURS_ET[idx % len(US_VIRAL_PEAK_HOURS_ET)]
-        jitter = ((channel_index * 3) + (idx * 2) + 5) % 15
+        # 9:00 AM VN time, spaced by 3 minutes so Planly accepts distinct timestamps
+        minute_offset = idx * 3
         slot_dt = dt.datetime(
             target_date.year, target_date.month, target_date.day,
-            h, m, tzinfo=tz
-        ) + dt.timedelta(minutes=jitter)
+            9, minute_offset, 0, tzinfo=tz_vn
+        )
         slot_utc = slot_dt.astimezone(dt.timezone.utc)
-        if slot_utc > now_utc + dt.timedelta(minutes=10):
+        if slot_utc > now_utc:
             slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
     return slots
 
 
 def get_channel_scheduled_counts_by_date(client: PlanlyClient) -> Dict[str, Dict[str, int]]:
-    """Inspects Planly calendar and counts how many posts are scheduled per channel per date in US Eastern Time.
+    """Inspects Planly calendar and counts how many posts are scheduled per channel per date in Vietnam Time (GMT+7).
     Returns: {channel_id: {"YYYY-MM-DD": count, ...}}
     """
-    tz = get_us_eastern_tz()
+    tz_vn = dt.timezone(dt.timedelta(hours=7))
     counts: Dict[str, Dict[str, int]] = {}
     try:
         groups = client.list_scheduled_groups()
@@ -175,7 +176,7 @@ def get_channel_scheduled_counts_by_date(client: PlanlyClient) -> Dict[str, Dict
             clean_iso = publish_on.replace("Z", "+00:00")
             try:
                 dt_utc = dt.datetime.fromisoformat(clean_iso)
-                dt_local = dt_utc.astimezone(tz)
+                dt_local = dt_utc.astimezone(tz_vn)
                 date_str = dt_local.strftime("%Y-%m-%d")
             except Exception:
                 date_str = publish_on[:10]
@@ -222,8 +223,8 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
             channels = live_channels
     except Exception as e:
         logger.warning(f"Không thể cập nhật danh sách kênh trực tiếp từ Planly: {e}")
-    tz = get_us_eastern_tz()
-    today_et = dt.datetime.now(tz).date()
+    tz_vn = dt.timezone(dt.timedelta(hours=7))
+    today_vn = dt.datetime.now(tz_vn).date()
 
     cfg = load_config().get("generation", {})
     media_cache = load_media_cache()
@@ -232,13 +233,14 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
     schedule_counts = get_channel_scheduled_counts_by_date(client)
     total_scheduled_this_cycle = 0
 
-    # Scan from today (Day 0) to lookahead days into the future
-    for day_offset in range(0, lookahead_days + 1):
+    # Scan from tomorrow (Day 1) to lookahead days into the future (Day 1 = tomorrow, Day 2 = next day)
+    start_day = 1
+    for day_offset in range(start_day, lookahead_days + 1):
         if is_stop_requested():
             logger.info("Stop signal detected. Exiting worker cycle.")
             break
 
-        target_date = today_et + dt.timedelta(days=day_offset)
+        target_date = today_vn + dt.timedelta(days=day_offset)
         target_date_str = target_date.strftime("%Y-%m-%d")
 
         logger.info(f"--- Kiem tra lich ngay: {target_date.strftime('%d/%m/%Y')} (Day +{day_offset}) ---")
@@ -336,6 +338,16 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                     client.schedule_posts([post_entry])
                     mark_posted(out_file.name, ch_id, slot_time)
                     total_scheduled_this_cycle += 1
+
+                    # Immediately delete local video and meta file to keep disk space at 0 MB
+                    try:
+                        if out_file.exists():
+                            out_file.unlink()
+                        if meta_file.exists():
+                            meta_file.unlink()
+                        logger.info(f"    🗑️ Giai phong bo nho: Da xoa file cuc bo {out_file.name} sau khi upload len Planly.")
+                    except Exception:
+                        pass
 
                     # Update local count cache
                     if ch_id not in schedule_counts:

@@ -965,6 +965,756 @@ ICONIC_TRUE_CRIME_CASES: List[Dict[str, Any]] = [
         "hashtags": ["#truecrime #elisalam #cecilhotel #losangeles #unsolved #mystery #crimetok #coldcase #fyp"]
     }
 
+,
+{
+    "id": "lindbergh_baby_kidnapping",
+    "case_name": "The Lindbergh Baby: Crime of the Century",
+    "hook_banner": "CRIME OF THE CENTURY \ud83d\udc76",
+    "wiki_query": "Lindbergh kidnapping",
+    "broll_queries": [
+        "nursery crib night window ladder",
+        "fbi wood ladder forensic examination",
+        "old newspaper headline kidnapping",
+        "courtroom crowd 1930s trial"
+    ],
+    "scenes": [
+        {
+            "text": "On March first, 1932, twenty-month-old Charles Augustus Lindbergh Junior was taken directly from his crib in Hopewell, New Jersey."
+        },
+        {
+            "text": "His father, world-famous aviator Charles Lindbergh, discovered a handmade wooden ladder abandoned below the nursery window."
+        },
+        {
+            "text": "On the window sill, the kidnapper left a handwritten note demanding fifty thousand dollars in unmarked gold certificates."
+        },
+        {
+            "text": "Despite paying the entire ransom through an intermediary in a Bronx cemetery, the toddler was tragically found dead ten weeks later."
+        },
+        {
+            "text": "Two years later, investigators traced the ransom certificates to Richard Hauptmann, a German carpenter living in the Bronx."
+        },
+        {
+            "text": "In his garage, detectives discovered nearly fourteen thousand dollars of the ransom money hidden inside oil cans and floorboards."
+        },
+        {
+            "text": "Forensic experts proved that wood from the kidnap ladder precisely matched floorboards missing from Hauptmanns attic."
+        },
+        {
+            "text": "Hauptmann was convicted and electrocuted in 1936, maintaining his innocence until his very final breath."
+        },
+        {
+            "text": "Was Hauptmann a lone actor or part of a larger syndicate? Share your thoughts below and subscribe for more historic cases."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #lindbergh #history #kidnapping #fbi #mystery #crimetok #coldcase"
+    ]
+},
+{
+    "id": "manson_family_murders",
+    "case_name": "The Manson Family: Helter Skelter Murders",
+    "hook_banner": "THE TATE-LABIANCA MURDERS \ud83e\ude78",
+    "wiki_query": "Manson Family",
+    "broll_queries": [
+        "cielo drive mansion gate night",
+        "spahn ranch desert old cars",
+        "police squad car flashing lights 1969",
+        "charles manson courtroom trial"
+    ],
+    "scenes": [
+        {
+            "text": "On August ninth, 1969, a wave of terror swept through Los Angeles when actress Sharon Tate and four others were brutally murdered at Cielo Drive."
+        },
+        {
+            "text": "The killers wrote the word PIG on the front door using the victims blood before fleeing into the Hollywood Hills."
+        },
+        {
+            "text": "The very next night, grocery executive Leno LaBianca and his wife Rosemary were murdered in their home with the phrase Helter Skelter smeared on the wall."
+        },
+        {
+            "text": "For months, police had no suspect, until a young woman in jail bragged to her cellmate about participating in the killings."
+        },
+        {
+            "text": "The trail led straight to Spahn Ranch, an abandoned movie set where Charles Manson led his apocalyptic commune."
+        },
+        {
+            "text": "Manson had brainwashed his young followers to commit horrific violence to ignite what he called a racial apocalypse."
+        },
+        {
+            "text": "During the sensational nine-month trial, Manson and his followers carved X marks into their foreheads in open defiance of the court."
+        },
+        {
+            "text": "All were found guilty of first-degree murder and spent the remainder of their lives behind bars."
+        },
+        {
+            "text": "How did one man gain such total psychological control over ordinary teenagers? Comment your take and follow for more dark history."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #manson #cult #truecrimecommunity #history #hollywood #crimetok"
+    ]
+},
+{
+    "id": "green_river_killer_ridgway",
+    "case_name": "The Green River Killer: 49 Confirmed Victims",
+    "hook_banner": "49 CONFIRMED VICTIMS \ud83c\udf0a",
+    "wiki_query": "Gary Ridgway",
+    "broll_queries": [
+        "foggy river pacific northwest trees",
+        "fbi detectives crime scene woods",
+        "police interrogation room tape",
+        "courtroom sentencing emotional victims"
+    ],
+    "scenes": [
+        {
+            "text": "Throughout the nineteen-eighties, young women began vanishing along the Pacific Highway near Seattle, Washington."
+        },
+        {
+            "text": "Their bodies were discovered scattered along the misty banks of the Green River, launching the largest serial murder investigation in American history."
+        },
+        {
+            "text": "For nearly twenty years, the killer operated without detection, evading police task forces and passing polygraph examinations."
+        },
+        {
+            "text": "In 2001, forensic detectives re-examined old evidence using revolutionary new DNA profiling techniques."
+        },
+        {
+            "text": "The DNA directly linked semen recovered from early victims to Gary Leon Ridgway, a quiet local truck painter."
+        },
+        {
+            "text": "In exchange for avoiding the death penalty, Ridgway confessed to murdering forty-nine women and led detectives to hidden burial sites."
+        },
+        {
+            "text": "He admitted his compulsion was so overpowering that he often forgot the names and faces of his victims."
+        },
+        {
+            "text": "Ridgway was sentenced to forty-eight consecutive life sentences with zero possibility of parole."
+        },
+        {
+            "text": "Did Gary Ridgway take even more secrets to his cell? Leave your theory in the comments and follow for real justice stories."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #greenriverkiller #dna #detective #fbi #justice #crimetok #serialkiller"
+    ]
+},
+{
+    "id": "btk_serial_killer_rader",
+    "case_name": "BTK: The Church President With A Dark Secret",
+    "hook_banner": "THE 30-YEAR FLOPPY DISK \ud83d\udcbe",
+    "wiki_query": "Dennis Rader",
+    "broll_queries": [
+        "wichita kansas suburban house night",
+        "church congregation altar interior",
+        "vintage computer floppy disk forensic",
+        "police arrest handcuffs patrol car"
+    ],
+    "scenes": [
+        {
+            "text": "Between 1974 and 1991, a shadowy figure terrorized Wichita, Kansas, binding and killing ten innocent people in their own homes."
+        },
+        {
+            "text": "He sent mocking letters to police and local news stations, demanding to be called BTK, standing for Bind, Torture, Kill."
+        },
+        {
+            "text": "Then, in 1991, the letters stopped abruptly, and the terrifying cold case went completely dark for more than a decade."
+        },
+        {
+            "text": "In 2004, infuriated by a local newspaper article suggesting he was forgotten or dead, BTK began sending packages again."
+        },
+        {
+            "text": "He asked police in a letter if a computer floppy disk could be traced back to him, and police falsely assured him in a newspaper ad that it was safe."
+        },
+        {
+            "text": "BTK sent a purple floppy disk, and within hours, computer forensics extracted deleted metadata revealing the disk was used at Christ Lutheran Church by Dennis."
+        },
+        {
+            "text": "Detectives immediately arrested Dennis Rader, a long-time church council president and local compliance officer."
+        },
+        {
+            "text": "Rader confessed to all ten murders and was sentenced to ten consecutive life terms in maximum security."
+        },
+        {
+            "text": "Could you imagine discovering your church president was an infamous killer? Share your reaction below."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #btk #dennisrader #forensics #coldcase #unsolved #justice #crimetok"
+    ]
+},
+{
+    "id": "golden_state_killer_deangelo",
+    "case_name": "The Golden State Killer: Caught by Ancestry DNA",
+    "hook_banner": "CAUGHT AFTER 40 YEARS \ud83e\uddec",
+    "wiki_query": "Golden State Killer",
+    "broll_queries": [
+        "california suburb night flashlight window",
+        "dna genealogy family tree chart",
+        "police badge retired officer uniform",
+        "elderly man courtroom orange jumpsuit"
+    ],
+    "scenes": [
+        {
+            "text": "From 1974 to 1986, a masked predator terrorized California across multiple cities, committing thirteen murders and fifty sexual assaults."
+        },
+        {
+            "text": "Known variously as the East Area Rapist and the Original Night Stalker, he would break into homes, tie up couples, and disappear silently into the night."
+        },
+        {
+            "text": "For over four decades, investigators exhausted hundreds of leads, but the perpetrator vanished without leaving a fingerprint."
+        },
+        {
+            "text": "In 2018, cold case investigator Paul Holes pioneered a revolutionary approach: genetic genealogy using public DNA databases."
+        },
+        {
+            "text": "By uploading crime scene DNA to GEDmatch, investigators built an extensive family tree stretching back to the early eighteen-hundreds."
+        },
+        {
+            "text": "The genetic branches narrowed down to one specific man: seventy-two-year-old Joseph James DeAngelo, a retired police officer living in Citrus Heights."
+        },
+        {
+            "text": "Detectives secretly swabbed DeAngelos car door handle and trash can, finding an indisputable one-hundred percent DNA match."
+        },
+        {
+            "text": "In 2020, DeAngelo pleaded guilty to all charges to avoid execution, receiving multiple consecutive life sentences without parole."
+        },
+        {
+            "text": "Genetic genealogy has now solved hundreds of cold cases worldwide. Tell us which case they should solve next!"
+        }
+    ],
+    "hashtags": [
+        "#truecrime #goldenstatekiller #dna #coldcase #investigation #forensics #crimetok"
+    ]
+},
+{
+    "id": "chicago_tylenol_murders",
+    "case_name": "The 1982 Chicago Tylenol Murders",
+    "hook_banner": "POISON IN THE BOTTLE \ud83d\udc8a",
+    "wiki_query": "Chicago Tylenol murders",
+    "broll_queries": [
+        "medicine cabinet bathroom pill bottle",
+        "pharmacy shelves tylenol recall boxes",
+        "police crime lab chemical testing test tubes",
+        "chicago skyline autumn 1982 news"
+    ],
+    "scenes": [
+        {
+            "text": "In late September 1982, seven people in the Chicago area suddenly collapsed and died within hours of taking Extra-Strength Tylenol capsules."
+        },
+        {
+            "text": "Among the victims were three members of the same family who took pills from the very same bottle."
+        },
+        {
+            "text": "A sharp-eyed firefighter and nurse noticed all seven victims had taken Tylenol just before cardiac arrest, alerting authorities."
+        },
+        {
+            "text": "Toxicology tests revealed the capsules were loaded with lethal doses of potassium cyanide, ten thousand times the fatal threshold."
+        },
+        {
+            "text": "Investigators determined someone had taken bottles off store shelves, laced them with poison, and returned them to store shelves across Chicago."
+        },
+        {
+            "text": "Johnson and Johnson launched an unprecedented nationwide recall of thirty-one million bottles, offering a one-hundred-thousand-dollar reward."
+        },
+        {
+            "text": "This tragedy permanently changed consumer packaging worldwide, leading directly to the invention of tamper-evident seals on food and medication."
+        },
+        {
+            "text": "More than forty years later, the identity of the Chicago Tylenol poisoner remains one of Americas greatest unsolved mysteries."
+        },
+        {
+            "text": "Do you think the killer was a lone madman or an inside employee? Share your theory below."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #tylenol #mystery #chicago #unsolved #history #coldcase #crimetok"
+    ]
+},
+{
+    "id": "amityville_horror_murders",
+    "case_name": "The Amityville Murders: What Really Happened",
+    "hook_banner": "REAL AMITYVILLE HORROR \ud83c\udfda\ufe0f",
+    "wiki_query": "The Amityville Horror",
+    "broll_queries": [
+        "dutch colonial house distinctive windows night",
+        "police yellow tape ocean avenue amityville",
+        "detective holding rifle evidence bag",
+        "courtroom defense attorney trial 1975"
+    ],
+    "scenes": [
+        {
+            "text": "Long before Hollywood movies and ghost stories, a gruesome real-life tragedy took place at one-twelve Ocean Avenue in Amityville, New York."
+        },
+        {
+            "text": "On November thirteenth, 1974, twenty-three-year-old Ronald DeFeo Junior ran into a local bar screaming that his parents had been shot."
+        },
+        {
+            "text": "When police arrived at the three-story Dutch Colonial home, they discovered six family members shot dead in their beds with a high-powered rifle."
+        },
+        {
+            "text": "All six victims were found lying face down with their hands flat, showing zero signs of a struggle or sedatives in their systems."
+        },
+        {
+            "text": "Neighbors reported hearing no gunshots that night, despite the rifle firing eight unsuppressed rounds in quiet succession."
+        },
+        {
+            "text": "DeFeo confessed to the killings, claiming he heard disembodied voices plotting against him inside the walls."
+        },
+        {
+            "text": "He was convicted on six counts of second-degree murder and sentenced to twenty-five years to life, passing away in prison in 2021."
+        },
+        {
+            "text": "Thirteen months later, the Lutz family moved in and fled twenty-eight days later, sparking decades of supernatural speculation."
+        },
+        {
+            "text": "Was it pure insanity, a mob hit, or something unexplainable? Share your perspective below."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #amityville #horror #mystery #history #unsolved #crimetok #fyp"
+    ]
+},
+{
+    "id": "son_of_sam_david_berkowitz",
+    "case_name": "Son of Sam: The .44 Caliber Killer",
+    "hook_banner": "THE .44 CALIBER KILLER \ud83d\udd2b",
+    "wiki_query": "David Berkowitz",
+    "broll_queries": [
+        "new york city street 1977 parked cars night",
+        "yellow parking ticket windshield rain",
+        "police precinct press conference microphones",
+        "detectives escorting smiling suspect handcuffs"
+    ],
+    "scenes": [
+        {
+            "text": "During the sweltering summer of 1977, New York City was gripped by paralyzing fear as a nighttime shooter stalked parked cars."
+        },
+        {
+            "text": "Armed with a charter arms forty-four bulldog revolver, the killer targeted young couples with long, dark hair, killing six and wounding seven."
+        },
+        {
+            "text": "He left handwritten letters at crime scenes addressed to Captain Joseph Borrelli, signing them with the eerie moniker Son of Sam."
+        },
+        {
+            "text": "Police formed the legendary Operation Omega task force, fielding thousands of calls and checking thousands of leads with zero success."
+        },
+        {
+            "text": "The breakthrough came from an ordinary yellow parking ticket issued near the final shooting scene in Brooklyn to a Ford Galaxie."
+        },
+        {
+            "text": "Detectives traced the ticket to twenty-four-year-old postal employee David Berkowitz in Yonkers."
+        },
+        {
+            "text": "When police approached his car on August tenth, Berkowitz grinned and said, Well, you got me. How come it took you so long?"
+        },
+        {
+            "text": "Berkowitz claimed his neighbors barking dog was possessed by an ancient demon that commanded him to kill."
+        },
+        {
+            "text": "Did Berkowitz act alone, or was he part of a larger satanic cult? Tell us your thoughts below."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #sonofsam #nyc #1970s #fbi #serialkiller #justice #crimetok"
+    ]
+},
+{
+    "id": "cleveland_torso_murders",
+    "case_name": "The Cleveland Torso Murders: The Mad Butcher",
+    "hook_banner": "ELIOT NESS VS MAD BUTCHER \ud83d\udd2a",
+    "wiki_query": "Cleveland Torso Murderer",
+    "broll_queries": [
+        "kingsbury run cleveland industrial fog 1930s",
+        "eliot ness fedora trenchcoat police chief",
+        "vintage coroner lab autopsy instruments",
+        "old newspaper headline cleveland butcher"
+    ],
+    "scenes": [
+        {
+            "text": "During the Great Depression between 1935 and 1938, a terrifying serial killer stalked Kingsbury Run in Cleveland, Ohio."
+        },
+        {
+            "text": "Twelve bodies were discovered in ravines and marshlands, all decapitated and severed with clean, surgical precision."
+        },
+        {
+            "text": "Famed crime fighter Eliot Ness, legendary leader of The Untouchables, was brought in as Cleveland safety director to catch the killer."
+        },
+        {
+            "text": "Despite ordering massive raids and interrogating hundreds of suspects, the Butcher taunted Ness by dumping body parts right outside city hall."
+        },
+        {
+            "text": "Only three of the twelve victims were ever officially identified, as most were destitute wanderers living in shantytowns."
+        },
+        {
+            "text": "Ness secretly interrogated Dr. Francis Sweeney, a former World War One military surgeon who failed two early polygraph tests."
+        },
+        {
+            "text": "However, Sweeney was the first cousin of a powerful Ohio congressman, making formal prosecution politically impossible."
+        },
+        {
+            "text": "Sweeney committed himself to an asylum, where he spent decades sending mocking postcards to Eliot Ness until Ness passed away."
+        },
+        {
+            "text": "Was Dr. Sweeney the true Mad Butcher of Kingsbury Run? Comment your theory below and follow for more."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #cleveland #eliotness #history #unsolved #mystery #crimetok"
+    ]
+},
+{
+    "id": "st_valentines_day_massacre",
+    "case_name": "The St. Valentines Day Massacre",
+    "hook_banner": "CAPONES VALENTINE MASSACRE \ud83c\udf39",
+    "wiki_query": "Saint Valentine's Day Massacre",
+    "broll_queries": [
+        "chicago garage brick wall bullet holes",
+        "vintage 1929 police car thompson submachine gun",
+        "al capone fedora cigar smiling mobster",
+        "newspaper front page massacre 1929"
+    ],
+    "scenes": [
+        {
+            "text": "On the icy morning of February fourteenth, 1929, seven members of Chicagos North Side gang gathered in a Lincoln Park garage."
+        },
+        {
+            "text": "Around ten-thirty in the morning, four men entered the garage, two of them dressed in full Chicago police uniforms."
+        },
+        {
+            "text": "Believing it was a routine police shakedown, the seven mobsters complied, lining up against the brick wall with their hands raised."
+        },
+        {
+            "text": "Suddenly, the disguised gunmen opened fire with Thompson submachine guns and shotguns, firing seventy rounds in seconds."
+        },
+        {
+            "text": "The intended target, notorious rival gang leader Bugs Moran, was running late and spotted the police car, escaping with his life."
+        },
+        {
+            "text": "The public instantly knew the mastermind behind the slaughter was Chicago kingpin Al Capone, who was conveniently vacationing in Florida."
+        },
+        {
+            "text": "The brutal massacre outraged President Herbert Hoover, prompting the federal government to order federal agents to take Capone down."
+        },
+        {
+            "text": "Unable to prove murder, federal prosecutors eventually imprisoned Capone for eleven years on federal income tax evasion."
+        },
+        {
+            "text": "The bloodstained bricks of that Chicago garage wall were auctioned off and preserved in a museum. Follow for more mob history!"
+        }
+    ],
+    "hashtags": [
+        "#truecrime #alcapone #chicago #mafia #history #mobsters #crimetok #fyp"
+    ]
+},
+{
+    "id": "tupac_shakur_vegas_driveby",
+    "case_name": "The Murder of Tupac Shakur: 1996 Las Vegas",
+    "hook_banner": "THE VEGAS STRIP DRIVE-BY \ud83c\udfa4",
+    "wiki_query": "Murder of Tupac Shakur",
+    "broll_queries": [
+        "las vegas strip neon signs night 1996",
+        "black bmw 750il sedan bullet holes",
+        "boxing match mgm grand arena crowd",
+        "courtroom judge gavel arraignment 2023"
+    ],
+    "scenes": [
+        {
+            "text": "On September seventh, 1996, rap superstar Tupac Shakur was riding in the passenger seat of a black BMW on the Las Vegas Strip."
+        },
+        {
+            "text": "Earlier that night, Tupac and Death Row Records CEO Suge Knight had attended the Mike Tyson fight at the MGM Grand."
+        },
+        {
+            "text": "At eleven-fifteen at night, while stopped at a red light at Flamingo Road, a white Cadillac pulled up alongside their vehicle."
+        },
+        {
+            "text": "A hand emerged from the rear window and fired fourteen rounds from a Glock pistol directly into the passenger side."
+        },
+        {
+            "text": "Tupac was struck four times and rushed to University Medical Center, where he tragically succumbed to his injuries six days later."
+        },
+        {
+            "text": "For twenty-seven years, the case remained shrouded in silence, conspiracy theories, and lack of witness cooperation."
+        },
+        {
+            "text": "Then, in September 2023, Las Vegas police arrested Duane Keefe D Davis, charging him with open murder with a deadly weapon."
+        },
+        {
+            "text": "Davis had repeatedly spoken in public interviews and a tell-all book about providing the gun used in the vehicle."
+        },
+        {
+            "text": "Why do you think it took nearly three decades to make an arrest? Share your view below and follow for updates."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #2pac #tupac #lasvegas #hiphop #justice #coldcase #crimetok"
+    ]
+},
+{
+    "id": "dyatlov_pass_incident",
+    "case_name": "The Dyatlov Pass Incident: 9 Hikers in the Snow",
+    "hook_banner": "NINE HIKERS IN THE SNOW \u2744\ufe0f",
+    "wiki_query": "Dyatlov Pass incident",
+    "broll_queries": [
+        "ural mountains snow blizzard mountain ridge",
+        "torn camping tent half buried snow forensics",
+        "investigators walking snowshoes siberia 1959",
+        "old black and white hiker group photos"
+    ],
+    "scenes": [
+        {
+            "text": "In February 1959, nine experienced Soviet hikers embarked on a challenging trek across the northern Ural Mountains."
+        },
+        {
+            "text": "When they failed to send a scheduled telegram weeks later, military rescue teams and volunteer searchers were dispatched into the wilderness."
+        },
+        {
+            "text": "Searchers found their campsite on the slope of Dead Mountain: their tent was slashed open from the inside out."
+        },
+        {
+            "text": "Barefoot tracks led a mile downhill through subzero blizzard winds, where the bodies were discovered scattered over several days."
+        },
+        {
+            "text": "Several victims were found in their underwear, while others wore mismatched clothing taken from their deceased companions."
+        },
+        {
+            "text": "Autopsies revealed bizarre inconsistencies: two had crushed skulls and fractured ribs comparable to a high-speed car crash, yet with zero external bruises."
+        },
+        {
+            "text": "Even stranger, traces of unexplained radiation were detected on some clothing, and one hikers tongue and eyes were missing."
+        },
+        {
+            "text": "Official Soviet investigators abruptly closed the inquest, concluding the deaths were caused by an unknown compelling natural force."
+        },
+        {
+            "text": "Was it a slab avalanche, secret military weapons testing, or infrasound panic? What is your verdict?"
+        }
+    ],
+    "hashtags": [
+        "#truecrime #dyatlovpass #mystery #siberia #unsolved #history #crimetok #fyp"
+    ]
+}
+,
+{
+    "id": "bonnie_and_clyde_ambush",
+    "case_name": "Bonnie and Clyde: The 167-Bullet Ambush",
+    "hook_banner": "THE 167-BULLET AMBUSH \ud83d\ude97",
+    "wiki_query": "Bonnie and Clyde",
+    "broll_queries": [
+        "1934 ford v8 vintage car highway",
+        "texas rangers police ambush rifles dust",
+        "vintage newspaper bonnie clyde headline",
+        "old wanted posters 1930s outlaw"
+    ],
+    "scenes": [
+        {
+            "text": "During the depths of the Great Depression, Clyde Barrow and Bonnie Parker led a ruthless two-year crime spree across the American heartland."
+        },
+        {
+            "text": "Robbing banks, small gas stations, and killing at least nine law enforcement officers, their daring escapes made national headlines."
+        },
+        {
+            "text": "The Texas prison system hired legendary former Texas Ranger Frank Hamer to track the outlaw couple down at all costs."
+        },
+        {
+            "text": "On May twenty-third, 1934, Hamer and a posse of six lawmen lay concealed in the bushes along a rural highway in Bienville Parish, Louisiana."
+        },
+        {
+            "text": "Around nine in the morning, Clydes stolen 1934 Ford V-Eight slowed down to help an accomplice father parked on the roadside."
+        },
+        {
+            "text": "Before either outlaw could draw a weapon, the officers opened fire with automatic rifles and shotguns."
+        },
+        {
+            "text": "A staggering one hundred and sixty-seven rounds were fired into the vehicle in less than twenty seconds."
+        },
+        {
+            "text": "Crowds of souvenirs hunters immediately mobbed the bullet-riddled car, even attempting to cut locks of Bonnie hair before police cordoned the scene."
+        },
+        {
+            "text": "The bullet-riddled death car is on display in a Nevada casino to this day. Follow for more wild American outlaw history!"
+        }
+    ],
+    "hashtags": [
+        "#truecrime #bonnieandclyde #history #outlaws #1930s #fbi #crimetok #fyp"
+    ]
+},
+{
+    "id": "john_wayne_gacy_clown",
+    "case_name": "John Wayne Gacy: The Killer Clown",
+    "hook_banner": "THE KILLER CLOWN \ud83e\udd21",
+    "wiki_query": "John Wayne Gacy",
+    "broll_queries": [
+        "suburban brick ranch house chicago night",
+        "clown costume makeup mirror smiling",
+        "detectives digging crawlspace flashlight dirt",
+        "courtroom judge sentencing serial killer"
+    ],
+    "scenes": [
+        {
+            "text": "To his Norwood Park neighbors in suburban Chicago, John Wayne Gacy was a respected contractor, Democratic precinct captain, and community volunteer."
+        },
+        {
+            "text": "He frequently entertained hospitalized children at charity events dressed as Pogo the Clown."
+        },
+        {
+            "text": "Behind this charming facade lay one of the most prolific serial predators in American criminal history."
+        },
+        {
+            "text": "In December 1978, fifteen-year-old high school student Robert Piest vanished after visiting Gacy to discuss a part-time job."
+        },
+        {
+            "text": "Detectives executed a search warrant on Gacys home and detected a sickening odor coming from the basement heating vents."
+        },
+        {
+            "text": "Underneath the floorboards, investigators uncovered twenty-nine bodies buried in the four-foot-high earthen crawlspace."
+        },
+        {
+            "text": "Gacy confessed to thirty-three murders in total, having dumped four additional victims into the nearby Des Plaines River."
+        },
+        {
+            "text": "He was convicted on all counts and executed by lethal injection at Stateville Correctional Center in 1994."
+        },
+        {
+            "text": "How could a community monster hide in plain sight for so long? Leave your thoughts below and subscribe for more."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #johnwaynegacy #clown #serialkiller #chicago #fbi #justice #crimetok"
+    ]
+},
+{
+    "id": "jeffrey_dahmer_apartment_213",
+    "case_name": "Inside Apartment 213: Jeffrey Dahmer",
+    "hook_banner": "INSIDE APARTMENT 213 \ud83d\udeaa",
+    "wiki_query": "Jeffrey Dahmer",
+    "broll_queries": [
+        "oxford apartments building night milwaukee",
+        "police sirens flashing apartment hallway",
+        "blue plastic barrel hazmat chemical forensic",
+        "courtroom handcuffed suspect orange jumpsuit"
+    ],
+    "scenes": [
+        {
+            "text": "On the humid night of July twenty-second, 1991, Tracy Edwards flagged down two Milwaukee patrol officers while handcuffed by one wrist."
+        },
+        {
+            "text": "He claimed a man in apartment two-thirteen of the Oxford Apartments had threatened him with a large knife and attempted to drug him."
+        },
+        {
+            "text": "When officers entered apartment two-thirteen to retrieve the handcuff keys, they opened a bedside drawer and found Polaroids documenting horrifying atrocities."
+        },
+        {
+            "text": "A search of the apartment revealed severed skulls in the closet, human remains in the freezer, and a fifty-seven-gallon drum filled with acid."
+        },
+        {
+            "text": "The resident, thirty-one-year-old Jeffrey Dahmer, confessed to murdering seventeen young men and boys between 1978 and 1991."
+        },
+        {
+            "text": "Public outrage erupted when it was revealed police had encountered one of Dahmers victims months earlier and mistakenly returned him to Dahmers apartment."
+        },
+        {
+            "text": "Dahmer was sentenced to fifteen consecutive life terms, totaling over nine hundred years behind bars."
+        },
+        {
+            "text": "In November 1994, Dahmer was fatally assaulted by fellow inmate Christopher Scarver in the prison gymnasium."
+        },
+        {
+            "text": "The entire Oxford Apartments building was demolished to erase the site of these tragedies. What case should we cover next?"
+        }
+    ],
+    "hashtags": [
+        "#truecrime #dahmer #milwaukee #truecrimecommunity #history #justice #crimetok"
+    ]
+},
+{
+    "id": "richard_ramirez_night_stalker",
+    "case_name": "The Night Stalker: Terror in Los Angeles",
+    "hook_banner": "THE NIGHT STALKER \ud83d\udc41\ufe0f",
+    "wiki_query": "Richard Ramirez",
+    "broll_queries": [
+        "los angeles night skyline palm trees dark",
+        "police sketch composite face avia shoes",
+        "crowd angry mob street chasing suspect",
+        "courtroom hand showing pentagram mark"
+    ],
+    "scenes": [
+        {
+            "text": "During the scorching spring and summer of 1985, a wave of nighttime home invasions paralyzed greater Los Angeles and San Francisco."
+        },
+        {
+            "text": "An intruder slipped through unlocked windows and doors, committing fourteen murders and leaving satanic pentagram symbols on walls."
+        },
+        {
+            "text": "Residents bolted doors, purchased guard dogs, and hardware stores completely sold out of window locks."
+        },
+        {
+            "text": "The only physical evidence linking the random crimes was a rare Avia sneaker footprint and a stolen orange Toyota station wagon."
+        },
+        {
+            "text": "When the stolen Toyota was found, laser fingerprint technology pulled a single partial print matching twenty-five-year-old Richard Ramirez."
+        },
+        {
+            "text": "Police broadcast Ramirez mugshot across all news stations on August thirty-first, 1985."
+        },
+        {
+            "text": "Unaware his face was on the front page of every newspaper, Ramirez entered an East Los Angeles convenience store and was recognized."
+        },
+        {
+            "text": "An enraged neighborhood mob chased him down the street and subdued him until police arrived to make the arrest."
+        },
+        {
+            "text": "Ramirez was sentenced to death and spent twenty-three years on San Quentin death row before dying of lymphoma. Follow for more!"
+        }
+    ],
+    "hashtags": [
+        "#truecrime #nightstalker #richardramirez #losangeles #1980s #justice #crimetok"
+    ]
+},
+{
+    "id": "oklahoma_city_bombing_murrah",
+    "case_name": "The Oklahoma City Bombing: April 19, 1995",
+    "hook_banner": "APRIL 19, 1995 TRAGEDY \ud83c\udfe2",
+    "wiki_query": "Oklahoma City bombing",
+    "broll_queries": [
+        "federal building facade morning street",
+        "ryder rental yellow moving truck parked",
+        "fbi evidence axle vehicle identification number",
+        "memorial reflecting pool oklahoma city empty chairs"
+    ],
+    "scenes": [
+        {
+            "text": "At nine-oh-two on the morning of April nineteenth, 1995, a massive blast tore through the Alfred P. Murrah Federal Building in Oklahoma City."
+        },
+        {
+            "text": "A five-thousand-pound fertilizer and fuel bomb loaded inside a yellow Ryder rental truck destroyed one-third of the nine-story concrete building."
+        },
+        {
+            "text": "The blast claimed the lives of one hundred and sixty-eight people, including nineteen innocent children in the second-floor daycare."
+        },
+        {
+            "text": "It remains the deadliest act of homegrown domestic terrorism in the history of the United States."
+        },
+        {
+            "text": "Just ninety minutes after the explosion, twenty-seven-year-old Timothy McVeigh was pulled over by a state trooper for driving without a license plate."
+        },
+        {
+            "text": "Trooper Charlie Hanger arrested McVeigh after noticing a concealed Glock pistol under his jacket."
+        },
+        {
+            "text": "Meanwhile, FBI agents sifted through the rubble and discovered the rear axle of the Ryder truck, containing its vehicle identification number."
+        },
+        {
+            "text": "The VIN led back to a body shop in Kansas where McVeigh had rented the truck under an alias."
+        },
+        {
+            "text": "McVeigh was convicted on eleven federal counts and executed by lethal injection at Terre Haute federal prison in 2001. Never forget."
+        }
+    ],
+    "hashtags": [
+        "#truecrime #history #oklahomacity #fbi #investigation #memorial #neverforget #crimetok"
+    ]
+}
 ]
 
 
