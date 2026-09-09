@@ -66,7 +66,20 @@ async def handle_get_config(request: web.Request) -> web.Response:
 
 async def handle_save_config(request: web.Request) -> web.Response:
     data = await request.json()
-    save_config(data)
+    cfg = load_config()
+    if "api_keys" in data and isinstance(data["api_keys"], dict):
+        cfg.setdefault("api_keys", {}).update(data["api_keys"])
+    if "gemini_api_key" in data:
+        cfg.setdefault("api_keys", {})["gemini_api_key"] = str(data["gemini_api_key"]).strip()
+    if "pexels_api_key" in data:
+        cfg.setdefault("api_keys", {})["pexels_api_key"] = str(data["pexels_api_key"]).strip()
+    if "publishing" in data and isinstance(data["publishing"], dict):
+        cfg.setdefault("publishing", {}).update(data["publishing"])
+    if "videos_per_channel_per_day" in data:
+        cfg.setdefault("publishing", {})["videos_per_channel_per_day"] = int(data["videos_per_channel_per_day"])
+    if "lookahead_days" in data:
+        cfg.setdefault("publishing", {})["lookahead_days"] = int(data["lookahead_days"])
+    save_config(cfg)
     append_log("Configuration saved successfully.")
     return web.json_response({"status": "success", "config": load_config()})
 
@@ -492,6 +505,34 @@ async def handle_commentary_render(request: web.Request) -> web.Response:
     return web.json_response({"ok": True, "message": "Bắt đầu render video commentary trong background."})
 
 
+def _run_sample_story_task():
+    global current_job
+    current_job = {"status": "generating", "message": "Dang san xuat video ky an mau (>60s)..."}
+    try:
+        from core.crime_story_database import get_next_crime_story
+        from core.story_engine import render_crime_story_video
+        story = get_next_crime_story()
+        stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+        clean_id = re.sub(r"[^\w]+", "_", story.get("id", "crime_story"))
+        out_file = OUTPUT_DIR / f"sample_{stamp}_{clean_id}.mp4"
+        append_log(f"🎬 Bat dau dung video mau ky an: '{story.get('case_name')}' (>60s)...")
+        render_crime_story_video(story, out_file, log=append_log)
+        append_log(f"✅ DA XONG VIDEO MAU: {out_file.name}")
+        current_job = {"status": "idle", "message": f"Rendered sample: {out_file.name}", "sample_video": out_file.name}
+    except Exception as e:
+        traceback.print_exc()
+        append_log(f"❌ Loi dung video mau: {e}")
+        current_job = {"status": "error", "message": str(e)}
+
+
+async def handle_render_sample_story(request: web.Request) -> web.Response:
+    if current_job["status"] == "generating":
+        return web.json_response({"ok": False, "message": "Dang co tien trinh render video chay."}, status=409)
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _run_sample_story_task)
+    return web.json_response({"ok": True, "message": "Bat dau san xuat video ky an mau trong nen."})
+
+
 def create_app() -> web.Application:
     app = web.Application()
     app.router.add_get("/", handle_index)
@@ -514,6 +555,7 @@ def create_app() -> web.Application:
     app.router.add_post("/api/commentary/inspect", handle_commentary_inspect)
     app.router.add_post("/api/commentary/generate_script", handle_commentary_generate_script)
     app.router.add_post("/api/commentary/render", handle_commentary_render)
+    app.router.add_post("/api/story/render_sample", handle_render_sample_story)
     return app
 
 

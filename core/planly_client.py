@@ -218,3 +218,27 @@ class PlanlyClient:
         except Exception:
             pass
         return total_deleted
+
+    def clear_all_media(self, log=print) -> int:
+        """Deletes all uploaded media from Planly media library."""
+        total_deleted = 0
+        while True:
+            res = self._post("/media/list", {"teamId": self.team_id})
+            data = res.get("data") or {}
+            rows = data.get("rows") or []
+            if not rows:
+                break
+            ids = [r["id"] for r in rows if "id" in r]
+            if not ids:
+                break
+            self._post("/media/delete", {"teamId": self.team_id, "ids": ids})
+            total_deleted += len(ids)
+            try:
+                log(f"[Planly] Da xoa lo {len(ids)} media file. Tong cong da xoa: {total_deleted}...")
+            except Exception:
+                pass
+        try:
+            log(f"[Planly] Hoan tat: Da xoa toan bo {total_deleted} media file tren Planly.")
+        except Exception:
+            pass
+        return total_deleted

@@ -1,0 +1,58 @@
+name: Auto Story Producer & Planly Scheduler (Cloud 24/7)
+
+on:
+  schedule:
+    # Runs every 4 hours automatically without turning on any computer
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+    inputs:
+      quota:
+        description: 'Number of videos per channel per day'
+        required: false
+        default: '6'
+      lookahead:
+        description: 'Number of days to schedule ahead'
+        required: false
+        default: '7'
+
+concurrency:
+  group: auto-make-money-producer
+  cancel-in-progress: false
+
+jobs:
+  produce-and-schedule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install FFmpeg & Fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-liberation fonts-noto-cjk
+          ffmpeg -version
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Cloud Video Producer & Planly Scheduler
+        env:
+          PLANLY_TOKEN: ${{ secrets.PLANLY_TOKEN }}
+          PLANLY_TEAM_ID: ${{ secrets.PLANLY_TEAM_ID }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VIDEOS_PER_DAY: ${{ github.event.inputs.quota || '6' }}
+          LOOKAHEAD_DAYS: ${{ github.event.inputs.lookahead || '7' }}
+          PYTHONIOENCODING: 'utf-8'
+        run: |
+          python core/background_worker.py --single-pass --quota "${{ github.event.inputs.quota || '6' }}" --lookahead "${{ github.event.inputs.lookahead || '7' }}"

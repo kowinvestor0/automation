@@ -85,10 +85,24 @@ class AccountManager:
 
     def load_all(self) -> List[Dict[str, Any]]:
         try:
-            if not self.path.exists():
-                return []
-            data = json.loads(self.path.read_text(encoding="utf-8"))
-            accounts = data.get("accounts", [])
+            accounts = []
+            if self.path.exists():
+                data = json.loads(self.path.read_text(encoding="utf-8"))
+                accounts = data.get("accounts", [])
+
+            # Fallback to environment variables for GitHub Actions / Cloud Runner
+            env_token = os.environ.get("PLANLY_TOKEN") or os.environ.get("PLANLY_API_KEY", "")
+            if not accounts and env_token:
+                env_team = os.environ.get("PLANLY_TEAM_ID", "")
+                accounts = [{
+                    "id": "env_planly_account",
+                    "name": "Cloud Planly Runner",
+                    "token": env_token.strip(),
+                    "team_id": env_team.strip(),
+                    "channels": [],
+                    "status": "connected"
+                }]
+
             for acc in accounts:
                 for ch in acc.get("channels", []):
                     if not ch.get("tier"):

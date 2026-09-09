@@ -350,32 +350,54 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Auto Make Money True Crime Background Worker")
+    parser.add_argument("--single-pass", action="store_true", help="Run single pass and exit (ideal for GitHub Actions)")
+    parser.add_argument("--lookahead", type=int, default=7, help="Number of lookahead days")
+    parser.add_argument("--quota", type=int, default=None, help="Videos per channel per day")
+    args, _ = parser.parse_known_args()
+
+    cfg = load_config()
+    configured_quota = args.quota or int(os.environ.get("VIDEOS_PER_DAY") or cfg.get("publishing", {}).get("videos_per_channel_per_day", 6))
+    lookahead_days = args.lookahead or int(os.environ.get("LOOKAHEAD_DAYS") or 7)
+
     clear_stop_signal()
-    if not acquire_lock():
-        print("❌ Worker đã đang chạy trong nền (PID in data/worker.lock).")
-        sys.exit(1)
+    if not args.single_pass:
+        if not acquire_lock():
+            print("❌ Worker da dang chay trong nen (PID in data/worker.lock).")
+            sys.exit(1)
 
     logger.info("====================================================================")
-    logger.info("🚀 AUTO MAKE MONEY - BACKGROUND WORKER (AMERICAN TRUE CRIME ENGINE 24/7)")
-    logger.info("📌 Tự động duy trì 6 video tài liệu kỳ án/kênh/ngày (>60s) cho 7 ngày tới.")
-    logger.info("⚡ Động cơ: Wikipedia/Wikimedia + Pexels 9:16 + Myinstants SFX + Edge TTS.")
-    logger.info("✨ Không rung lắc, không méo hình, chuẩn 1080x1920, 100% nhất quán.")
+    logger.info("🚀 AUTO MAKE MONEY - AMERICAN TRUE CRIME ENGINE (24/7 CLOUD / LOCAL)")
+    logger.info(f"📌 Chi tieu: {configured_quota} video/kenh/ngay (>60s) | Tinh truoc: {lookahead_days} ngay toi.")
+    logger.info("⚡ Dong co: Wikipedia/Wikimedia + Pexels 9:16 + Myinstants SFX + Edge TTS.")
+    logger.info("✨ Khong rung lac, khong meo hinh, chuan 1080x1920, 100% nhat quan.")
     logger.info("====================================================================")
+
+    if args.single_pass:
+        logger.info("🚀 Dang chay che do Single Pass (GitHub Actions Cloud Runner)...")
+        scheduled = run_worker_cycle(lookahead_days=lookahead_days, quota_per_day=configured_quota)
+        logger.info(f"🎉 Hoan thanh Single Pass! Da xep lich: {scheduled} video.")
+        sys.exit(0)
 
     try:
         while not is_stop_requested():
             try:
-                scheduled = run_worker_cycle(lookahead_days=7, quota_per_day=6)
+                # Reload config each cycle so user changes in UI take effect immediately
+                live_cfg = load_config()
+                current_quota = int(live_cfg.get("publishing", {}).get("videos_per_channel_per_day", configured_quota))
+
+                scheduled = run_worker_cycle(lookahead_days=lookahead_days, quota_per_day=current_quota)
                 if is_stop_requested():
                     break
 
                 if scheduled > 0:
-                    logger.info(f"🎉 Hoàn thành chu kỳ sản xuất. Đã xếp lịch thêm {scheduled} video độc quyền!")
+                    logger.info(f"🎉 Hoan thanh chu ky san xuat. Da xep lich them {scheduled} video doc quyen!")
                 else:
-                    logger.info("✅ Tất cả các kênh đã có đủ 6 video/ngày cho 7 ngày tới.")
+                    logger.info(f"✅ Tat ca cac kenh da co du {current_quota} video/ngay cho {lookahead_days} ngay toi.")
             except Exception as cycle_err:
-                logger.error(f"⚠️ Lỗi trong chu kỳ worker: {cycle_err}", exc_info=True)
-                logger.info("🔄 Tự động thử lại sau 30 giây...")
+                logger.error(f"⚠️ Loi trong chu ky worker: {cycle_err}", exc_info=True)
+                logger.info("🔄 Tu dong thu lai sau 30 giay...")
                 for _ in range(3):
                     if is_stop_requested():
                         break
@@ -383,17 +405,17 @@ def main():
                 continue
 
             # Sleep 15 minutes between health checks
-            logger.info("💤 Chờ 15 phút trước chu kỳ kiểm tra tiếp theo...")
+            logger.info("💤 Cho 15 phut truoc chu ky kiem tra tiep theo...")
             for _ in range(90):  # 90 x 10s = 15 mins
                 if is_stop_requested():
                     break
                 time.sleep(10)
 
     except KeyboardInterrupt:
-        logger.info("Worker dừng bởi người dùng.")
+        logger.info("Worker dung boi nguoi dung.")
     finally:
         release_lock()
-        logger.info("Background Worker đã dừng an toàn.")
+        logger.info("Background Worker da dung an toan.")
 
 
 if __name__ == "__main__":

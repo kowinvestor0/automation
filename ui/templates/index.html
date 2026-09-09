@@ -45,15 +45,21 @@
       </div>
 
       <!-- Quick Action Buttons -->
-      <div class="flex items-center gap-2.5">
-        <button onclick="openOutputFolder()" class="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs sm:text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition shadow-xs" title="Mở thư mục video lưu trên máy (D:\auto make money\output)">
-          <i class="fa-solid fa-folder-open"></i> Mở Thư Mục Video
+      <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+        <button onclick="renderSampleStoryVideo()" id="btnSampleRender" class="flex items-center gap-1.5 rounded-lg border border-purple-300 bg-gradient-to-r from-purple-600 to-indigo-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:from-purple-700 hover:to-indigo-700 transition shadow-xs" title="Dựng thử 1 video kỳ án mẫu chuẩn >60s">
+          <i class="fa-solid fa-clapperboard"></i> 🎬 Dựng Thử Video (>60s)
         </button>
-        <button onclick="openModal('libraryModal')" class="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs sm:text-sm font-medium text-purple-700 hover:bg-purple-100 transition shadow-xs">
-          <i class="fa-solid fa-calendar-days"></i> Kho Video & Lịch
+        <button onclick="openModal('cloudModal')" class="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs sm:text-sm font-medium text-blue-700 hover:bg-blue-100 transition shadow-xs" title="Chạy tự động trên GitHub Actions Cloud 24/7">
+          <i class="fa-solid fa-cloud"></i> ☁️ GitHub Actions
         </button>
-        <button onclick="openModal('settingsModal')" class="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition shadow-xs">
-          <i class="fa-solid fa-gear"></i> Cài Đặt API
+        <button onclick="openOutputFolder()" class="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs sm:text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition shadow-xs" title="Mở thư mục video lưu trên máy (D:\auto make money\output)">
+          <i class="fa-solid fa-folder-open"></i> Thư Mục Video
+        </button>
+        <button onclick="openModal('libraryModal')" class="flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs sm:text-sm font-medium text-purple-700 hover:bg-purple-100 transition shadow-xs">
+          <i class="fa-solid fa-calendar-days"></i> Kho Video
+        </button>
+        <button onclick="openModal('settingsModal')" class="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition shadow-xs">
+          <i class="fa-solid fa-gear"></i> Cài Đặt & API
         </button>
       </div>
     </header>
@@ -479,34 +485,51 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL: CÀI ĐẶT API ==================== -->
+  <!-- ==================== MODAL: CÀI ĐẶT HỆ THỐNG & QUOTA ==================== -->
   <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 space-y-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
       <div class="flex items-center justify-between border-b border-gray-100 pb-3">
         <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-gray-700"></i> Cài Đặt Hệ Thống & API Keys
+          <i class="fa-solid fa-sliders text-blue-600"></i> Cài Đặt Hệ Thống & Quota Sản Xuất
         </h3>
         <button onclick="closeModal('settingsModal')" class="text-gray-400 hover:text-gray-600">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
 
-      <div class="space-y-3 text-xs">
+      <div class="space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Số video / kênh / ngày:</label>
+            <input type="number" id="cfgVideosPerDay" min="1" max="20" value="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 font-bold text-blue-600">
+            <span class="text-[10px] text-gray-400">VD: 3 hoặc 6 video/kênh</span>
+          </div>
+          <div>
+            <label class="block font-semibold text-gray-700 mb-1">Số ngày xếp lịch trước:</label>
+            <input type="number" id="cfgLookaheadDays" min="1" max="30" value="7" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 font-bold text-indigo-600">
+            <span class="text-[10px] text-gray-400">Xếp gối đầu (Lookahead)</span>
+          </div>
+        </div>
+
         <div>
-          <label class="block font-medium text-gray-700 mb-1">Google Gemini API Key (Viết kịch bản theo video):</label>
+          <label class="block font-medium text-gray-700 mb-1">Pexels API Key (Kho B-roll 9:16 miễn phí):</label>
+          <input type="password" id="cfgPexelsKey" placeholder="Nhập API key Pexels..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+          <span class="text-[10px] text-gray-400">Dùng để tải các video minh họa nền 9:16 phong cách True Crime</span>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">Google Gemini API Key (AI Lời bình & Kịch bản):</label>
           <input type="password" id="cfgGeminiKey" placeholder="AIzaSy..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
         </div>
-        <div>
-          <label class="block font-medium text-gray-700 mb-1">Pexels API Key (Kho B-roll 9:16 bổ trợ):</label>
-          <input type="password" id="cfgPexelsKey" placeholder="API key Pexels..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
-        </div>
+
         <div>
           <label class="block font-medium text-gray-700 mb-1">Múi giờ đăng (Timezone Offset):</label>
           <input type="number" id="cfgTzOffset" value="7" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+          <span class="text-[10px] text-gray-400">UTC+7 cho giờ Việt Nam</span>
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
         <button onclick="closeModal('settingsModal')" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
           Đóng
         </button>
@@ -516,6 +539,86 @@
       </div>
     </div>
   </div>
+
+  <!-- ==================== MODAL: XEM VIDEO MẪU ==================== -->
+  <div id="samplePlayerModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-gray-200 space-y-3">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+        <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-play text-purple-600"></i> Video Kỳ Án Mẫu (>60s)
+        </h3>
+        <button onclick="closeModal('samplePlayerModal'); document.getElementById('sampleVideoPlayer').pause();" class="text-gray-400 hover:text-gray-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="flex justify-center bg-black rounded-xl overflow-hidden shadow-inner max-h-[460px]">
+        <video id="sampleVideoPlayer" controls class="w-auto h-[440px] max-w-full rounded-lg" autoplay></video>
+      </div>
+      <div class="text-[11px] text-gray-600 bg-gray-50 p-2.5 rounded-lg flex items-center justify-between">
+        <span id="sampleVideoInfo" class="font-medium text-gray-700">Độ dài: >60s • Chuẩn kiếm tiền</span>
+        <a id="sampleDownloadBtn" href="#" target="_blank" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-xs">
+          Xem Toàn Màn Hình
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: GITHUB ACTIONS CLOUD RUNNER ==================== -->
+  <div id="cloudModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-cloud text-blue-600"></i> Tự Động Hóa 24/7 Bằng GitHub Actions Cloud
+        </h3>
+        <button onclick="closeModal('cloudModal')" class="text-gray-400 hover:text-gray-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5 text-xs text-gray-700 leading-relaxed">
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <span class="font-bold text-blue-800">💡 Tại sao nên để Repo Public trên GitHub?</span>
+          <p class="mt-1 text-blue-700">
+            Khi Repository được đặt ở chế độ <b>Public</b> trên GitHub, bạn được hưởng <b>không giới hạn</b> số phút máy chủ Ubuntu Cloud (hoàn toàn miễn phí) để render video và lên lịch Planly mỗi 4 tiếng mà <b>không cần mở máy tính cá nhân 24/7</b>!
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-gray-900 text-xs">3 Bước Kích Hoạt Tự Động Trong 2 Phút:</h4>
+          <ol class="list-decimal list-inside space-y-1.5 pl-1">
+            <li>
+              Vào trang Repo GitHub của bạn ➔ chọn tab <b>Settings</b> ➔ Menu trái chọn <b>Secrets and variables</b> ➔ <b>Actions</b>.
+            </li>
+            <li>
+              Nhấn <b>New repository secret</b> và thêm 3 biến sau:
+              <ul class="list-disc list-inside mt-1 ml-3 space-y-1 font-mono text-[11px] text-gray-800">
+                <li><b class="text-indigo-600">PLANLY_TOKEN</b>: Bearer token Planly của bạn</li>
+                <li><b class="text-indigo-600">PLANLY_TEAM_ID</b>: Team ID tài khoản Planly</li>
+                <li><b class="text-indigo-600">PEXELS_API_KEY</b>: API key miễn phí từ Pexels.com</li>
+              </ul>
+            </li>
+            <li>
+              <b>Chuyển Repo sang Public (tùy chọn)</b>: Tại <b>Settings</b> ➔ cuộn xuống cuối phần <b>Danger Zone</b> ➔ <b>Change repository visibility</b> ➔ chọn <b>Change to public</b>.
+            </li>
+          </ol>
+        </div>
+
+        <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <span class="font-bold text-emerald-800">🚀 Lịch Chạy Tự Động (Cron Job):</span>
+          <p class="mt-1 text-emerald-700">
+            File <code>.github/workflows/auto_story_producer.yml</code> đã được cấu hình chạy tự động mỗi 4 tiếng (cron <code>0 */4 * * *</code>), tự động tải ảnh tư liệu Wikipedia, dựng video >60s kèm hiệu ứng & phụ đề rồi lên lịch trực tiếp vào Planly.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-gray-100">
+        <button onclick="closeModal('cloudModal')" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-semibold shadow-xs">
+          Đã Hiểu
+        </button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- APPLICATION LOGIC JAVASCRIPT -->
   <script>
@@ -1017,9 +1120,13 @@
       try {
         const res = await fetch('/api/config');
         const cfg = await res.json();
-        document.getElementById('cfgGeminiKey').value = cfg.gemini_api_key || '';
-        document.getElementById('cfgPexelsKey').value = cfg.pexels_api_key || '';
-        document.getElementById('cfgTzOffset').value = (cfg.publishing && cfg.publishing.timezone_offset) || 7;
+        const apiKeys = cfg.api_keys || {};
+        const pub = cfg.publishing || {};
+        document.getElementById('cfgGeminiKey').value = apiKeys.gemini_api_key || cfg.gemini_api_key || '';
+        document.getElementById('cfgPexelsKey').value = apiKeys.pexels_api_key || cfg.pexels_api_key || '';
+        document.getElementById('cfgVideosPerDay').value = pub.videos_per_channel_per_day || 3;
+        document.getElementById('cfgLookaheadDays').value = pub.lookahead_days || 7;
+        document.getElementById('cfgTzOffset').value = pub.timezone_offset || 7;
       } catch (e) {
         console.error(e);
       }
@@ -1028,6 +1135,8 @@
     async function saveSettings() {
       const gKey = document.getElementById('cfgGeminiKey').value.trim();
       const pKey = document.getElementById('cfgPexelsKey').value.trim();
+      const vPerDay = parseInt(document.getElementById('cfgVideosPerDay').value || 3);
+      const lookahead = parseInt(document.getElementById('cfgLookaheadDays').value || 7);
       const tz = parseInt(document.getElementById('cfgTzOffset').value || 7);
 
       try {
@@ -1037,18 +1146,87 @@
           body: JSON.stringify({
             gemini_api_key: gKey,
             pexels_api_key: pKey,
-            publishing: { timezone_offset: tz }
+            videos_per_channel_per_day: vPerDay,
+            lookahead_days: lookahead,
+            publishing: {
+              videos_per_channel_per_day: vPerDay,
+              lookahead_days: lookahead,
+              timezone_offset: tz
+            }
           })
         });
         const data = await res.json();
         if (data.status === 'success') {
           closeModal('settingsModal');
-          showAlert("Đã lưu cài đặt API thành công!", "success");
+          showAlert(`Đã lưu thành công: ${vPerDay} video/kênh/ngày, xếp gối đầu ${lookahead} ngày!`, "success");
         }
       } catch (e) {
         showAlert(`Lỗi lưu cài đặt: ${e.message}`, "error");
       }
     }
+
+    // Render sample story video (>60s)
+    let samplePollingTimer = null;
+    async function renderSampleStoryVideo() {
+      const btn = document.getElementById('btnSampleRender');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang dựng...';
+      showAlert("Đang sản xuất 1 video kỳ án mẫu (>60s chuẩn kiếm tiền TikTok)... Quá trình mất ~40-60 giây.", "info");
+
+      try {
+        const res = await fetch('/api/story/render_sample', { method: 'POST' });
+        const d = await res.json();
+        if (!d.ok) {
+          showAlert(`Không thể bắt đầu: ${d.message}`, "error");
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-clapperboard"></i> 🎬 Dựng Thử Video (>60s)';
+          return;
+        }
+
+        // Poll for completion
+        if (samplePollingTimer) clearInterval(samplePollingTimer);
+        samplePollingTimer = setInterval(async () => {
+          try {
+            const sRes = await fetch('/api/status');
+            const sData = await sRes.json();
+            if (sData.status === 'idle') {
+              clearInterval(samplePollingTimer);
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fa-solid fa-clapperboard"></i> 🎬 Dựng Thử Video (>60s)';
+              showAlert("🎉 Đã dựng xong video kỳ án mẫu! Đang mở trình phát...", "success");
+
+              // Fetch latest video to play in modal
+              const vRes = await fetch('/api/videos');
+              const vData = await vRes.json();
+              const vids = vData.videos || [];
+              if (vids.length > 0) {
+                const latest = vids[0]; // First video is latest
+                const player = document.getElementById('sampleVideoPlayer');
+                const videoUrl = `/api/video/${latest.filename}`;
+                player.src = videoUrl;
+                document.getElementById('sampleVideoInfo').textContent = `${latest.title || latest.filename} (${latest.duration}s)`;
+                const dlBtn = document.getElementById('sampleDownloadBtn');
+                dlBtn.href = videoUrl;
+                openModal('samplePlayerModal');
+                player.play().catch(() => {});
+              }
+            } else if (sData.status === 'error') {
+              clearInterval(samplePollingTimer);
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fa-solid fa-clapperboard"></i> 🎬 Dựng Thử Video (>60s)';
+              showAlert(`Lỗi khi dựng video: ${sData.job_message}`, "error");
+            }
+          } catch (e) {
+            // Keep polling
+          }
+        }, 3000);
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-clapperboard"></i> 🎬 Dựng Thử Video (>60s)';
+        showAlert(`Lỗi kết nối: ${err.message}`, "error");
+      }
+    }
+
 
     // Add Account Modal
     async function saveNewAccount() {
