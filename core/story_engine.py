@@ -43,19 +43,34 @@ def _render_image_to_video_segment(
     output_path: Path,
     pan_direction: str = "right"
 ) -> bool:
-    """Renders a still photo into a butter-smooth 9:16 portrait video segment.
-    Uses blurred background + centered authentic photo + smooth slow pan.
+    """Renders an authentic archive photo into a butter-smooth 9:16 portrait video segment.
+    Uses blurred backdrop + centered authentic photo + smooth cinematic slow Ken Burns motion.
     ABSOLUTELY ZERO CAMERA SHAKE / ZERO JITTER.
     """
     try:
         dur_str = f"{duration:.2f}"
-        # Pan horizontally across slightly oversized frame
         if pan_direction == "right":
             x_expr = f"(in_w-out_w)*(t/{dur_str})"
+            y_expr = "(in_h-out_h)/2"
+            scale_expr = "scale=1160:2060"
         elif pan_direction == "left":
             x_expr = f"(in_w-out_w)*(1-t/{dur_str})"
+            y_expr = "(in_h-out_h)/2"
+            scale_expr = "scale=1160:2060"
+        elif pan_direction == "zoom_in":
+            x_expr = "(in_w-out_w)/2"
+            y_expr = "(in_h-out_h)/2"
+            # Subtle zoom in (1.00 -> 1.06)
+            scale_expr = f"scale='1080*(1+0.06*t/{dur_str})':'1920*(1+0.06*t/{dur_str})':eval=frame"
+        elif pan_direction == "zoom_out":
+            x_expr = "(in_w-out_w)/2"
+            y_expr = "(in_h-out_h)/2"
+            # Subtle zoom out (1.06 -> 1.00)
+            scale_expr = f"scale='1080*(1.06-0.06*t/{dur_str})':'1920*(1.06-0.06*t/{dur_str})':eval=frame"
         else:
             x_expr = "(in_w-out_w)/2"
+            y_expr = "(in_h-out_h)/2"
+            scale_expr = "scale=1080:1920"
 
         cmd = [
             "ffmpeg", "-y", "-loglevel", "error",
@@ -67,7 +82,7 @@ def _render_image_to_video_segment(
             f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=20:2,eq=brightness=-0.35[bg];"
             f"[0:v]scale=980:1380:force_original_aspect_ratio=decrease[fg];"
             f"[bg][fg]overlay=(W-w)/2:(H-h)/2[composite];"
-            f"[composite]scale=1160:2060,crop=1080:1920:x='{x_expr}':y='(in_h-out_h)/2',setsar=1,fps=30[v]",
+            f"[composite]{scale_expr},crop=1080:1920:x='{x_expr}':y='{y_expr}',setsar=1,fps=30[v]",
             "-map", "[v]",
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22", "-pix_fmt", "yuv420p", "-an",
             str(output_path)
@@ -77,6 +92,7 @@ def _render_image_to_video_segment(
     except Exception as e:
         print(f"[StoryEngine] Image render failed: {e}")
         return False
+
 
 
 def _render_video_broll_segment(
@@ -151,56 +167,30 @@ def render_crime_story_video(
         out_path=ass_path
     )
 
-    # 3. Gather Visual Media (Wikimedia Archival Photos + Pexels B-Roll)
-    log(f"[StoryEngine] 3/5 Downloading authentic archive photos & cinematic B-roll...")
+    # 3. Gather Visual Media (100% Authentic Archival Photos from Wikimedia)
+    log(f"[StoryEngine] 3/5 Downloading authentic archive photos for '{wiki_query}'...")
     wiki_client = WikimediaClient()
-    wiki_photos = wiki_client.get_case_visuals(wiki_query, count=4)
-    log(f"   [Wikimedia] Retrieved {len(wiki_photos)} authentic archive photo(s)")
+    wiki_photos = wiki_client.get_case_visuals(wiki_query, count=12)
+    if not wiki_photos and wiki_query != case_name:
+        wiki_photos = wiki_client.get_case_visuals(case_name, count=12)
+    log(f"   [Wikimedia] Retrieved {len(wiki_photos)} authentic historical archive photo(s)")
 
-    pexels_client = PexelsClient()
-    broll_clips = []
-    if pexels_client.is_configured:
-        for bq in broll_queries:
-            results = pexels_client.search_videos(bq, per_page=4)
-            for vdata in results:
-                dl = pexels_client.download_video_file(vdata)
-                if dl and dl.exists():
-                    broll_clips.append(dl)
-                    break
-    log(f"   [Pexels] Retrieved {len(broll_clips)} cinematic B-roll clip(s)")
-
-    # 4. Assemble Scene Montage (1 visual per scene transition, NO SHAKE)
+    # 4. Assemble Scene Montage (1 authentic photo per scene with smooth Ken Burns motion)
     log(f"[StoryEngine] 4/5 Rendering smooth cinematic visual montage for {len(timeline)} scenes...")
     montage_segments = []
     concat_file = workdir / "montage_concat.txt"
     concat_lines = []
-
-    wiki_idx = 0
-    broll_idx = 0
+    motions = ["right", "zoom_in", "left", "zoom_out", "center"]
 
     for s_idx, sc_info in enumerate(timeline):
         sc_dur = float(sc_info.get("duration", 7.0))
         seg_dest = workdir / f"scene_seg_{s_idx:02d}.mp4"
-        orig_scene = scenes_data[s_idx] if s_idx < len(scenes_data) else {}
-        visual_hint = orig_scene.get("visual_hint", "wiki" if (s_idx % 2 == 1) else "broll")
+        direction = motions[s_idx % len(motions)]
 
         success = False
-        if visual_hint == "wiki" and wiki_photos:
-            photo_p = wiki_photos[wiki_idx % len(wiki_photos)]
-            wiki_idx += 1
-            direction = "right" if (s_idx % 2 == 0) else "left"
+        if wiki_photos:
+            photo_p = wiki_photos[s_idx % len(wiki_photos)]
             success = _render_image_to_video_segment(photo_p, sc_dur, seg_dest, pan_direction=direction)
-
-        if not success and broll_clips:
-            clip_p = broll_clips[broll_idx % len(broll_clips)]
-            broll_idx += 1
-            clip_dur = ffprobe_duration(clip_p)
-            start_off = random.uniform(0.0, max(0.0, clip_dur - sc_dur - 1.0)) if (clip_dur > sc_dur + 1.0) else 0.0
-            success = _render_video_broll_segment(clip_p, sc_dur, seg_dest, start_offset=start_off)
-
-        if not success and wiki_photos:
-            photo_p = wiki_photos[0]
-            success = _render_image_to_video_segment(photo_p, sc_dur, seg_dest, pan_direction="center")
 
         if not success:
             # Fallback dark ambient background
@@ -228,35 +218,39 @@ def render_crime_story_video(
     ]
     subprocess.run(concat_cmd, check=True)
 
-    # 5. Sound Effects & Audio Mixing
-    log("[StoryEngine] 5/5 Mixing dark suspense music, SFX & mastering audio...")
+    # 5. Background Music Ducking & Mastering
+    log("[StoryEngine] 5/5 Mixing dark suspense music & mastering audio...")
     bg_music = get_background_music(total_voice_dur, workdir)
 
-    myinstants = MyInstantsClient()
-    sfx_inputs = []
-    sfx_filter_chains = []
+    # Render master audio track FIRST (decoupled from video to guarantee zero audio cutoff)
+    master_audio = workdir / "master_audio.wav"
+    audio_filter = (
+        "[0:a]volume=1.35,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,asplit=2[voice_sc][voice];"
+        "[1:a]volume=0.10,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[music];"
+        "[music][voice_sc]sidechaincompress=threshold=0.10:ratio=4:attack=20:release=350[ducked_music];"
+        "[ducked_music][voice]amix=inputs=2:duration=longest:normalize=0,loudnorm=I=-14:LRA=7:TP=-1.5,aresample=async=1[a_out]"
+    )
+    cmd_audio = [
+        "ffmpeg", "-y", "-loglevel", "error",
+        "-i", str(voice_path),
+        "-i", str(bg_music),
+        "-filter_complex", audio_filter,
+        "-map", "[a_out]",
+        "-t", f"{total_voice_dur:.2f}",
+        str(master_audio)
+    ]
+    subprocess.run(cmd_audio, check=True)
+    master_dur = ffprobe_duration(master_audio)
+    log(f"[StoryEngine] Master audio track ready: {master_dur:.2f}s (voice: {total_voice_dur:.2f}s)")
 
-    # Map SFX cues from scenes
-    sfx_count = 0
-    for s_idx, sc_info in enumerate(timeline):
-        orig_sc = scenes_data[s_idx] if s_idx < len(scenes_data) else {}
-        sfx_cue = orig_sc.get("sfx")
-        if sfx_cue:
-            start_t = float(sc_info.get("start", 0.0))
-            sfx_file = myinstants.download_sound(sfx_cue)
-            if sfx_file and sfx_file.exists():
-                delay_ms = int(start_t * 1000)
-                sfx_inputs.extend(["-i", str(sfx_file)])
-                sfx_idx = 3 + sfx_count
-                sfx_filter_chains.append(f"[{sfx_idx}:a]adelay={delay_ms}|{delay_ms},volume=0.35[sfx_{sfx_count}];")
-                sfx_count += 1
-            if sfx_count >= 5:
-                break
-
-    # Build audio & video filter complex
-    clean_ass = str(ass_path).replace("\\", "/").replace(":", "\\:")
+    # Build video filter complex
+    clean_ass = str(ass_path.resolve()).replace("\\", "/").replace(":", "\\:")
     font_file = FONTS_DIR / "Anton-Regular.ttf"
-    font_arg = f":fontfile='{str(font_file).replace('\\', '/').replace(':', '\\:')}'" if font_file.exists() else ""
+    if font_file.exists():
+        clean_font = str(font_file.resolve()).replace("\\", "/").replace(":", "\\:")
+        font_arg = f":fontfile='{clean_font}'"
+    else:
+        font_arg = ""
     clean_banner = _clean_banner_text(hook_banner)
 
     # Top Hook Banner styling: bold yellow text in dark banner box + ASS karaoke
@@ -267,36 +261,22 @@ def render_crime_story_video(
         f"ass='{clean_ass}'[v_out]"
     )
 
-    af_parts = [
-        "[1:a]volume=1.25,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,asplit=2[voice_sc][voice];",
-        "[2:a]volume=0.12,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[music];",
-        "[music][voice_sc]sidechaincompress=threshold=0.12:ratio=4:attack=20:release=350[ducked_music];",
-    ]
-    mix_ins = ["[ducked_music]", "[voice]"]
-
-    for i in range(sfx_count):
-        af_parts.append(f"{sfx_filter_chains[i]}")
-        mix_ins.append(f"[sfx_{i}]")
-
-    af_parts.append(f"{''.join(mix_ins)}amix=inputs={len(mix_ins)}:normalize=0,loudnorm=I=-14:LRA=7:TP=-1.5[a_out]")
-    audio_filter = "".join(af_parts)
-
     final_cmd = [
         "ffmpeg", "-y", "-loglevel", "error",
         "-i", str(raw_montage_video),
-        "-i", str(voice_path),
-        "-i", str(bg_music),
-        *sfx_inputs,
-        "-filter_complex", f"{video_filter};{audio_filter}",
+        "-i", str(master_audio),
+        "-filter_complex", video_filter,
         "-map", "[v_out]",
-        "-map", "[a_out]",
+        "-map", "1:a",
         "-t", f"{total_voice_dur:.2f}",
         "-c:v", "libx264", "-preset", "veryfast", "-crf", "22", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "192k",
         str(out_file)
     ]
     subprocess.run(final_cmd, check=True)
-    log(f"[StoryEngine] Successfully rendered True Crime story video: {out_file.name} ({total_voice_dur:.1f}s)")
+    actual_dur = ffprobe_duration(out_file)
+    log(f"[StoryEngine] Successfully rendered True Crime story video: {out_file.name} (Audio & Video: {actual_dur:.1f}s)")
+
 
     # Save metadata
     meta_path = out_file.with_suffix(".meta.json")

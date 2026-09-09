@@ -16,6 +16,7 @@ import yt_dlp
 from core.paths import CACHE_DIR, OUTPUT_DIR
 from core.tts_engine import ffprobe_duration
 from core.config_manager import get_api_key
+from core.audio_processor import has_audio_stream
 
 SOURCES_DIR = CACHE_DIR / "sources"
 SOURCES_DIR.mkdir(parents=True, exist_ok=True)
@@ -291,9 +292,61 @@ def render_hybrid_commentary_video(
     log("[Commentary Engine] 4/4 Mixing audio & final 1080x1920 render...")
     bg_music = get_background_music(total_voice_dur, workdir)
     sfx_path = build_sfx_track(timeline, total_voice_dur, workdir)
-    clean_ass = str(ass_path).replace("\\", "/").replace(":", "\\:")
+
+    # 1. Master Audio Track (Decoupled to guarantee zero audio cutoff)
+    master_audio = workdir / "master_audio.wav"
+    audio_inputs = [
+        "-i", str(full_voice_path),
+        "-i", str(bg_music),
+    ]
+    af_parts = [
+        "[0:a]volume=1.25,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,asplit=2[voice_sc][voice];",
+        "[1:a]volume=0.12,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[music];",
+        "[music][voice_sc]sidechaincompress=threshold=0.12:ratio=4:attack=20:release=350[ducked_music];",
+    ]
+    mix_ins = ["[ducked_music]", "[voice]"]
+
+    # If src video has audio, mix background wild audio safely
+    src_has_audio = has_audio_stream(src_video_path)
+    if src_has_audio:
+        wild_idx = len(audio_inputs) // 2
+        audio_inputs.extend(["-stream_loop", "-1", "-i", str(src_video_path)])
+        af_parts.append(
+            f"[{wild_idx}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,"
+            f"stereotools=mlev=0.12:slev=1.3:mpan=0,volume=0.14,apad=whole_dur={total_voice_dur:.2f}[wild_a];"
+        )
+        mix_ins.append("[wild_a]")
+
+    if sfx_path and sfx_path.exists():
+        sfx_idx = len(audio_inputs) // 2
+        audio_inputs.extend(["-i", str(sfx_path)])
+        af_parts.append(
+            f"[{sfx_idx}:a]volume=0.32,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,"
+            f"apad=whole_dur={total_voice_dur:.2f}[sfx];"
+        )
+        mix_ins.append("[sfx]")
+
+    af_parts.append(
+        f"{''.join(mix_ins)}amix=inputs={len(mix_ins)}:duration=longest:normalize=0,loudnorm=I=-14:LRA=7:TP=-1.5,aresample=async=1[a_out]"
+    )
+    cmd_audio = [
+        "ffmpeg", "-y", "-loglevel", "error",
+        *audio_inputs,
+        "-filter_complex", "".join(af_parts),
+        "-map", "[a_out]",
+        "-t", f"{total_voice_dur:.2f}",
+        str(master_audio)
+    ]
+    subprocess.run(cmd_audio, check=True)
+
+    # 2. Final Multiplex with Video
+    clean_ass = str(ass_path.resolve()).replace("\\", "/").replace(":", "\\:")
     font_file = FONTS_DIR / "Anton-Regular.ttf"
-    font_arg = f":fontfile='{str(font_file).replace('\\', '/').replace(':', '\\:')}'" if font_file.exists() else ""
+    if font_file.exists():
+        clean_font = str(font_file.resolve()).replace("\\", "/").replace(":", "\\:")
+        font_arg = f":fontfile='{clean_font}'"
+    else:
+        font_arg = ""
     hook_banner_text = _clean_hook_banner(script.get("hook_banner", "WATCH CAREFULLY"))
 
     fc_video = (
@@ -304,34 +357,12 @@ def render_hybrid_commentary_video(
         f"ass='{clean_ass}'[v]"
     )
 
-    af_parts = [
-        # Original wild audio: center channel suppression + low volume
-        "[1:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,stereotools=mlev=0.12:slev=1.3:mpan=0,volume=0.14[wild_a];",
-        "[2:a]volume=1.25,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,asplit=2[voice_sc][voice];",
-        "[3:a]volume=0.12,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[music];",
-        "[music][voice_sc]sidechaincompress=threshold=0.12:ratio=4:attack=20:release=350[ducked_music];",
-    ]
-    mix_ins = ["[wild_a]", "[ducked_music]", "[voice]"]
-    cmd_inputs = [
-        "-stream_loop", "-1", "-i", str(stitched_footage),
-        "-stream_loop", "-1", "-i", str(src_video_path),
-        "-i", str(full_voice_path),
-        "-i", str(bg_music),
-    ]
-
-    if sfx_path and sfx_path.exists():
-        cmd_inputs += ["-i", str(sfx_path)]
-        af_parts.append("[4:a]volume=0.32,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[sfx];")
-        mix_ins.append("[sfx]")
-
-    af_parts.append(f"{''.join(mix_ins)}amix=inputs={len(mix_ins)}:normalize=0,loudnorm=I=-14:LRA=7:TP=-1.5[a]")
-    fc_audio = "".join(af_parts)
-
     cmd_final = [
         "ffmpeg", "-y", "-loglevel", "error",
-        *cmd_inputs,
-        "-filter_complex", f"{fc_video};{fc_audio}",
-        "-map", "[v]", "-map", "[a]",
+        "-stream_loop", "-1", "-i", str(stitched_footage),
+        "-i", str(master_audio),
+        "-filter_complex", fc_video,
+        "-map", "[v]", "-map", "1:a",
         "-c:v", "libx264", "-preset", "veryfast", "-crf", "19", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "192k",
         "-t", f"{total_voice_dur:.2f}",

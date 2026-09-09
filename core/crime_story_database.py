@@ -1001,3 +1001,12 @@ def get_next_crime_story() -> Dict[str, Any]:
     used.append(chosen["id"])
     save_used_story_ids(used)
     return chosen
+
+
+def get_case_by_id(case_id: str) -> Optional[Dict[str, Any]]:
+    """Retrieves a specific case by its ID."""
+    for c in ICONIC_TRUE_CRIME_CASES:
+        if c.get("id") == case_id:
+            return c
+    return None
+

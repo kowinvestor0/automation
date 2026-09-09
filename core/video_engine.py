@@ -58,10 +58,25 @@ def assemble_dynamic_scene_montage(
         return bg_clip
 
     # Single clip provided covering entire duration (e.g. commentary source)
-    if len(clip_paths) == 1 and len(timeline) <= 1:
+    if len(clip_paths) == 1:
         dur = ffprobe_duration(clip_paths[0])
         if dur >= target_duration:
             return clip_paths[0]
+        # Loop single clip cleanly to target duration
+        looped_clip = workdir / "looped_source.mp4"
+        cmd_loop = [
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-stream_loop", "-1",
+            "-i", str(clip_paths[0]),
+            "-t", f"{target_duration:.2f}",
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30",
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "192k",
+            str(looped_clip)
+        ]
+        res_l = subprocess.run(cmd_loop, capture_output=True, text=True)
+        if res_l.returncode == 0 and looped_clip.exists() and looped_clip.stat().st_size > 5000:
+            return looped_clip
 
     log(f"[VideoEngine] Assembling {len(timeline)} scene visual cuts using {len(clip_paths)} distinct clip(s)...")
     seg_files = []
@@ -73,7 +88,7 @@ def assemble_dynamic_scene_montage(
         sc_dur = float(sc.get("duration", 8.0))
         clip_dur = ffprobe_duration(clip_p)
 
-        # Pick random start offset within clip if long enough
+        # Pick safe start offset within clip
         start_offset = 0.0
         if clip_dur > sc_dur + 1.5:
             start_offset = random.uniform(0.0, min(5.0, clip_dur - sc_dur))
@@ -84,9 +99,9 @@ def assemble_dynamic_scene_montage(
         cmd = [
             "ffmpeg", "-y", "-loglevel", "error",
             *loop_in,
+            "-i", str(clip_p),
             "-ss", f"{start_offset:.2f}",
             "-t", f"{sc_dur:.2f}",
-            "-i", str(clip_p),
             "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30",
             "-c:v", "libx264", "-preset", "ultrafast", "-crf", "22", "-pix_fmt", "yuv420p", "-an",
             str(seg_out)
@@ -96,9 +111,9 @@ def assemble_dynamic_scene_montage(
             seg_files.append(seg_out)
             p_str = str(seg_out.resolve()).replace("\\", "/")
             concat_lines.append(f"file '{p_str}'")
-        else:
-            p_str = str(clip_p.resolve()).replace("\\", "/")
-            concat_lines.append(f"file '{p_str}'")
+
+    if not concat_lines:
+        return clip_paths[0]
 
     concat_list.write_text("\n".join(concat_lines) + "\n", encoding="utf-8")
     stitched_out = workdir / "stitched_footage.mp4"
@@ -117,6 +132,7 @@ def assemble_dynamic_scene_montage(
         return stitched_out
 
     return clip_paths[0]
+
 
 
 def stitch_clips_to_target_duration(
@@ -255,24 +271,25 @@ def render_monetizable_video(
         ]
         mix_sources = ["[ducked_music]", "[voice]"]
 
-        # If source has audio, process original audio
+        # If source has audio, process original audio and pad with silence so it never truncates mix
         if has_orig_audio:
             if vocal_suppress:
-                af_parts.insert(0, f"[0:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,stereotools=mlev=0.15:slev=1.2:mpan=0,volume={orig_vol:.2f}[orig_a];")
+                af_parts.insert(0, f"[0:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,stereotools=mlev=0.15:slev=1.2:mpan=0,volume={orig_vol:.2f},apad=whole_dur={voice_duration:.2f}[orig_a];")
             else:
-                af_parts.insert(0, f"[0:a]volume={orig_vol:.2f},aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[orig_a];")
+                af_parts.insert(0, f"[0:a]volume={orig_vol:.2f},aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,apad=whole_dur={voice_duration:.2f}[orig_a];")
             mix_sources.insert(0, "[orig_a]")
 
         if sfx_path and sfx_path.exists():
             sfx_idx = len(input_files)
             input_files.append(sfx_path)
             cmd_inputs += ["-i", str(sfx_path)]
-            af_parts.append(f"[{sfx_idx}:a]volume=0.30,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[sfx];")
+            af_parts.append(f"[{sfx_idx}:a]volume=0.30,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,apad=whole_dur={voice_duration:.2f}[sfx];")
             mix_sources.append("[sfx]")
 
-        # Combine all audio streams and normalize
-        af_parts.append(f"{''.join(mix_sources)}amix=inputs={len(mix_sources)}:normalize=0,loudnorm=I=-14:LRA=7:TP=-1.5[a]")
+        # Combine all audio streams, duration=longest ensures voice never cuts off
+        af_parts.append(f"{''.join(mix_sources)}amix=inputs={len(mix_sources)}:duration=longest:normalize=0,loudnorm=I=-14:LRA=7:TP=-1.5,aresample=async=1[a]")
         fc_audio = "".join(af_parts)
+
 
         # 6. Render Final Output with FFmpeg
         log(f"[VideoEngine] 5/5 Final render to {out_file.name} (1080x1920 30fps)...")
