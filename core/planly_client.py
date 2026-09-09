@@ -209,6 +209,12 @@ class PlanlyClient:
                 break
             self.delete_schedule_groups(ids)
             total_deleted += len(ids)
-            log(f"[Planly] Đã xóa lô {len(ids)} bài viết. Tổng cộng đã xóa: {total_deleted}...")
-        log(f"[Planly] Hoàn tất: Đã xóa toàn bộ {total_deleted} bài viết trên Planly.")
+            try:
+                log(f"[Planly] Da xoa lo {len(ids)} bai viet. Tong cong da xoa: {total_deleted}...")
+            except Exception:
+                pass
+        try:
+            log(f"[Planly] Hoan tat: Da xoa toan bo {total_deleted} bai viet tren Planly.")
+        except Exception:
+            pass
         return total_deleted

@@ -28,14 +28,8 @@ from core.paths import DATA_DIR, OUTPUT_DIR, CACHE_DIR
 from core.account_manager import AccountManager
 from core.planly_client import PlanlyClient
 from core.config_manager import load_config
-from core.scraper import VideoScraper
-from core.video_commentary import render_hybrid_commentary_video, generate_commentary_script
-from core.infinite_content import (
-    load_used_viral_clips,
-    save_used_viral_clips,
-    get_next_unique_viral_clip,
-    VIRAL_KNOWLEDGE_BASE
-)
+from core.story_engine import render_crime_story_video
+from core.crime_story_database import get_next_crime_story, ICONIC_TRUE_CRIME_CASES
 from core.scheduler import (
     get_us_eastern_tz,
     US_VIRAL_PEAK_HOURS_ET,
@@ -231,10 +225,8 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
     tz = get_us_eastern_tz()
     today_et = dt.datetime.now(tz).date()
 
-    scraper = VideoScraper()
     cfg = load_config().get("generation", {})
     media_cache = load_media_cache()
-    used_viral_ids = load_used_viral_clips()
 
     # Get live schedule counts from Planly
     schedule_counts = get_channel_scheduled_counts_by_date(client)
@@ -249,9 +241,9 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
         target_date = today_et + dt.timedelta(days=day_offset)
         target_date_str = target_date.strftime("%Y-%m-%d")
 
-        logger.info(f"--- Kiểm tra lịch ngày: {target_date.strftime('%d/%m/%Y')} (Day +{day_offset}) ---")
+        logger.info(f"--- Kiem tra lich ngay: {target_date.strftime('%d/%m/%Y')} (Day +{day_offset}) ---")
 
-        # Sort channels so channels with fewest scheduled posts (such as new channels) are served first
+        # Sort channels so channels with fewest scheduled posts are served first
         sorted_channels = sorted(
             channels,
             key=lambda c: schedule_counts.get(c["id"], {}).get(target_date_str, 0)
@@ -268,53 +260,39 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
             needed = quota_per_day - current_scheduled
 
             if needed <= 0:
-                logger.info(f"  Kênh '{ch_name}': Đã đủ {current_scheduled}/{quota_per_day} video cho ngày {target_date_str}. Bỏ qua.")
+                logger.info(f"  Kenh '{ch_name}': Da du {current_scheduled}/{quota_per_day} video cho ngay {target_date_str}. Bo qua.")
                 continue
 
             ch_idx = next((i for i, c in enumerate(channels) if c["id"] == ch_id), 0)
             all_slots = build_channel_slots_for_date(target_date, channel_index=ch_idx, quota=quota_per_day)
             if current_scheduled >= len(all_slots):
-                logger.info(f"  Kênh '{ch_name}': Không còn slot khả dụng cho ngày {target_date_str} (đã có {current_scheduled} video).")
+                logger.info(f"  Kenh '{ch_name}': Khong con slot kha dung cho ngay {target_date_str} (da co {current_scheduled} video).")
                 continue
 
             missing_slots = all_slots[current_scheduled : current_scheduled + needed]
             if not missing_slots:
                 continue
 
-            logger.info(f"  ⚡ Kênh '{ch_name}': Đang có {current_scheduled}/{quota_per_day} video. Cần tạo thêm {len(missing_slots)} video mới...")
+            logger.info(f"  ⚡ Kenh '{ch_name}': Dang co {current_scheduled}/{quota_per_day} video. Can tao them {len(missing_slots)} video tai lieu ky an moi...")
 
             for slot_idx, slot_time in enumerate(missing_slots):
                 if is_stop_requested():
                     break
 
-                # Pick unique viral niche
-                niche_idx = (ch_idx * quota_per_day + current_scheduled + slot_idx) % len(VIRAL_KNOWLEDGE_BASE)
-                niche_obj = VIRAL_KNOWLEDGE_BASE[niche_idx]
-                niche_name = niche_obj["category"]
+                story = get_next_crime_story()
+                case_id = story.get("id", "crime_story")
+                case_name = story.get("case_name", "Unsolved Mystery")
 
-                logger.info(f"    [{slot_idx+1}/{len(missing_slots)}] [{niche_name}] Đang tìm clip viral độc quyền từ kho vô hạn...")
-                src_clip = get_next_unique_viral_clip(
-                    scraper=scraper,
-                    used_ids=used_viral_ids,
-                    preferred_category=niche_name,
-                    log=logger.info
-                )
-
-                if not src_clip:
-                    logger.warning(f"    Không tìm thấy clip viral cho kênh '{ch_name}'. Bỏ qua slot.")
-                    continue
-
-                clean_t = re.sub(r"[^\w]+", "_", src_clip["title"][:25]).strip("_")
+                clean_t = re.sub(r"[^\w]+", "_", case_id)[:25].strip("_")
                 stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-                out_file = OUTPUT_DIR / f"commentary_{stamp}_{safe_ch_name}_{slot_idx+1}_{clean_t}.mp4"
+                out_file = OUTPUT_DIR / f"crime_{stamp}_{safe_ch_name}_{slot_idx+1}_{clean_t}.mp4"
 
-                logger.info(f"    -> Đang render video commentary độc quyền: '{src_clip['title'][:50]}' ({src_clip.get('duration', 0):.1f}s)...")
+                logger.info(f"    [{slot_idx+1}/{len(missing_slots)}] -> Dang san xuat ky an: '{case_name}' (>60s)...")
                 try:
-                    render_hybrid_commentary_video(
-                        source_video_info=src_clip,
+                    render_crime_story_video(
+                        story=story,
                         out_file=out_file,
                         cfg=cfg,
-                        enable_broll_cutaways=False,
                         log=logger.info
                     )
 
@@ -322,20 +300,25 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                     if meta_file.exists():
                         meta_info = json.loads(meta_file.read_text(encoding="utf-8"))
                     else:
-                        meta_info = {"title": src_clip["title"], "hashtags": ["#shorts", "#viral", "#commentary"]}
+                        meta_info = {"title": case_name, "hashtags": story.get("hashtags", ["#truecrime", "#mystery", "#crimetok"])}
 
                     # Upload to Planly S3
                     vpath_str = str(out_file.resolve())
                     if vpath_str not in media_cache:
-                        logger.info(f"    -> Đang tải video lên Planly S3 Storage...")
+                        logger.info(f"    -> Dang tai video len Planly S3 Storage...")
                         media_id = client.upload_video(out_file, log=logger.info)
                         media_cache[vpath_str] = media_id
                         save_media_cache(media_cache)
                     else:
                         media_id = media_cache[vpath_str]
 
-                    tags_str = " ".join(meta_info.get("hashtags", ["#viral", "#commentary", "#shorts"]))
-                    caption = f"{meta_info.get('title', src_clip['title'])}! What are your thoughts on this? React below! 💬\n\n{tags_str}"
+                    raw_tags = meta_info.get("hashtags", ["#truecrime", "#mystery", "#crimetok", "#fyp"])
+                    if isinstance(raw_tags, list):
+                        tags_str = " ".join(raw_tags)
+                    else:
+                        tags_str = str(raw_tags)
+
+                    caption = f"{meta_info.get('title', case_name)} 😱 What really happened? Share your theory below! 👇\n\n{tags_str}"
 
                     # Post entry on Planly with duet/stitch disabled
                     post_entry = {
@@ -359,9 +342,9 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                         schedule_counts[ch_id] = {}
                     schedule_counts[ch_id][target_date_str] = schedule_counts[ch_id].get(target_date_str, 0) + 1
 
-                    logger.info(f"    ✅ Đã xếp lịch thành công lúc {slot_time} trên kênh '{ch_name}'!")
+                    logger.info(f"    ✅ Da xep lich thanh cong luc {slot_time} tren kenh '{ch_name}'!")
                 except Exception as e:
-                    logger.error(f"    ❌ Lỗi tạo video slot {slot_idx+1} cho kênh '{ch_name}': {e}")
+                    logger.error(f"    ❌ Loi tao video slot {slot_idx+1} cho kenh '{ch_name}': {e}", exc_info=True)
 
     return total_scheduled_this_cycle
 
@@ -373,9 +356,10 @@ def main():
         sys.exit(1)
 
     logger.info("====================================================================")
-    logger.info("🚀 AUTO MAKE MONEY - BACKGROUND WORKER ĐÃ KHỞI ĐỘNG (CHẠY NGẦM 24/7)")
-    logger.info("📌 Tự động duy trì 6 video/kênh/ngày cho tất cả các ngày sắp tới.")
-    logger.info("⚡ Động cơ: Tự tìm Short trên mạng + Bình luận liền mạch (>60s) + Zero trùng lặp.")
+    logger.info("🚀 AUTO MAKE MONEY - BACKGROUND WORKER (AMERICAN TRUE CRIME ENGINE 24/7)")
+    logger.info("📌 Tự động duy trì 6 video tài liệu kỳ án/kênh/ngày (>60s) cho 7 ngày tới.")
+    logger.info("⚡ Động cơ: Wikipedia/Wikimedia + Pexels 9:16 + Myinstants SFX + Edge TTS.")
+    logger.info("✨ Không rung lắc, không méo hình, chuẩn 1080x1920, 100% nhất quán.")
     logger.info("====================================================================")
 
     try:
