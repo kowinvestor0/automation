@@ -165,7 +165,7 @@ async def handle_stream_video(request: web.Request) -> web.FileResponse:
 
 
 async def handle_open_output_folder(request: web.Request) -> web.Response:
-    """Opens local D:\auto make money\output folder in Windows File Explorer."""
+    r"""Opens local D:\auto make money\output folder in Windows File Explorer."""
     try:
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         os.startfile(str(OUTPUT_DIR))
