@@ -9,6 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 from core.account_manager import AccountManager
+from core.planly_client import PlanlyClient
 from core.paths import DATA_DIR
 
 def purge_all_planly_schedules():

@@ -138,28 +138,29 @@ def render_crime_story_video(
     log(f"[StoryEngine] Starting production for True Crime case: '{case_name}'...")
 
     # 1. Synthesize Voiceover (Deep, dramatic American narrator)
-    log("[StoryEngine] 1/5 Synthesizing dramatic narrator voiceover (Edge TTS)...")
+    # 1. Synthesize Voiceover (High-energy, fast-paced dramatic American narrator)
+    log("[StoryEngine] 1/5 Synthesizing high-energy narrator voiceover (+15% fast pace for TikTok)...")
     voice_cfg = {
-        "voice": "en-US-ChristopherNeural",
-        "voice_rate": "-2%",  # Slightly slower for intense suspenseful pacing
+        "voice": cfg.get("voice", "en-US-ChristopherNeural") if cfg else "en-US-ChristopherNeural",
+        "voice_rate": "+15%",  # Fast-paced, intense, energetic pacing to maximize retention and prevent sleepiness
         "font": "Anton",
-        "font_size": 90,
+        "font_size": 66,
         "highlight_color": "&H0033E5FF&",
-        "words_per_caption": 3
+        "words_per_caption": 2
     }
     tts_scenes = [{"role": "narrator", "text": sc["text"]} for sc in scenes_data]
     voice_path, timeline = synthesize_script(tts_scenes, voice_cfg, workdir, log=log)
     total_voice_dur = ffprobe_duration(voice_path)
-    log(f"[StoryEngine] Generated voiceover duration: {total_voice_dur:.1f}s across {len(timeline)} scenes")
+    log(f"[StoryEngine] Generated fast-paced voiceover: {total_voice_dur:.1f}s across {len(timeline)} scenes")
 
-    # 2. Build Animated ASS Subtitles
-    log("[StoryEngine] 2/5 Generating dynamic ASS karaoke subtitles...")
+    # 2. Build Animated ASS Subtitles (TikTok Safe Zone Compliant)
+    log("[StoryEngine] 2/5 Generating safe-zone ASS karaoke subtitles...")
     ass_path = workdir / "subtitles.ass"
     sub_cfg = {
         "font": "Anton",
-        "font_size": 90,
+        "font_size": 66,
         "highlight_color": "&H0033E5FF&",
-        "words_per_caption": 3
+        "words_per_caption": 2
     }
     build_ass_subtitles(
         timeline=timeline,
@@ -253,11 +254,12 @@ def render_crime_story_video(
         font_arg = ""
     clean_banner = _clean_banner_text(hook_banner)
 
-    # Top Hook Banner styling: bold yellow text in dark banner box + ASS karaoke
+    # Top Hook Banner styling: bold yellow text in dark banner box + ASS karaoke (safe 54pt font)
     video_filter = (
         "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,"
-        "drawbox=x=0:y=110:w=1080:h=170:color=black@0.75:t=fill,"
-        f"drawtext=text='{clean_banner}'{font_arg}:fontcolor=yellow:fontsize=76:x=(w-text_w)/2:y=155,"
+        "eq=saturation=1.05:contrast=1.04:brightness=0.01,"
+        "drawbox=x=0:y=110:w=1080:h=150:color=black@0.80:t=fill,"
+        f"drawtext=text='{clean_banner}'{font_arg}:fontcolor=yellow:fontsize=54:x=(w-text_w)/2:y=155,"
         f"ass='{clean_ass}'[v_out]"
     )
 

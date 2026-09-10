@@ -143,18 +143,33 @@ def release_lock() -> None:
             pass
 
 
+# 6 Safe Organic Peak Hours in Vietnam Time (GMT+7) spread 2.5 - 3 hours apart:
+# Eliminates burst upload / bot spam flagging by TikTok algorithm
+TIKTOK_ORGANIC_PEAK_HOURS_VN = [
+    (8, 30),   # Slot 1: Morning commute / wake-up
+    (11, 45),  # Slot 2: Lunch break peak
+    (15, 0),   # Slot 3: Afternoon break
+    (17, 45),  # Slot 4: Evening commute
+    (20, 15),  # Slot 5: PRIME EVENING VIRAL TIME (Highest engagement)
+    (22, 30),  # Slot 6: Bedtime scroll peak
+]
+
+
 def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota: int = 6) -> List[str]:
-    # Vietnam timezone GMT+7
+    """Generates organic, human-like posting times spread across the entire day.
+    Prevents TikTok anti-bot / unoriginal spam strikes from burst publishing.
+    """
     tz_vn = dt.timezone(dt.timedelta(hours=7))
     now_utc = dt.datetime.now(dt.timezone.utc)
     slots = []
     for idx in range(quota):
-        # 9:00 AM VN time, spaced by 3 minutes so Planly accepts distinct timestamps
-        minute_offset = idx * 3
+        h, m = TIKTOK_ORGANIC_PEAK_HOURS_VN[idx % len(TIKTOK_ORGANIC_PEAK_HOURS_VN)]
+        # Organic jitter (3-12 mins) per channel so accounts never post at the exact same minute
+        jitter = ((channel_index * 7) + (idx * 3) + 2) % 13
         slot_dt = dt.datetime(
             target_date.year, target_date.month, target_date.day,
-            9, minute_offset, 0, tzinfo=tz_vn
-        )
+            h, m, 0, tzinfo=tz_vn
+        ) + dt.timedelta(minutes=jitter)
         slot_utc = slot_dt.astimezone(dt.timezone.utc)
         if slot_utc > now_utc:
             slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
