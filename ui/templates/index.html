@@ -46,20 +46,25 @@
 
       <!-- Quick Action Buttons -->
       <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+        <!-- Worker Status Badge -->
+        <div id="workerBadge" class="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-gray-50 px-2.5 py-2 text-xs font-medium text-gray-500 cursor-pointer" onclick="toggleWorker()" title="Nhấp để bật/tắt Worker tự động">
+          <span id="workerDot" class="inline-block w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+          <span id="workerLabel">Worker: --</span>
+        </div>
         <button onclick="renderSampleStoryVideo()" id="btnSampleRender" class="flex items-center gap-1.5 rounded-lg border border-purple-300 bg-gradient-to-r from-purple-600 to-indigo-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white hover:from-purple-700 hover:to-indigo-700 transition shadow-xs" title="Dựng thử 1 video kỳ án mẫu chuẩn >60s">
-          <i class="fa-solid fa-clapperboard"></i> 🎬 Dựng Thử Video (>60s)
+          <i class="fa-solid fa-clapperboard"></i> 🎬 Dựng Thử
+        </button>
+        <button onclick="openModal('calendarModal')" class="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs sm:text-sm font-medium text-amber-700 hover:bg-amber-100 transition shadow-xs" title="Xem lịch Planly đã xếp">
+          <i class="fa-solid fa-calendar-check"></i> Planly Calendar
         </button>
         <button onclick="openModal('cloudModal')" class="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs sm:text-sm font-medium text-blue-700 hover:bg-blue-100 transition shadow-xs" title="Chạy tự động trên GitHub Actions Cloud 24/7">
-          <i class="fa-solid fa-cloud"></i> ☁️ GitHub Actions
+          <i class="fa-solid fa-cloud"></i> ☁️ Cloud
         </button>
-        <button onclick="openOutputFolder()" class="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs sm:text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition shadow-xs" title="Mở thư mục video lưu trên máy (D:\auto make money\output)">
-          <i class="fa-solid fa-folder-open"></i> Thư Mục Video
-        </button>
-        <button onclick="openModal('libraryModal')" class="flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-xs sm:text-sm font-medium text-purple-700 hover:bg-purple-100 transition shadow-xs">
-          <i class="fa-solid fa-calendar-days"></i> Kho Video
+        <button onclick="openModal('workerLogModal')" class="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs sm:text-sm font-medium text-gray-600 hover:bg-gray-100 transition shadow-xs" title="Xem log Worker">
+          <i class="fa-solid fa-terminal"></i> Log
         </button>
         <button onclick="openModal('settingsModal')" class="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 transition shadow-xs">
-          <i class="fa-solid fa-gear"></i> Cài Đặt & API
+          <i class="fa-solid fa-gear"></i> Cài Đặt
         </button>
       </div>
     </header>
@@ -523,6 +528,11 @@
         </div>
 
         <div>
+          <label class="block font-medium text-gray-700 mb-1">Anthropic API Key (AI Kịch bản backup):</label>
+          <input type="password" id="cfgAnthropicKey" placeholder="sk-ant-api03-..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+        </div>
+
+        <div>
           <label class="block font-medium text-gray-700 mb-1">Múi giờ đăng (Timezone Offset):</label>
           <input type="number" id="cfgTzOffset" value="7" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
           <span class="text-[10px] text-gray-400">UTC+7 cho giờ Việt Nam</span>
@@ -620,6 +630,65 @@
   </div>
 
 
+  <!-- ==================== MODAL: PLANLY CALENDAR ==================== -->
+  <div id="calendarModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-calendar-check text-amber-600"></i> Planly Calendar — Lịch Đã Xếp
+        </h3>
+        <div class="flex items-center gap-2">
+          <span id="calendarTotal" class="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">0 bài đăng</span>
+          <button onclick="if(confirm('Xóa TOÀN BỘ lịch đã xếp trên Planly?')){purgePlanly()}" class="text-xs font-medium text-red-600 hover:text-red-800 px-2.5 py-1 rounded-lg border border-red-200 hover:bg-red-50 transition">
+            <i class="fa-solid fa-trash"></i> Xóa Hết
+          </button>
+          <button onclick="closeModal('calendarModal')" class="text-gray-400 hover:text-gray-600">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+      </div>
+      <div id="calendarGrid" class="text-xs">
+        <div class="text-center py-8 text-gray-400">Đang tải lịch Planly...</div>
+      </div>
+      <div class="flex justify-end pt-2 border-t border-gray-100">
+        <button onclick="loadPlanlyCalendar()" class="rounded-lg border border-amber-300 bg-amber-50 text-amber-700 px-4 py-2 text-xs font-medium hover:bg-amber-100 mr-2">
+          <i class="fa-solid fa-rotate"></i> Làm Mới
+        </button>
+        <button onclick="closeModal('calendarModal')" class="rounded-lg bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-xs font-semibold shadow-xs">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: WORKER LOG ==================== -->
+  <div id="workerLogModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-terminal text-gray-600"></i> Worker Log — Nhật Ký Sản Xuất
+        </h3>
+        <div class="flex items-center gap-2">
+          <span id="workerLogStatus" class="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">--</span>
+          <button onclick="closeModal('workerLogModal')" class="text-gray-400 hover:text-gray-600">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+      </div>
+      <div id="workerLogConsole" class="bg-gray-900 text-green-400 font-mono text-[11px] leading-relaxed p-4 rounded-xl max-h-[55vh] overflow-y-auto custom-scroll whitespace-pre-wrap">
+        Đang tải log...
+      </div>
+      <div class="flex justify-between pt-2 border-t border-gray-100">
+        <button onclick="loadWorkerLogs()" class="rounded-lg border border-gray-300 bg-white text-gray-700 px-4 py-2 text-xs font-medium hover:bg-gray-50">
+          <i class="fa-solid fa-rotate"></i> Làm Mới
+        </button>
+        <button onclick="closeModal('workerLogModal')" class="rounded-lg bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-xs font-semibold shadow-xs">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- APPLICATION LOGIC JAVASCRIPT -->
   <script>
     // State management
@@ -635,6 +704,8 @@
       loadAccounts();
       loadConfigSettings();
       startPollingLogs();
+      pollWorkerStatus();
+      setInterval(pollWorkerStatus, 8000);
     });
 
     // Alert banner helper
@@ -698,6 +769,8 @@
       const el = document.getElementById(id);
       if (el) el.classList.remove('hidden');
       if (id === 'libraryModal') loadLibraryVideos();
+      if (id === 'calendarModal') loadPlanlyCalendar();
+      if (id === 'workerLogModal') loadWorkerLogs();
     }
     function closeModal(id) {
       const el = document.getElementById(id);
@@ -1124,6 +1197,7 @@
         const pub = cfg.publishing || {};
         document.getElementById('cfgGeminiKey').value = apiKeys.gemini_api_key || cfg.gemini_api_key || '';
         document.getElementById('cfgPexelsKey').value = apiKeys.pexels_api_key || cfg.pexels_api_key || '';
+        document.getElementById('cfgAnthropicKey').value = apiKeys.anthropic_api_key || '';
         document.getElementById('cfgVideosPerDay').value = pub.videos_per_channel_per_day || 3;
         document.getElementById('cfgLookaheadDays').value = pub.lookahead_days || 7;
         document.getElementById('cfgTzOffset').value = pub.timezone_offset || 7;
@@ -1135,6 +1209,7 @@
     async function saveSettings() {
       const gKey = document.getElementById('cfgGeminiKey').value.trim();
       const pKey = document.getElementById('cfgPexelsKey').value.trim();
+      const aKey = document.getElementById('cfgAnthropicKey').value.trim();
       const vPerDay = parseInt(document.getElementById('cfgVideosPerDay').value || 3);
       const lookahead = parseInt(document.getElementById('cfgLookaheadDays').value || 7);
       const tz = parseInt(document.getElementById('cfgTzOffset').value || 7);
@@ -1146,6 +1221,11 @@
           body: JSON.stringify({
             gemini_api_key: gKey,
             pexels_api_key: pKey,
+            api_keys: {
+              gemini_api_key: gKey,
+              pexels_api_key: pKey,
+              anthropic_api_key: aKey
+            },
             videos_per_channel_per_day: vPerDay,
             lookahead_days: lookahead,
             publishing: {
@@ -1253,6 +1333,145 @@
         }
       } catch (e) {
         showAlert(`Lỗi lưu tài khoản: ${e.message}`, "error");
+      }
+    }
+
+    // ==================== WORKER CONTROL ====================
+
+    async function pollWorkerStatus() {
+      try {
+        const res = await fetch('/api/worker/status');
+        const d = await res.json();
+        const dot = document.getElementById('workerDot');
+        const label = document.getElementById('workerLabel');
+        const badge = document.getElementById('workerBadge');
+        if (d.running) {
+          dot.className = 'inline-block w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse';
+          label.textContent = `Worker: ON (PID ${d.pid})`;
+          badge.className = 'flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-2.5 py-2 text-xs font-medium text-green-700 cursor-pointer';
+        } else {
+          dot.className = 'inline-block w-2.5 h-2.5 rounded-full bg-red-400';
+          label.textContent = 'Worker: OFF';
+          badge.className = 'flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs font-medium text-red-600 cursor-pointer';
+        }
+        // Update worker log modal status badge too
+        const logStatus = document.getElementById('workerLogStatus');
+        if (logStatus) {
+          logStatus.textContent = d.running ? `🟢 PID ${d.pid}` : '🔴 Đã dừng';
+          logStatus.className = 'text-xs font-bold px-2.5 py-1 rounded-lg ' + (d.running ? 'text-green-700 bg-green-100' : 'text-red-600 bg-red-100');
+        }
+      } catch (e) {
+        // Silent fail
+      }
+    }
+
+    async function toggleWorker() {
+      try {
+        const statusRes = await fetch('/api/worker/status');
+        const status = await statusRes.json();
+
+        if (status.running) {
+          if (!confirm('Dừng Worker tự động sản xuất video?')) return;
+          const res = await fetch('/api/worker/stop', { method: 'POST' });
+          const d = await res.json();
+          showAlert(d.message, d.ok ? 'success' : 'error');
+        } else {
+          const res = await fetch('/api/worker/start', { method: 'POST' });
+          const d = await res.json();
+          showAlert(d.message, d.ok ? 'success' : 'error');
+        }
+        setTimeout(pollWorkerStatus, 1500);
+      } catch (e) {
+        showAlert(`Lỗi điều khiển worker: ${e.message}`, 'error');
+      }
+    }
+
+    // ==================== PLANLY CALENDAR ====================
+
+    async function loadPlanlyCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải lịch từ Planly API...</div>';
+      try {
+        const res = await fetch('/api/planly/calendar');
+        const d = await res.json();
+        document.getElementById('calendarTotal').textContent = `${d.total_posts || 0} bài đăng`;
+
+        if (!d.ok || !d.dates || d.dates.length === 0) {
+          grid.innerHTML = '<div class="text-center py-10 text-gray-500">Chưa có bài đăng nào được xếp lịch trên Planly.</div>';
+          return;
+        }
+
+        const channels = d.channels || [];
+        const dates = d.dates || [];
+        const cal = d.calendar || {};
+
+        // Build table
+        let html = '<div class="overflow-x-auto"><table class="w-full border-collapse text-xs">';
+        html += '<thead><tr><th class="sticky left-0 bg-white text-left py-2 px-2 border-b border-gray-200 font-semibold text-gray-700 min-w-[140px]">Kênh</th>';
+        dates.forEach(dt => {
+          const dayParts = dt.split('-');
+          html += `<th class="py-2 px-2 border-b border-gray-200 text-center font-medium text-gray-600 min-w-[70px]">${dayParts[2]}/${dayParts[1]}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        channels.forEach(ch => {
+          html += `<tr class="hover:bg-gray-50">`;
+          html += `<td class="sticky left-0 bg-white py-2 px-2 border-b border-gray-100 font-medium text-gray-800 truncate max-w-[160px]" title="${ch.name}">${ch.name}</td>`;
+          dates.forEach(dt => {
+            const count = (cal[ch.id] || {})[dt] || 0;
+            let cellClass = 'text-gray-300';
+            let cellBg = '';
+            if (count >= 6) { cellClass = 'text-green-700 font-bold'; cellBg = 'bg-green-100'; }
+            else if (count >= 3) { cellClass = 'text-amber-700 font-bold'; cellBg = 'bg-amber-50'; }
+            else if (count > 0) { cellClass = 'text-blue-600 font-medium'; cellBg = 'bg-blue-50'; }
+            html += `<td class="py-2 px-2 border-b border-gray-100 text-center ${cellClass} ${cellBg}">${count || '—'}</td>`;
+          });
+          html += '</tr>';
+        });
+
+        // Summary row
+        html += '<tr class="bg-gray-50 font-bold"><td class="sticky left-0 bg-gray-50 py-2 px-2 border-t-2 border-gray-300 text-gray-800">TỔNG</td>';
+        dates.forEach(dt => {
+          let dayTotal = 0;
+          channels.forEach(ch => { dayTotal += (cal[ch.id] || {})[dt] || 0; });
+          html += `<td class="py-2 px-2 border-t-2 border-gray-300 text-center text-gray-800">${dayTotal}</td>`;
+        });
+        html += '</tr></tbody></table></div>';
+
+        grid.innerHTML = html;
+      } catch (e) {
+        grid.innerHTML = `<div class="text-center py-8 text-red-500">Lỗi tải lịch: ${e.message}</div>`;
+      }
+    }
+
+    async function purgePlanly() {
+      try {
+        showAlert('Đang xóa toàn bộ lịch trên Planly...', 'info');
+        const res = await fetch('/api/planly/purge', { method: 'POST' });
+        const d = await res.json();
+        showAlert(d.message, d.ok ? 'success' : 'error');
+        if (d.ok) loadPlanlyCalendar();
+      } catch (e) {
+        showAlert(`Lỗi xóa lịch: ${e.message}`, 'error');
+      }
+    }
+
+    // ==================== WORKER LOG VIEWER ====================
+
+    async function loadWorkerLogs() {
+      const consoleEl = document.getElementById('workerLogConsole');
+      try {
+        const res = await fetch('/api/worker/logs?n=100');
+        const d = await res.json();
+        const lines = d.lines || [];
+        if (lines.length === 0) {
+          consoleEl.textContent = 'Chưa có log nào. Hãy khởi động Worker để bắt đầu sản xuất video tự động.';
+        } else {
+          consoleEl.textContent = lines.join('\n');
+          consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+      } catch (e) {
+        consoleEl.textContent = `Lỗi tải log: ${e.message}`;
       }
     }
   </script>

@@ -5,6 +5,8 @@ import asyncio
 import datetime as dt
 import json
 import os
+import re
+import subprocess
 import traceback
 from pathlib import Path
 from typing import Any, Dict, List
@@ -533,6 +535,198 @@ async def handle_render_sample_story(request: web.Request) -> web.Response:
     return web.json_response({"ok": True, "message": "Bat dau san xuat video ky an mau trong nen."})
 
 
+async def handle_toggle_channel_tier(request: web.Request) -> web.Response:
+    """Toggle a channel between 'monetized' (>60s) and 'growth' (<45s)."""
+    data = await request.json()
+    channel_id = data.get("channel_id", "")
+    new_tier = data.get("tier")
+    tier = account_mgr.toggle_channel_tier(channel_id, new_tier)
+    append_log(f"Toggled channel {channel_id} to tier: {tier}")
+    return web.json_response({"ok": True, "tier": tier})
+
+
+# ==================== WORKER CONTROL ====================
+
+WORKER_LOCK_FILE = DATA_DIR / "worker.lock"
+WORKER_STOP_FILE = DATA_DIR / "worker.stop"
+WORKER_LOG_FILE = ROOT_DIR / "logs" / "background_worker.log"
+
+
+def _get_worker_pid() -> int | None:
+    """Read PID from worker lock file and verify it is alive."""
+    if not WORKER_LOCK_FILE.exists():
+        return None
+    try:
+        pid = int(WORKER_LOCK_FILE.read_text().strip())
+        if pid <= 0:
+            return None
+        # Check if process is alive on Windows
+        result = subprocess.run(
+            ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+            capture_output=True, text=True, timeout=5
+        )
+        if str(pid) in result.stdout:
+            return pid
+    except Exception:
+        pass
+    return None
+
+
+async def handle_worker_status(request: web.Request) -> web.Response:
+    """Get background worker status."""
+    pid = _get_worker_pid()
+    running = pid is not None
+
+    # Read last N lines from worker log
+    last_lines = []
+    if WORKER_LOG_FILE.exists():
+        try:
+            lines = WORKER_LOG_FILE.read_text(encoding="utf-8", errors="replace").splitlines()
+            last_lines = lines[-30:]
+        except Exception:
+            pass
+
+    return web.json_response({
+        "running": running,
+        "pid": pid,
+        "stop_requested": WORKER_STOP_FILE.exists(),
+        "last_logs": last_lines,
+    })
+
+
+async def handle_worker_start(request: web.Request) -> web.Response:
+    """Start background worker as a detached subprocess."""
+    pid = _get_worker_pid()
+    if pid:
+        return web.json_response({"ok": False, "message": f"Worker đã đang chạy (PID {pid})"})
+
+    # Clear stop signal if present
+    if WORKER_STOP_FILE.exists():
+        try:
+            WORKER_STOP_FILE.unlink()
+        except Exception:
+            pass
+
+    worker_script = ROOT_DIR / "core" / "background_worker.py"
+    python_exe = Path(os.sys.executable)
+
+    try:
+        proc = subprocess.Popen(
+            [str(python_exe), str(worker_script)],
+            cwd=str(ROOT_DIR),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+        )
+        append_log(f"Worker started with PID {proc.pid}")
+        return web.json_response({"ok": True, "pid": proc.pid, "message": f"Worker đã khởi động (PID {proc.pid})"})
+    except Exception as e:
+        append_log(f"Failed to start worker: {e}")
+        return web.json_response({"ok": False, "message": f"Không thể khởi động worker: {e}"}, status=500)
+
+
+async def handle_worker_stop(request: web.Request) -> web.Response:
+    """Stop background worker by writing stop signal file."""
+    pid = _get_worker_pid()
+    if not pid:
+        return web.json_response({"ok": False, "message": "Worker không đang chạy."})
+
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        WORKER_STOP_FILE.write_text("stop", encoding="utf-8")
+        append_log(f"Stop signal sent to worker PID {pid}")
+        return web.json_response({"ok": True, "message": f"Đã gửi tín hiệu dừng cho worker (PID {pid}). Worker sẽ dừng sau khi hoàn thành video hiện tại."})
+    except Exception as e:
+        return web.json_response({"ok": False, "message": str(e)}, status=500)
+
+
+# ==================== PLANLY CALENDAR ====================
+
+async def handle_planly_calendar(request: web.Request) -> web.Response:
+    """Get Planly calendar: video count per channel per date."""
+    accounts = account_mgr.load_all()
+    if not accounts:
+        return web.json_response({"ok": False, "calendar": {}, "channels": [], "message": "Không có tài khoản Planly."})
+
+    acc = accounts[0]
+    channels = acc.get("channels", [])
+    try:
+        client = PlanlyClient(acc["token"], acc["team_id"])
+        groups = client.list_scheduled_groups()
+    except Exception as e:
+        return web.json_response({"ok": False, "message": str(e), "calendar": {}, "channels": []}, status=500)
+
+    tz_vn = dt.timezone(dt.timedelta(hours=7))
+    # Build calendar: {channel_id: {date_str: count}}
+    calendar: Dict[str, Dict[str, int]] = {}
+    total_posts = 0
+    all_dates = set()
+
+    for g in groups:
+        publish_on = g.get("publishOn")
+        if not publish_on:
+            continue
+        try:
+            clean_iso = publish_on.replace("Z", "+00:00")
+            dt_utc = dt.datetime.fromisoformat(clean_iso)
+            dt_local = dt_utc.astimezone(tz_vn)
+            date_str = dt_local.strftime("%Y-%m-%d")
+        except Exception:
+            date_str = publish_on[:10]
+        all_dates.add(date_str)
+
+        for s in (g.get("schedules") or []):
+            ch_id = s.get("channelId") or (s.get("channel") or {}).get("id")
+            if not ch_id:
+                continue
+            if ch_id not in calendar:
+                calendar[ch_id] = {}
+            calendar[ch_id][date_str] = calendar[ch_id].get(date_str, 0) + 1
+            total_posts += 1
+
+    channel_info = [{"id": c["id"], "name": c.get("name", c["id"])} for c in channels]
+    sorted_dates = sorted(all_dates)
+
+    return web.json_response({
+        "ok": True,
+        "calendar": calendar,
+        "channels": channel_info,
+        "dates": sorted_dates,
+        "total_posts": total_posts,
+    })
+
+
+async def handle_planly_purge(request: web.Request) -> web.Response:
+    """Purge all scheduled posts from Planly."""
+    accounts = account_mgr.load_all()
+    if not accounts:
+        return web.json_response({"ok": False, "message": "Không có tài khoản Planly."})
+
+    acc = accounts[0]
+    try:
+        client = PlanlyClient(acc["token"], acc["team_id"])
+        deleted = client.clear_all_scheduled_posts(log=append_log)
+        append_log(f"Purged {deleted} scheduled posts from Planly calendar.")
+        return web.json_response({"ok": True, "deleted": deleted, "message": f"Đã xóa {deleted} bài đăng đã xếp lịch."})
+    except Exception as e:
+        return web.json_response({"ok": False, "message": str(e)}, status=500)
+
+
+# ==================== WORKER LOG TAIL ====================
+
+async def handle_worker_logs(request: web.Request) -> web.Response:
+    """Return last N lines of background_worker.log."""
+    n = int(request.query.get("n", 80))
+    lines = []
+    if WORKER_LOG_FILE.exists():
+        try:
+            all_lines = WORKER_LOG_FILE.read_text(encoding="utf-8", errors="replace").splitlines()
+            lines = all_lines[-n:]
+        except Exception:
+            pass
+    return web.json_response({"lines": lines})
+
+
 def create_app() -> web.Application:
     app = web.Application()
     app.router.add_get("/", handle_index)
@@ -556,6 +750,14 @@ def create_app() -> web.Application:
     app.router.add_post("/api/commentary/generate_script", handle_commentary_generate_script)
     app.router.add_post("/api/commentary/render", handle_commentary_render)
     app.router.add_post("/api/story/render_sample", handle_render_sample_story)
+    # Worker Control
+    app.router.add_get("/api/worker/status", handle_worker_status)
+    app.router.add_post("/api/worker/start", handle_worker_start)
+    app.router.add_post("/api/worker/stop", handle_worker_stop)
+    app.router.add_get("/api/worker/logs", handle_worker_logs)
+    # Planly Calendar
+    app.router.add_get("/api/planly/calendar", handle_planly_calendar)
+    app.router.add_post("/api/planly/purge", handle_planly_purge)
     return app
 
 
