@@ -168,11 +168,12 @@ def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota
     """
     tz_vn = dt.timezone(dt.timedelta(hours=7))
     now_utc = dt.datetime.now(dt.timezone.utc)
+    today_vn = dt.datetime.now(tz_vn).date()
     pub_cfg = load_config().get("publishing", {})
     mode = pub_cfg.get("mode", "organic_spread")
-    schedule_times = pub_cfg.get("schedule_times", ["09:00"])
+    schedule_times = pub_cfg.get("schedule_times", ["09:00", "12:00", "15:00", "18:00", "20:30", "22:30"])
 
-    slots = []
+    raw_candidates: List[dt.datetime] = []
     if mode == "same_time" and schedule_times:
         try:
             base_h, base_m = map(int, str(schedule_times[0]).split(":"))
@@ -181,18 +182,28 @@ def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota
         for idx in range(quota):
             jitter = (channel_index * 3) + (idx * 2)
             slot_dt = dt.datetime(target_date.year, target_date.month, target_date.day, base_h, base_m, 0, tzinfo=tz_vn) + dt.timedelta(minutes=jitter)
-            slot_utc = slot_dt.astimezone(dt.timezone.utc)
-            if slot_utc > now_utc:
-                slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+            raw_candidates.append(slot_dt)
     else:
         for idx in range(quota):
             h, m = TIKTOK_ORGANIC_PEAK_HOURS_VN[idx % len(TIKTOK_ORGANIC_PEAK_HOURS_VN)]
             jitter = ((channel_index * 7) + (idx * 3) + 2) % 13
             slot_dt = dt.datetime(target_date.year, target_date.month, target_date.day, h, m, 0, tzinfo=tz_vn) + dt.timedelta(minutes=jitter)
-            slot_utc = slot_dt.astimezone(dt.timezone.utc)
-            if slot_utc > now_utc:
-                slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
-    return slots
+            raw_candidates.append(slot_dt)
+
+    slots: List[str] = []
+    for idx, slot_dt in enumerate(raw_candidates):
+        slot_utc = slot_dt.astimezone(dt.timezone.utc)
+        if slot_utc > now_utc:
+            slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+        elif target_date == today_vn:
+            # If morning slot has passed today, schedule for upcoming afternoon/evening hours!
+            shift_mins = 20 + (channel_index * 4) + (idx * 40)
+            shifted_utc = now_utc + dt.timedelta(minutes=shift_mins)
+            shifted_vn = shifted_utc.astimezone(tz_vn)
+            if shifted_vn.date() == today_vn:
+                slots.append(shifted_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+
+    return sorted(slots)
 
 
 def get_channel_scheduled_counts_by_date(client: PlanlyClient) -> Dict[str, Dict[str, int]]:
