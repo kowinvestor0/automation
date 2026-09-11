@@ -250,24 +250,34 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
             break
 
         acc_name = target_acc.get("name", f"Account #{acc_idx}")
-        channels = target_acc.get("channels", [])
-        if not channels:
-            logger.warning(f"No TikTok channels found in account '{acc_name}'.")
+        token = target_acc.get("token", "").strip()
+        team_id = target_acc.get("team_id", "").strip()
+        if not token or not team_id:
+            logger.warning(f"Thiếu token hoặc team_id cho account '{acc_name}'. Bỏ qua.")
             continue
 
-        client = PlanlyClient(target_acc["token"], target_acc["team_id"])
+        client = PlanlyClient(token, team_id)
+        channels = target_acc.get("channels", [])
 
         # Auto-sync channels dynamically from Planly API on every cycle
         try:
             live_channels = client.list_channels()
             if live_channels:
-                if len(live_channels) != len(channels) or {c["id"] for c in live_channels} != {c["id"] for c in channels}:
-                    target_acc["channels"] = live_channels
-                    mgr.save_all(accounts)
-                    logger.info(f"🔄 Đã phát hiện và đồng bộ kênh mới từ Planly cho '{acc_name}': Hiện có {len(live_channels)} kênh!")
-                channels = live_channels
+                tiktok_channels = [c for c in live_channels if "tiktok" in (c.get("social_network") or "").lower()]
+                if tiktok_channels:
+                    channels = tiktok_channels
+                    target_acc["channels"] = channels
+                    try:
+                        mgr.save_all(accounts)
+                    except Exception:
+                        pass
+                    logger.info(f"🔄 Đồng bộ thành công {len(channels)} kênh TikTok từ Planly cho '{acc_name}'!")
         except Exception as e:
             logger.warning(f"Không thể cập nhật danh sách kênh trực tiếp từ Planly: {e}")
+
+        if not channels:
+            logger.warning(f"No TikTok channels found in account '{acc_name}'.")
+            continue
 
         # Get live schedule counts from Planly
         schedule_counts = get_channel_scheduled_counts_by_date(client)
@@ -321,7 +331,8 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                 if is_stop_requested():
                     break
 
-                story = get_next_crime_story()
+                story = dict(get_next_crime_story())
+                story["channel_name"] = str(ch_name)
                 case_id = story.get("id", "crime_story")
                 case_name = story.get("case_name", "Unsolved Mystery")
 

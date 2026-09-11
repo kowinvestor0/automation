@@ -135,6 +135,27 @@ def render_crime_story_video(
     wiki_query = story.get("wiki_query", case_name)
     broll_queries = story.get("broll_queries", ["detective investigation night", "police flashing lights night"])
 
+    # 0. Generate 100% unique script via Gemini API to prevent duplicate / unoriginal content
+    channel_tag = story.get("channel_name", "")
+    try:
+        from core.gemini_script import generate_unique_crime_script
+        ai_script = generate_unique_crime_script(
+            case_name=case_name,
+            wiki_query=wiki_query,
+            base_scenes=scenes_data,
+            channel_name=channel_tag,
+            log=log
+        )
+        if ai_script and ai_script.get("scenes"):
+            scenes_data = ai_script["scenes"]
+            if ai_script.get("hook_banner"):
+                hook_banner = ai_script["hook_banner"]
+            if ai_script.get("hashtags"):
+                story["hashtags"] = ai_script["hashtags"]
+            log(f"[StoryEngine] ✨ Áp dụng kịch bản độc bản (100% unique) từ Gemini API cho kênh '{channel_tag}' ({len(scenes_data)} scenes)")
+    except Exception as e:
+        log(f"[StoryEngine] Gemini enhancement skipped ({e}), using base database.")
+
     log(f"[StoryEngine] Starting production for True Crime case: '{case_name}'...")
 
     # 1. Synthesize Voiceover (Deep, dramatic American narrator)

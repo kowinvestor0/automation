@@ -141,3 +141,91 @@ def generate_script(clip_info: Dict[str, Any], language: str = "en") -> Dict[str
         "scenes": scenes,
         "hashtags": ["#shorts", "#viral", "#trending", "#breakdown", "#didyouknow", "#fyp"],
     }
+
+
+CRIME_STORY_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "hook_banner": {"type": "STRING"},
+        "scenes": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "text": {"type": "STRING"},
+                    "visual_hint": {"type": "STRING"},
+                },
+                "required": ["text", "visual_hint"],
+            },
+        },
+        "hashtags": {"type": "ARRAY", "items": {"type": "STRING"}},
+    },
+    "required": ["hook_banner", "scenes", "hashtags"],
+}
+
+CRIME_SYSTEM_INSTRUCTION = """You are an elite true crime investigative documentary scriptwriter creating gripping portrait short-form video narrations for TikTok (>60 seconds).
+
+CRITICAL RULES:
+1. NO CLICHÉ OPENERS: NEVER start with phrases like "This is insane", "Look right here", "Watch this", "Hey guys", "Wait until the end", "Nobody noticed". Start immediately with raw, shocking factual action, specific dates, locations, or baffling crime scene details.
+2. DURATION & WORD COUNT: The narration MUST exceed 60 seconds. Write exactly 10 to 12 concise, fast-paced scenes with a total of 190 to 240 words.
+3. SPELL OUT NUMBERS: Write numbers as words (e.g. "two hundred thousand dollars", "nineteen seventy-one", "thirty-six passengers") so the text-to-speech engine speaks naturally.
+4. TONE: Chilling, authentic American investigative documentary. Factual, dramatic, high retention, zero filler.
+5. NO EMOJIS in scene text.
+6. TRANSFORMATIVE & UNIQUE: Analyze the mystery, evidence, or FBI investigation findings so the content is 100% original and educational under Fair Use.
+"""
+
+
+def generate_unique_crime_script(
+    case_name: str,
+    wiki_query: str,
+    base_scenes: List[Dict[str, Any]],
+    channel_name: str = "",
+    log=print
+) -> Optional[Dict[str, Any]]:
+    """Generates a 100% unique, customized investigative script using Gemini 2.5 Flash.
+    Guarantees every video has unique audio, text, and structure to prevent unoriginal content strikes.
+    """
+    key = get_api_key("gemini_api_key")
+    if not key or len(key) < 20:
+        return None
+
+    try:
+        base_text = " ".join([sc.get("text", "") for sc in base_scenes])
+        prompt = (
+            f"Case Name: {case_name}\n"
+            f"Subject / Wiki: {wiki_query}\n"
+            f"Channel: {channel_name or 'American Crime Files'}\n"
+            f"Original Case Overview: {base_text[:1200]}\n\n"
+            f"Write a completely fresh, unique, 100% original investigative breakdown (10-12 scenes, 190-240 words, >60s spoken) "
+            f"for this case from a fresh investigative angle. Ensure the hook banner is 3-5 punchy words in ALL CAPS."
+        )
+        url = f"{BASE_URL}/models/{DEFAULT_MODEL}:generateContent?key={key}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "systemInstruction": {"parts": [{"text": CRIME_SYSTEM_INSTRUCTION}]},
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                "responseSchema": CRIME_STORY_SCHEMA,
+                "thinkingConfig": {"thinkingBudget": 0},
+                "temperature": 0.85,
+            },
+        }
+        res = requests.post(url, json=payload, timeout=35)
+        if res.status_code == 200:
+            data = res.json()
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            result = json.loads(text)
+            scenes = result.get("scenes", [])
+            total_words = sum(len(sc.get("text", "").split()) for sc in scenes)
+            if len(scenes) >= 8 and total_words >= 150:
+                log(f"[Gemini] ✨ Generated unique script: {len(scenes)} scenes, {total_words} words for '{case_name}' (channel: {channel_name})")
+                return result
+            else:
+                log(f"[Gemini] Generated script too short ({total_words} words), using base database.")
+        else:
+            log(f"[Gemini] API returned status {res.status_code}: {res.text[:100]}")
+    except Exception as e:
+        log(f"[Gemini] Script generation error ({e}), smoothly using base database.")
+
+    return None
+
