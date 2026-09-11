@@ -318,6 +318,13 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
 
             ch_id = ch["id"]
             ch_name = ch.get("name") or ch_id
+
+            # CRITICAL SAFETY LOCK: Protect active monetized channels from any post attempts
+            PROTECTED_CHANNELS = ["outdoorboyso", "outdoorboysc"]
+            if any(p in str(ch_name).lower() for p in PROTECTED_CHANNELS):
+                logger.info(f"🛡️ [SAFETY LOCK] Kênh kiếm tiền '{ch_name}' đang được đóng băng bảo vệ an toàn (0 bài). Bỏ qua.")
+                continue
+
             safe_ch_name = re.sub(r"[^\w]+", "_", str(ch_name)).strip("_")
             current_scheduled = schedule_counts.get(ch_id, {}).get(target_date_str, 0)
             needed = quota_per_day - current_scheduled
