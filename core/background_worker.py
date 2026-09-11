@@ -319,8 +319,8 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
             ch_id = ch["id"]
             ch_name = ch.get("name") or ch_id
 
-            # CRITICAL SAFETY LOCK: Protect active monetized channels from any post attempts
-            PROTECTED_CHANNELS = ["outdoorboyso", "outdoorboysc"]
+            # CRITICAL SAFETY LOCK: Protect active monetized channels from any automated post attempts
+            PROTECTED_CHANNELS = ["outdoorboyso", "outdoorboysc", "amelialynch1989", "1989"]
             if any(p in str(ch_name).lower() for p in PROTECTED_CHANNELS):
                 logger.info(f"🛡️ [SAFETY LOCK] Kênh kiếm tiền '{ch_name}' đang được đóng băng bảo vệ an toàn (0 bài). Bỏ qua.")
                 continue
