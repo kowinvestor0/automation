@@ -1743,17 +1743,28 @@ def generate_dynamic_crime_story(used_ids: List[str]) -> Optional[Dict[str, Any]
         if not key or len(key) < 20:
             return None
 
-        recent_names = [c["case_name"] for c in ICONIC_TRUE_CRIME_CASES[:20]]
+        categories = [
+            "Breathtaking Scientific Discovery / Space Exploration (NASA, James Webb, Deep Cosmos)",
+            "Deep Ocean Exploration & Unexplained Marine Phenomenon (Mariana Trench, Abyssal Plain)",
+            "Mega Engineering Marvel & Impossible Construction (Megastructure, Tunnel, Aerospace Records)",
+            "Lost Ancient Civilization & Archaeological Excavation (Pyramids, Hidden Cities, Artifacts)",
+            "Extreme Weather & Bizarre Natural Phenomenon (Supervolcanoes, Rogue Waves, Auroras)",
+            "Famous Historical American Unsolved Mystery or Heist (Non-violent, High Intrigue)"
+        ]
+        chosen_cat = random.choice(categories)
+
         prompt = (
-            f"Generate 1 famous real historical American unsolved mystery, FBI cold case, or true crime event "
-            f"that has an active Wikipedia article and archival photos on Wikimedia Commons. "
-            f"Do NOT generate any of these already covered cases: {recent_names[:15]}.\n"
-            f"Return JSON:\n"
-            f'{{"id": "unique_short_id", "case_name": "Full Title", "hook_banner": "ALL CAPS 3-5 WORDS", '
-            f'"wiki_query": "Exact Wikipedia Search Term", '
-            f'"broll_queries": ["night police lights", "dark archive files"], '
-            f'"scenes": [{{"text": "On a cold evening in...", "visual_hint": "wiki"}}], '
-            f'"hashtags": ["#truecrime", "#mystery", "#fbi"]}}'
+            f"Generate 1 high-retention viral documentary topic in the category: '{chosen_cat}'.\n"
+            f"Requirements:\n"
+            f"1. Must have a real, verified Wikipedia article with public domain historical photos.\n"
+            f"2. STRICT TIKTOK COMMUNITY GUIDELINES: Absolutely NO graphic violence, gore, weapons, politics, or sensitive controversy. 100% safe for all audiences.\n"
+            f"3. High viral intrigue and educational fascination.\n"
+            f"Return JSON format:\n"
+            f'{{"id": "unique_id", "case_name": "Full Title", "hook_banner": "ALL CAPS 3-5 WORDS", '
+            f'"wiki_query": "Exact Wikipedia Title", '
+            f'"broll_queries": ["cinematic ocean aerial", "astronomy telescope night"], '
+            f'"scenes": [{{"text": "Deep beneath the surface...", "visual_hint": "wiki"}}], '
+            f'"hashtags": ["#science", "#discovery", "#mindblown", "#fyp"]}}'
         )
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
         payload = {
@@ -1761,7 +1772,7 @@ def generate_dynamic_crime_story(used_ids: List[str]) -> Optional[Dict[str, Any]
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "thinkingConfig": {"thinkingBudget": 0},
-                "temperature": 0.9,
+                "temperature": 0.85,
             }
         }
         res = requests.post(url, json=payload, timeout=25)
