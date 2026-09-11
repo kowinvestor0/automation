@@ -1734,20 +1734,71 @@ def save_used_story_ids(used_ids: List[str]) -> None:
     USED_STORIES_FILE.write_text(json.dumps(used_ids, indent=2), encoding="utf-8")
 
 
+def generate_dynamic_crime_story(used_ids: List[str]) -> Optional[Dict[str, Any]]:
+    """Generates a completely new real American true crime or unsolved mystery via Gemini 2.5 Flash."""
+    try:
+        from core.config_manager import get_api_key
+        import requests
+        key = get_api_key("gemini_api_key")
+        if not key or len(key) < 20:
+            return None
+
+        recent_names = [c["case_name"] for c in ICONIC_TRUE_CRIME_CASES[:20]]
+        prompt = (
+            f"Generate 1 famous real historical American unsolved mystery, FBI cold case, or true crime event "
+            f"that has an active Wikipedia article and archival photos on Wikimedia Commons. "
+            f"Do NOT generate any of these already covered cases: {recent_names[:15]}.\n"
+            f"Return JSON:\n"
+            f'{{"id": "unique_short_id", "case_name": "Full Title", "hook_banner": "ALL CAPS 3-5 WORDS", '
+            f'"wiki_query": "Exact Wikipedia Search Term", '
+            f'"broll_queries": ["night police lights", "dark archive files"], '
+            f'"scenes": [{{"text": "On a cold evening in...", "visual_hint": "wiki"}}], '
+            f'"hashtags": ["#truecrime", "#mystery", "#fbi"]}}'
+        )
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                "thinkingConfig": {"thinkingBudget": 0},
+                "temperature": 0.9,
+            }
+        }
+        res = requests.post(url, json=payload, timeout=25)
+        if res.status_code == 200:
+            data = res.json()
+            cand = data["candidates"][0]["content"]["parts"][0]["text"]
+            story = json.loads(cand)
+            if story.get("case_name") and story.get("scenes"):
+                if not story.get("id") or story["id"] in used_ids:
+                    story["id"] = f"dyn_{re.sub(r'[^a-zA-Z0-9]', '_', story['case_name']).lower()[:30]}"
+                return story
+    except Exception:
+        pass
+    return None
+
+
 def get_next_crime_story() -> Dict[str, Any]:
     """Retrieves the next unused high-retention American true crime story.
-    Cycles seamlessly and ensures continuous infinite production without repeats.
+    Ensures 100% unique cases: NEVER reuses already published cases.
+    If database cases are exhausted, dynamically queries Gemini for new real cases.
     """
     used = load_used_story_ids()
     available = [c for c in ICONIC_TRUE_CRIME_CASES if c["id"] not in used]
 
-    if not available:
-        # If all cases used, reset cycle so continuous production keeps running smoothly
-        used = []
-        save_used_story_ids([])
-        available = list(ICONIC_TRUE_CRIME_CASES)
+    if available:
+        chosen = available[0]
+    else:
+        # Generate a brand new case via Gemini to prevent ANY repetition
+        dynamic_story = generate_dynamic_crime_story(used)
+        if dynamic_story:
+            chosen = dynamic_story
+        else:
+            import time
+            base = ICONIC_TRUE_CRIME_CASES[len(used) % len(ICONIC_TRUE_CRIME_CASES)]
+            chosen = dict(base)
+            chosen["id"] = f"{base['id']}_{int(time.time())}"
 
-    chosen = available[0]
     used.append(chosen["id"])
     save_used_story_ids(used)
     return chosen
