@@ -129,9 +129,18 @@
           <label class="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <i class="fa-solid fa-user-circle text-blue-600"></i> Tài khoản Planly đã lưu
           </label>
-          <button onclick="openModal('addAccountModal')" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
-            <i class="fa-solid fa-plus"></i> Thêm tài khoản mới
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="exportAccounts()" class="text-xs font-semibold text-gray-600 hover:text-gray-800 flex items-center gap-1 border border-gray-200 bg-white px-2.5 py-1 rounded-lg shadow-2xs transition hover:bg-gray-50" title="Xuất file JSON để dùng chung với App Upload">
+              <i class="fa-solid fa-file-export"></i> Xuất JSON
+            </button>
+            <button onclick="triggerImportAccounts()" class="text-xs font-semibold text-gray-600 hover:text-gray-800 flex items-center gap-1 border border-gray-200 bg-white px-2.5 py-1 rounded-lg shadow-2xs transition hover:bg-gray-50" title="Nhập file JSON từ App Upload">
+              <i class="fa-solid fa-file-import"></i> Nhập JSON
+            </button>
+            <input type="file" id="importAccountsInput" accept=".json" onchange="handleImportAccountsFile(event)" class="hidden">
+            <button onclick="openModal('addAccountModal')" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 ml-1">
+              <i class="fa-solid fa-plus"></i> Thêm tài khoản mới
+            </button>
+          </div>
         </div>
 
         <div class="flex flex-wrap items-center gap-3">
@@ -477,6 +486,14 @@
           <label class="block font-medium text-gray-700 mb-1">Team ID:</label>
           <input type="text" id="modalAccTeamId" placeholder="VD: 54109..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
         </div>
+
+        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1 text-[11px] text-blue-800">
+          <div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-question"></i> Cách lấy Token và Team ID từ Planly:</div>
+          <div>1. Đăng nhập vào <a href="https://app.planly.com" target="_blank" class="underline font-semibold">app.planly.com</a></div>
+          <div>2. Nhấn <b>F12</b> ➔ chọn tab <b>Console</b></div>
+          <div>3. Gõ: <code class="bg-white px-1 py-0.5 rounded border border-blue-200">localStorage.getItem('token')</code></div>
+          <div>4. Gõ: <code class="bg-white px-1 py-0.5 rounded border border-blue-200">localStorage.getItem('team_id')</code></div>
+        </div>
       </div>
 
       <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
@@ -516,10 +533,37 @@
           </div>
         </div>
 
+        <!-- Publishing Mode -->
+        <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-2">
+          <label class="block font-semibold text-gray-700">Chế độ giờ đăng bài:</label>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="publishMode" value="organic_spread" id="modeOrganic" onchange="togglePublishMode()" class="text-blue-600 focus:ring-blue-500" checked>
+              <div>
+                <span class="font-medium text-gray-800">Rải đều các khung giờ vàng (Khuyên dùng)</span>
+                <p class="text-[10px] text-gray-500">Tự động rải đều: 08:30, 11:45, 15:00, 17:45, 20:15, 22:30 (Tránh TikTok quét spam bot)</p>
+              </div>
+            </label>
+            
+            <label class="flex items-center gap-2 cursor-pointer pt-1">
+              <input type="radio" name="publishMode" value="same_time" id="modeSameTime" onchange="togglePublishMode()" class="text-blue-600 focus:ring-blue-500">
+              <div>
+                <span class="font-medium text-gray-800">Đăng cùng lúc vào giờ cố định</span>
+                <p class="text-[10px] text-gray-500">Tất cả video trong ngày sẽ được đăng quanh một mốc giờ</p>
+              </div>
+            </label>
+            <div id="sameTimeSettings" class="hidden ml-5 pt-1 flex items-center gap-2">
+              <span class="text-[11px] text-gray-600">Giờ đăng (VN):</span>
+              <input type="time" id="cfgScheduleTime" value="09:00" class="rounded border border-gray-300 px-2 py-1 text-xs font-bold text-blue-700 bg-white">
+              <span class="text-[10px] text-gray-400">(Có lệch 1-3 phút giữa các kênh để an toàn)</span>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label class="block font-medium text-gray-700 mb-1">Pexels API Key (Kho B-roll 9:16 miễn phí):</label>
           <input type="password" id="cfgPexelsKey" placeholder="Nhập API key Pexels..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
-          <span class="text-[10px] text-gray-400">Dùng để tải các video minh họa nền 9:16 phong cách True Crime</span>
+          <span class="text-[10px] text-gray-400">Dùng để tải các video minh họa nền 9:16</span>
         </div>
 
         <div>
@@ -585,45 +629,43 @@
         </button>
       </div>
 
-      <div class="space-y-3.5 text-xs text-gray-700 leading-relaxed">
-        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-          <span class="font-bold text-blue-800">💡 Tại sao nên để Repo Public trên GitHub?</span>
-          <p class="mt-1 text-blue-700">
-            Khi Repository được đặt ở chế độ <b>Public</b> trên GitHub, bạn được hưởng <b>không giới hạn</b> số phút máy chủ Ubuntu Cloud (hoàn toàn miễn phí) để render video và lên lịch Planly mỗi 4 tiếng mà <b>không cần mở máy tính cá nhân 24/7</b>!
-          </p>
-        </div>
+      <!-- Action Buttons Bar -->
+      <div class="flex flex-wrap items-center gap-2 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+        <button onclick="syncToGitHubCloud()" id="btnSyncCloud" class="flex-1 min-w-[170px] rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-cloud-arrow-up"></i> ⚡ Đồng Bộ Lên Cloud Ngay
+        </button>
+        <button onclick="triggerCloudRun()" id="btnTriggerCloud" class="flex-1 min-w-[170px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-play"></i> ▶️ Kích Hoạt Cloud Chạy Ngay
+        </button>
+      </div>
 
-        <div class="space-y-2">
-          <h4 class="font-bold text-gray-900 text-xs">3 Bước Kích Hoạt Tự Động Trong 2 Phút:</h4>
-          <ol class="list-decimal list-inside space-y-1.5 pl-1">
-            <li>
-              Vào trang Repo GitHub của bạn ➔ chọn tab <b>Settings</b> ➔ Menu trái chọn <b>Secrets and variables</b> ➔ <b>Actions</b>.
-            </li>
-            <li>
-              Nhấn <b>New repository secret</b> và thêm 3 biến sau:
-              <ul class="list-disc list-inside mt-1 ml-3 space-y-1 font-mono text-[11px] text-gray-800">
-                <li><b class="text-indigo-600">PLANLY_TOKEN</b>: Bearer token Planly của bạn</li>
-                <li><b class="text-indigo-600">PLANLY_TEAM_ID</b>: Team ID tài khoản Planly</li>
-                <li><b class="text-indigo-600">PEXELS_API_KEY</b>: API key miễn phí từ Pexels.com</li>
-              </ul>
-            </li>
-            <li>
-              <b>Chuyển Repo sang Public (tùy chọn)</b>: Tại <b>Settings</b> ➔ cuộn xuống cuối phần <b>Danger Zone</b> ➔ <b>Change repository visibility</b> ➔ chọn <b>Change to public</b>.
-            </li>
-          </ol>
+      <!-- Cloud Status Section -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h4 class="font-bold text-gray-800 text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-clock-rotate-left text-gray-500"></i> Lịch Sử Lần Chạy Trên Cloud (Mới Nhất):
+          </h4>
+          <button onclick="loadCloudStatus()" class="text-[11px] text-blue-600 hover:underline">
+            <i class="fa-solid fa-rotate"></i> Làm mới
+          </button>
         </div>
+        <div id="cloudRunsContainer" class="max-h-48 overflow-y-auto space-y-1.5 custom-scroll text-xs">
+          <div class="text-center py-3 text-gray-400">Đang tải thông tin Cloud...</div>
+        </div>
+      </div>
 
+      <div class="space-y-2.5 text-xs text-gray-700 leading-relaxed pt-2 border-t border-gray-100">
         <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-          <span class="font-bold text-emerald-800">🚀 Lịch Chạy Tự Động (Cron Job):</span>
-          <p class="mt-1 text-emerald-700">
-            File <code>.github/workflows/auto_story_producer.yml</code> đã được cấu hình chạy tự động mỗi 4 tiếng (cron <code>0 */4 * * *</code>), tự động tải ảnh tư liệu Wikipedia, dựng video >60s kèm hiệu ứng & phụ đề rồi lên lịch trực tiếp vào Planly.
+          <span class="font-bold text-emerald-800">💡 Tắt máy tính đi ngủ, Cloud tự chạy 24/7:</span>
+          <p class="mt-1 text-emerald-700 text-[11px]">
+            Hệ thống Cloud trên GitHub tự động kích hoạt mỗi 4 tiếng một lần (<code>cron: 0 */4 * * *</code>), tự động lấy tin tức khoa học / vũ trụ sạch, tự render video và tự bắn lên Planly. Bạn hoàn toàn không cần bật máy tính!
           </p>
         </div>
       </div>
 
       <div class="flex justify-end pt-2 border-t border-gray-100">
-        <button onclick="closeModal('cloudModal')" class="rounded-lg bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-semibold shadow-xs">
-          Đã Hiểu
+        <button onclick="closeModal('cloudModal')" class="rounded-lg bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 text-xs font-semibold shadow-xs">
+          Đóng
         </button>
       </div>
     </div>
@@ -637,9 +679,12 @@
         <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
           <i class="fa-solid fa-calendar-check text-amber-600"></i> Planly Calendar — Lịch Đã Xếp
         </h3>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <span id="calendarTotal" class="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">0 bài đăng</span>
-          <button onclick="if(confirm('Xóa TOÀN BỘ lịch đã xếp trên Planly?')){purgePlanly()}" class="text-xs font-medium text-red-600 hover:text-red-800 px-2.5 py-1 rounded-lg border border-red-200 hover:bg-red-50 transition">
+          <button onclick="purgeDuplicatesPlanly()" class="text-xs font-semibold text-amber-700 hover:text-amber-800 px-2.5 py-1 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 transition shadow-xs" title="Chỉ quét và xóa các video bị trùng lặp, giữ lại video gốc">
+            <i class="fa-solid fa-broom"></i> 🧹 Chỉ Xóa Bài Trùng
+          </button>
+          <button onclick="if(confirm('CẢNH BÁO: Hành động này sẽ xóa TOÀN BỘ bài viết đã xếp lịch trên Planly. Bạn có chắc chắn không?')){purgePlanly()}" class="text-xs font-medium text-red-600 hover:text-red-800 px-2.5 py-1 rounded-lg border border-red-200 hover:bg-red-50 transition">
             <i class="fa-solid fa-trash"></i> Xóa Hết
           </button>
           <button onclick="closeModal('calendarModal')" class="text-gray-400 hover:text-gray-600">
@@ -771,6 +816,8 @@
       if (id === 'libraryModal') loadLibraryVideos();
       if (id === 'calendarModal') loadPlanlyCalendar();
       if (id === 'workerLogModal') loadWorkerLogs();
+      if (id === 'cloudModal') loadCloudStatus();
+      if (id === 'settingsModal') loadConfigSettings();
     }
     function closeModal(id) {
       const el = document.getElementById(id);
@@ -1189,6 +1236,16 @@
     }
 
     // Settings Modal
+    function togglePublishMode() {
+      const isSameTime = document.getElementById('modeSameTime').checked;
+      const el = document.getElementById('sameTimeSettings');
+      if (isSameTime) {
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
     async function loadConfigSettings() {
       try {
         const res = await fetch('/api/config');
@@ -1201,6 +1258,19 @@
         document.getElementById('cfgVideosPerDay').value = pub.videos_per_channel_per_day || 3;
         document.getElementById('cfgLookaheadDays').value = pub.lookahead_days || 7;
         document.getElementById('cfgTzOffset').value = pub.timezone_offset || 7;
+
+        const mode = pub.mode || 'organic_spread';
+        if (mode === 'same_time') {
+          document.getElementById('modeSameTime').checked = true;
+          document.getElementById('sameTimeSettings').classList.remove('hidden');
+        } else {
+          document.getElementById('modeOrganic').checked = true;
+          document.getElementById('sameTimeSettings').classList.add('hidden');
+        }
+        const times = pub.schedule_times || ['09:00'];
+        if (times.length > 0) {
+          document.getElementById('cfgScheduleTime').value = times[0];
+        }
       } catch (e) {
         console.error(e);
       }
@@ -1213,6 +1283,8 @@
       const vPerDay = parseInt(document.getElementById('cfgVideosPerDay').value || 3);
       const lookahead = parseInt(document.getElementById('cfgLookaheadDays').value || 7);
       const tz = parseInt(document.getElementById('cfgTzOffset').value || 7);
+      const mode = document.getElementById('modeSameTime').checked ? 'same_time' : 'organic_spread';
+      const schedTime = document.getElementById('cfgScheduleTime').value || '09:00';
 
       try {
         const res = await fetch('/api/config', {
@@ -1231,14 +1303,17 @@
             publishing: {
               videos_per_channel_per_day: vPerDay,
               lookahead_days: lookahead,
-              timezone_offset: tz
+              timezone_offset: tz,
+              mode: mode,
+              schedule_times: [schedTime]
             }
           })
         });
         const data = await res.json();
         if (data.status === 'success') {
           closeModal('settingsModal');
-          showAlert(`Đã lưu thành công: ${vPerDay} video/kênh/ngày, xếp gối đầu ${lookahead} ngày!`, "success");
+          const modeTxt = mode === 'same_time' ? `Đăng cùng lúc (${schedTime})` : 'Rải đều giờ vàng';
+          showAlert(`Đã lưu cài đặt: ${vPerDay} video/kênh/ngày • ${modeTxt}!`, "success");
         }
       } catch (e) {
         showAlert(`Lỗi lưu cài đặt: ${e.message}`, "error");
@@ -1454,6 +1529,152 @@
       } catch (e) {
         showAlert(`Lỗi xóa lịch: ${e.message}`, 'error');
       }
+    }
+
+    async function purgeDuplicatesPlanly() {
+      if (!confirm('Bạn có chắc muốn quét và xóa các bài đăng trùng lặp trên Planly?\n(Các video độc bản vẫn được giữ nguyên)')) return;
+      try {
+        showAlert('Đang quét và xóa bài đăng trùng lặp trên Planly...', 'info');
+        const res = await fetch('/api/planly/purge-duplicates', { method: 'POST' });
+        const d = await res.json();
+        showAlert(d.message, d.ok ? 'success' : 'error');
+        if (d.ok) loadPlanlyCalendar();
+      } catch (e) {
+        showAlert(`Lỗi: ${e.message}`, 'error');
+      }
+    }
+
+    // ==================== GITHUB CLOUD SYNC & STATUS ====================
+
+    async function syncToGitHubCloud() {
+      const btn = document.getElementById('btnSyncCloud');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đồng bộ...'; }
+      showAlert('Đang đồng bộ API Keys và tài khoản Planly lên GitHub Secrets...', 'info');
+      try {
+        const res = await fetch('/api/github/sync-secrets', { method: 'POST' });
+        const d = await res.json();
+        showAlert(d.message, d.ok ? 'success' : 'error');
+        loadCloudStatus();
+      } catch (e) {
+        showAlert(`Lỗi đồng bộ GitHub: ${e.message}`, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> ⚡ Đồng Bộ Lên Cloud Ngay'; }
+      }
+    }
+
+    async function triggerCloudRun() {
+      const btn = document.getElementById('btnTriggerCloud');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kích hoạt...'; }
+      try {
+        const vPerDay = parseInt(document.getElementById('cfgVideosPerDay')?.value || 6);
+        const lookahead = parseInt(document.getElementById('cfgLookaheadDays')?.value || 7);
+        showAlert(`Đang gửi tín hiệu kích hoạt máy chủ Cloud (${vPerDay} video/kênh/ngày)...`, 'info');
+        const res = await fetch('/api/github/trigger-cloud', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ quota: vPerDay, lookahead: lookahead })
+        });
+        const d = await res.json();
+        showAlert(d.message, d.ok ? 'success' : 'error');
+        setTimeout(loadCloudStatus, 3000);
+      } catch (e) {
+        showAlert(`Lỗi kích hoạt Cloud: ${e.message}`, 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-play"></i> ▶️ Kích Hoạt Cloud Chạy Ngay'; }
+      }
+    }
+
+    async function loadCloudStatus() {
+      const container = document.getElementById('cloudRunsContainer');
+      if (!container) return;
+      container.innerHTML = '<div class="text-center py-4 text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang tải trạng thái Cloud...</div>';
+      try {
+        const res = await fetch('/api/github/status');
+        const d = await res.json();
+        if (!d.ok || !d.runs || d.runs.length === 0) {
+          container.innerHTML = '<div class="text-center py-4 text-gray-400">Chưa có lượt chạy nào trên Cloud hoặc chưa kết nối GitHub token.</div>';
+          return;
+        }
+        let html = '<div class="space-y-2">';
+        d.runs.forEach(r => {
+          let badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">Đang chạy</span>';
+          if (r.status === 'completed') {
+            if (r.conclusion === 'success') {
+              badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">✓ Thành công</span>';
+            } else {
+              badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700">✗ ${r.conclusion || 'Thất bại'}</span>`;
+            }
+          }
+          const timeStr = r.created_at ? new Date(r.created_at).toLocaleString('vi-VN') : '';
+          html += `
+            <div class="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100/80 transition">
+              <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-circle-nodes text-indigo-500"></i>
+                <div>
+                  <div class="font-semibold text-gray-800 text-xs">Run #${r.run_number} (${r.name || 'Cloud Producer'})</div>
+                  <div class="text-[10px] text-gray-500">${timeStr}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                ${badge}
+                ${r.html_url ? `<a href="${r.html_url}" target="_blank" class="text-xs text-blue-600 hover:underline"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : ''}
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = `<div class="text-center py-4 text-red-500">Lỗi tải trạng thái Cloud: ${e.message}</div>`;
+      }
+    }
+
+    // ==================== IMPORT / EXPORT ACCOUNTS ====================
+
+    async function exportAccounts() {
+      try {
+        const res = await fetch('/api/accounts/export');
+        const d = await res.json();
+        const blob = new Blob([JSON.stringify(d, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `planly_accounts_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showAlert('Đã xuất file cấu hình tài khoản Planly thành công!', 'success');
+      } catch (e) {
+        showAlert(`Lỗi xuất file: ${e.message}`, 'error');
+      }
+    }
+
+    function triggerImportAccounts() {
+      document.getElementById('importAccountsInput').click();
+    }
+
+    async function handleImportAccountsFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const json = JSON.parse(e.target.result);
+          const res = await fetch('/api/accounts/import', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(json)
+          });
+          const d = await res.json();
+          showAlert(d.ok ? `Đã nhập thành công ${d.count} tài khoản Planly!` : d.message, d.ok ? 'success' : 'error');
+          if (d.ok) {
+            loadAccounts();
+          }
+        } catch (err) {
+          showAlert(`Lỗi đọc file JSON: ${err.message}`, 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
     }
 
     // ==================== WORKER LOG VIEWER ====================

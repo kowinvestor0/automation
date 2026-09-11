@@ -156,23 +156,36 @@ TIKTOK_ORGANIC_PEAK_HOURS_VN = [
 
 
 def build_channel_slots_for_date(target_date: dt.date, channel_index: int, quota: int = 6) -> List[str]:
-    """Generates organic, human-like posting times spread across the entire day.
-    Prevents TikTok anti-bot / unoriginal spam strikes from burst publishing.
+    """Generates posting times for target date based on publishing config mode:
+    - 'same_time': Posts at user's specified hour (e.g. 09:00 VN) with natural 1-3 min jitter per channel
+    - 'organic_spread': Posts spread across peak hours (08:30, 11:45, 15:00, 17:45, 20:15, 22:30)
     """
     tz_vn = dt.timezone(dt.timedelta(hours=7))
     now_utc = dt.datetime.now(dt.timezone.utc)
+    pub_cfg = load_config().get("publishing", {})
+    mode = pub_cfg.get("mode", "organic_spread")
+    schedule_times = pub_cfg.get("schedule_times", ["09:00"])
+
     slots = []
-    for idx in range(quota):
-        h, m = TIKTOK_ORGANIC_PEAK_HOURS_VN[idx % len(TIKTOK_ORGANIC_PEAK_HOURS_VN)]
-        # Organic jitter (3-12 mins) per channel so accounts never post at the exact same minute
-        jitter = ((channel_index * 7) + (idx * 3) + 2) % 13
-        slot_dt = dt.datetime(
-            target_date.year, target_date.month, target_date.day,
-            h, m, 0, tzinfo=tz_vn
-        ) + dt.timedelta(minutes=jitter)
-        slot_utc = slot_dt.astimezone(dt.timezone.utc)
-        if slot_utc > now_utc:
-            slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+    if mode == "same_time" and schedule_times:
+        try:
+            base_h, base_m = map(int, str(schedule_times[0]).split(":"))
+        except Exception:
+            base_h, base_m = 9, 0
+        for idx in range(quota):
+            jitter = (channel_index * 3) + (idx * 2)
+            slot_dt = dt.datetime(target_date.year, target_date.month, target_date.day, base_h, base_m, 0, tzinfo=tz_vn) + dt.timedelta(minutes=jitter)
+            slot_utc = slot_dt.astimezone(dt.timezone.utc)
+            if slot_utc > now_utc:
+                slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
+    else:
+        for idx in range(quota):
+            h, m = TIKTOK_ORGANIC_PEAK_HOURS_VN[idx % len(TIKTOK_ORGANIC_PEAK_HOURS_VN)]
+            jitter = ((channel_index * 7) + (idx * 3) + 2) % 13
+            slot_dt = dt.datetime(target_date.year, target_date.month, target_date.day, h, m, 0, tzinfo=tz_vn) + dt.timedelta(minutes=jitter)
+            slot_utc = slot_dt.astimezone(dt.timezone.utc)
+            if slot_utc > now_utc:
+                slots.append(slot_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"))
     return slots
 
 

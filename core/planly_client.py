@@ -242,3 +242,45 @@ class PlanlyClient:
         except Exception:
             pass
         return total_deleted
+
+    def delete_duplicate_posts(self, log=print) -> int:
+        """Deletes only duplicate scheduled posts from Planly calendar, preserving unique ones."""
+        all_groups = self.list_scheduled_groups()
+        seen_fingerprints = set()
+        duplicate_ids = []
+
+        for g in all_groups:
+            gid = g.get("id")
+            if not gid:
+                continue
+
+            # Fingerprint by: channel_id + caption normalized + publish date
+            schedules = g.get("schedules") or []
+            caption = (g.get("caption") or "").strip().lower()[:60]
+            publish_on = (g.get("publishOn") or "")[:10]
+
+            ch_ids = tuple(sorted([s.get("channelId") or (s.get("channel") or {}).get("id") for s in schedules if s]))
+            fp = (ch_ids, caption, publish_on)
+
+            if fp in seen_fingerprints and caption:
+                duplicate_ids.append(gid)
+            else:
+                seen_fingerprints.add(fp)
+
+        if duplicate_ids:
+            try:
+                log(f"[Planly] Phát hiện {len(duplicate_ids)} bài viết bị trùng lặp. Đang xóa...")
+            except Exception:
+                pass
+            self.delete_schedule_groups(duplicate_ids)
+            try:
+                log(f"[Planly] Đã xóa xong {len(duplicate_ids)} bài viết trùng lặp, giữ lại toàn bộ video gốc!")
+            except Exception:
+                pass
+        else:
+            try:
+                log("[Planly] Không phát hiện bài viết nào bị trùng lặp trên Planly.")
+            except Exception:
+                pass
+
+        return len(duplicate_ids)

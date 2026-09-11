@@ -20,6 +20,7 @@ from core.scraper import VideoScraper
 from core.gemini_script import generate_script
 from core.video_engine import render_monetizable_video
 from core.scheduler import get_available_videos, schedule_channel_quota
+from core.github_sync import sync_secrets_to_github, get_cloud_workflow_status, trigger_cloud_workflow
 
 account_mgr = AccountManager()
 scraper = VideoScraper()
@@ -712,6 +713,79 @@ async def handle_planly_purge(request: web.Request) -> web.Response:
         return web.json_response({"ok": False, "message": str(e)}, status=500)
 
 
+async def handle_planly_purge_duplicates(request: web.Request) -> web.Response:
+    """Purge only duplicate scheduled posts from Planly, keeping unique ones."""
+    accounts = account_mgr.load_all()
+    if not accounts:
+        return web.json_response({"ok": False, "message": "Không có tài khoản Planly."})
+
+    acc = accounts[0]
+    try:
+        client = PlanlyClient(acc["token"], acc["team_id"])
+        deleted = client.delete_duplicate_posts(log=append_log)
+        msg = f"Đã xóa {deleted} bài viết trùng lặp, giữ lại toàn bộ video gốc!" if deleted else "Không phát hiện bài viết trùng lặp nào trên Planly."
+        return web.json_response({"ok": True, "deleted": deleted, "message": msg})
+    except Exception as e:
+        return web.json_response({"ok": False, "message": str(e)}, status=500)
+
+
+# ==================== GITHUB CLOUD SYNC ====================
+
+async def handle_sync_github_secrets(request: web.Request) -> web.Response:
+    """Syncs API keys and Planly credentials to GitHub Actions Secrets."""
+    cfg = load_config()
+    accounts = account_mgr.load_all()
+    secrets: Dict[str, str] = {}
+
+    if accounts:
+        secrets["PLANLY_TOKEN"] = accounts[0].get("token", "")
+        secrets["PLANLY_TEAM_ID"] = accounts[0].get("team_id", "")
+
+    api_keys = cfg.get("api_keys", {})
+    if api_keys.get("pexels_api_key"):
+        secrets["PEXELS_API_KEY"] = api_keys["pexels_api_key"]
+    if api_keys.get("gemini_api_key"):
+        secrets["GEMINI_API_KEY"] = api_keys["gemini_api_key"]
+
+    res = sync_secrets_to_github(secrets)
+    append_log(res.get("message", "GitHub Secrets synced."))
+    return web.json_response(res)
+
+
+async def handle_github_status(request: web.Request) -> web.Response:
+    """Returns status of latest GitHub Actions runs."""
+    res = get_cloud_workflow_status(limit=6)
+    return web.json_response(res)
+
+
+async def handle_trigger_cloud(request: web.Request) -> web.Response:
+    """Trigger GitHub Actions cloud producer immediately."""
+    data = await request.json()
+    quota = int(data.get("quota", 6))
+    lookahead = int(data.get("lookahead", 7))
+    res = trigger_cloud_workflow(quota=quota, lookahead=lookahead)
+    append_log(res.get("message", "Triggered cloud run."))
+    return web.json_response(res)
+
+
+# ==================== ACCOUNTS IMPORT / EXPORT ====================
+
+async def handle_export_accounts(request: web.Request) -> web.Response:
+    """Exports all Planly accounts as JSON for sharing with upload app."""
+    return web.json_response({"accounts": account_mgr.load_all()})
+
+
+async def handle_import_accounts(request: web.Request) -> web.Response:
+    """Imports Planly accounts JSON from upload app."""
+    data = await request.json()
+    accs = data.get("accounts", [])
+    if isinstance(accs, list) and accs:
+        account_mgr.save_all(accs)
+        append_log(f"Đã nhập thành công {len(accs)} tài khoản Planly từ file.")
+        return web.json_response({"ok": True, "count": len(accs), "accounts": account_mgr.load_all()})
+    return web.json_response({"ok": False, "message": "Dữ liệu accounts không hợp lệ."}, status=400)
+
+
 # ==================== WORKER LOG TAIL ====================
 
 async def handle_worker_logs(request: web.Request) -> web.Response:
@@ -738,6 +812,8 @@ def create_app() -> web.Application:
     app.router.add_post("/api/accounts/delete", handle_delete_account)
     app.router.add_post("/api/accounts/test", handle_test_account)
     app.router.add_post("/api/accounts/sync", handle_sync_channels)
+    app.router.add_get("/api/accounts/export", handle_export_accounts)
+    app.router.add_post("/api/accounts/import", handle_import_accounts)
     app.router.add_post("/api/channels/toggle_tier", handle_toggle_channel_tier)
     app.router.add_get("/api/news/trends", handle_get_trends)
     app.router.add_post("/api/news/generate", handle_generate_news)
@@ -755,9 +831,14 @@ def create_app() -> web.Application:
     app.router.add_post("/api/worker/start", handle_worker_start)
     app.router.add_post("/api/worker/stop", handle_worker_stop)
     app.router.add_get("/api/worker/logs", handle_worker_logs)
-    # Planly Calendar
+    # Planly Calendar & Purge
     app.router.add_get("/api/planly/calendar", handle_planly_calendar)
     app.router.add_post("/api/planly/purge", handle_planly_purge)
+    app.router.add_post("/api/planly/purge-duplicates", handle_planly_purge_duplicates)
+    # GitHub Cloud
+    app.router.add_post("/api/github/sync-secrets", handle_sync_github_secrets)
+    app.router.add_get("/api/github/status", handle_github_status)
+    app.router.add_post("/api/github/trigger-cloud", handle_trigger_cloud)
     return app
 
 
