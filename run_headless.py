@@ -156,10 +156,11 @@ def main():
         client = None if args.dry_run else PlanlyClient(acc["token"], acc["team_id"])
 
         results = schedule_channel_quota(
+            client=client,
             channels=channels,
-            quota_per_channel=args.quota,
-            schedule_mode=args.mode,
-            planly_client=client,
+            videos=videos,
+            videos_per_channel=args.quota,
+            mode=args.mode,
             dry_run=args.dry_run,
             log=print
         )

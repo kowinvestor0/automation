@@ -130,20 +130,30 @@ def generate_intelligent_script(
     gemini_key = os.environ.get("GEMINI_API_KEY") or get_api_key("gemini_api_key")
     if gemini_key and len(gemini_key) >= 20:
         try:
-            word_target = int(dur * 2.3)
-            scene_target = max(7, min(10, int(dur / 8.0)))
-            prompt = f"""You are an elite viral video commentary creator (like Daily Dose of Internet or Adam Rose).
-Write an electrifying, informative English commentary reacting directly to this video:
+            word_target = int(dur * 2.45)
+            scene_target = max(7, min(10, int(dur / 7.5)))
+            prompt = f"""You are an elite video documentary and viral commentary creator.
+Write a fast-paced, electrifying English narration reacting DIRECTLY to this video footage:
 Video Title: {title}
 Category: {category}
 Context / Description: {desc[:400] or 'Direct footage breakdown'}
-Video Duration: {dur:.1f} seconds.
+Target Video Duration: {dur:.1f} seconds.
 
-RULES:
-1. Speak DIRECTLY about what is happening in this specific video! Mention "{clean_t}" and key details!
-2. Match duration {dur:.1f} seconds (Total words must be approximately {word_target} words across {scene_target} dialogue scenes).
-3. Alternate between role 'q' (amazed spectator asking sharp questions) and role 'a' (expert analyst explaining the science/physics/backstory).
-4. NEVER use generic templates or talk about unrelated topics.
+CRITICAL RULES:
+1. ZERO CLICHÉ OPENERS: NEVER start with phrases like "THIS IS INSANE!", "Hey guys", "Look right here", "Watch this", "Did you know", "You won't believe".
+Scene 1 MUST start IMMEDIATELY with the raw, factual event or direct action!
+Examples of great openers:
+- "A 40-ton excavator operator is balancing on the edge of a three-hundred-foot cliff..."
+- "This specialized hydraulic press exerts over five hundred tons of compressive force directly onto solid tungsten..."
+- "A cargo vessel caught in a North Sea storm is getting slammed by thirty-foot rogue waves..."
+2. DURATION & WORD COUNT: The narration must span the entire video ({dur:.1f} seconds). Write approximately {word_target} words across {scene_target} dialogue scenes. Each scene should have 18 to 25 words so the speech flows continuously without dead air!
+3. DUAL-VOICE DYNAMICS:
+- Role 'q': Asks sharp, urgent questions reacting to the danger, physics, or turning points in the video.
+- Role 'a': Expert breakdown explaining what's happening, the mechanics, the stakes, and the resolution.
+4. SYNCHRONIZATION WITH FOOTAGE:
+- Scenes 1-2: What begins happening immediately on screen.
+- Scenes 3-5: Escalating action, danger, or technical breakdown.
+- Scenes 6-8: Climax, outcome, and concluding insight.
 5. Output ONLY valid JSON:
 {{
   "hook_banner": "3-4 WORDS IN ALL CAPS",

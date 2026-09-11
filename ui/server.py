@@ -845,6 +845,6 @@ def create_app() -> web.Application:
 def run_server(host: str = "127.0.0.1", port: int = 8888) -> None:
     app = create_app()
     print(f"============================================================")
-    print(f"🚀 AUTO MAKE MONEY DASHBOARD RUNNING AT: http://{host}:{port}")
+    print(f"AUTO MAKE MONEY DASHBOARD RUNNING AT: http://{host}:{port}")
     print(f"============================================================")
     web.run_app(app, host=host, port=port)

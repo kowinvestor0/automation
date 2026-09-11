@@ -101,25 +101,31 @@ def clear_stop_signal() -> None:
             pass
 
 
-import ctypes
-
 def is_pid_alive(pid: int) -> bool:
     if pid <= 0:
         return False
-    try:
-        kernel32 = ctypes.windll.kernel32
-        handle = kernel32.OpenProcess(0x1000, False, pid)
-        if not handle:
-            return kernel32.GetLastError() == 5  # ERROR_ACCESS_DENIED
+    if sys.platform == "win32":
         try:
-            exit_code = ctypes.c_ulong()
-            if kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
-                return exit_code.value == 259  # STILL_ACTIVE
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.OpenProcess(0x1000, False, pid)
+            if not handle:
+                return kernel32.GetLastError() == 5  # ERROR_ACCESS_DENIED
+            try:
+                exit_code = ctypes.c_ulong()
+                if kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                    return exit_code.value == 259  # STILL_ACTIVE
+                return False
+            finally:
+                kernel32.CloseHandle(handle)
+        except Exception:
             return False
-        finally:
-            kernel32.CloseHandle(handle)
-    except Exception:
-        return False
+    else:
+        try:
+            os.kill(pid, 0)
+            return True
+        except (OSError, ProcessLookupError):
+            return False
 
 
 def acquire_lock() -> bool:
@@ -223,7 +229,7 @@ def get_channel_scheduled_counts_by_date(client: PlanlyClient) -> Dict[str, Dict
 
 
 def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
-    """Performs one full maintenance and generation pass.
+    """Performs one full maintenance and generation pass across ALL Planly accounts.
     Returns number of new videos scheduled in this pass.
     """
     mgr = AccountManager()
@@ -232,46 +238,52 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
         logger.warning("No Planly accounts found in data/accounts.json")
         return 0
 
-    target_acc = accounts[0]
-    channels = target_acc.get("channels", [])
-    if not channels:
-        logger.warning("No TikTok channels found in account.")
-        return 0
-
-    client = PlanlyClient(target_acc["token"], target_acc["team_id"])
-
-    # Auto-sync channels dynamically from Planly API on every cycle
-    try:
-        live_channels = client.list_channels()
-        if live_channels:
-            if len(live_channels) != len(channels) or {c["id"] for c in live_channels} != {c["id"] for c in channels}:
-                target_acc["channels"] = live_channels
-                mgr.save_all(accounts)
-                logger.info(f"🔄 Đã phát hiện và đồng bộ kênh mới từ Planly: Hiện có {len(live_channels)} kênh!")
-            channels = live_channels
-    except Exception as e:
-        logger.warning(f"Không thể cập nhật danh sách kênh trực tiếp từ Planly: {e}")
     tz_vn = dt.timezone(dt.timedelta(hours=7))
     today_vn = dt.datetime.now(tz_vn).date()
-
     cfg = load_config().get("generation", {})
     media_cache = load_media_cache()
-
-    # Get live schedule counts from Planly
-    schedule_counts = get_channel_scheduled_counts_by_date(client)
     total_scheduled_this_cycle = 0
 
-    # Scan from tomorrow (Day 1) to lookahead days into the future (Day 1 = tomorrow, Day 2 = next day)
-    start_day = 1
-    for day_offset in range(start_day, lookahead_days + 1):
+    for acc_idx, target_acc in enumerate(accounts, 1):
         if is_stop_requested():
             logger.info("Stop signal detected. Exiting worker cycle.")
             break
 
-        target_date = today_vn + dt.timedelta(days=day_offset)
-        target_date_str = target_date.strftime("%Y-%m-%d")
+        acc_name = target_acc.get("name", f"Account #{acc_idx}")
+        channels = target_acc.get("channels", [])
+        if not channels:
+            logger.warning(f"No TikTok channels found in account '{acc_name}'.")
+            continue
 
-        logger.info(f"--- Kiem tra lich ngay: {target_date.strftime('%d/%m/%Y')} (Day +{day_offset}) ---")
+        client = PlanlyClient(target_acc["token"], target_acc["team_id"])
+
+        # Auto-sync channels dynamically from Planly API on every cycle
+        try:
+            live_channels = client.list_channels()
+            if live_channels:
+                if len(live_channels) != len(channels) or {c["id"] for c in live_channels} != {c["id"] for c in channels}:
+                    target_acc["channels"] = live_channels
+                    mgr.save_all(accounts)
+                    logger.info(f"🔄 Đã phát hiện và đồng bộ kênh mới từ Planly cho '{acc_name}': Hiện có {len(live_channels)} kênh!")
+                channels = live_channels
+        except Exception as e:
+            logger.warning(f"Không thể cập nhật danh sách kênh trực tiếp từ Planly: {e}")
+
+        # Get live schedule counts from Planly
+        schedule_counts = get_channel_scheduled_counts_by_date(client)
+        logger.info(f"\n============================================================")
+        logger.info(f"📌 Đang kiểm tra Tài Khoản #{acc_idx}: '{acc_name}' ({len(channels)} kênh)")
+        logger.info(f"============================================================")
+
+        # Scan from today (Day 0) to lookahead days into the future (Day 0 = today, Day 1 = tomorrow...)
+        for day_offset in range(0, lookahead_days + 1):
+            if is_stop_requested():
+                break
+
+            target_date = today_vn + dt.timedelta(days=day_offset)
+            target_date_str = target_date.strftime("%Y-%m-%d")
+            tag_name = "HÔM NAY" if day_offset == 0 else f"Day +{day_offset}"
+            logger.info(f"--- Kiem tra lich ngay: {target_date.strftime('%d/%m/%Y')} ({tag_name}) ---")
 
         # Sort channels so channels with fewest scheduled posts are served first
         sorted_channels = sorted(
@@ -333,7 +345,7 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                         meta_info = {"title": case_name, "hashtags": story.get("hashtags", ["#truecrime", "#mystery", "#crimetok"])}
 
                     # Upload to Planly S3
-                    vpath_str = str(out_file.resolve())
+                    vpath_str = f"{client.team_id}:{str(out_file.resolve())}"
                     if vpath_str not in media_cache:
                         logger.info(f"    -> Dang tai video len Planly S3 Storage...")
                         media_id = client.upload_video(out_file, log=logger.info)

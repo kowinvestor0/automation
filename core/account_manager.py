@@ -95,13 +95,24 @@ class AccountManager:
             if not accounts and env_token:
                 env_team = os.environ.get("PLANLY_TEAM_ID", "")
                 accounts = [{
-                    "id": "env_planly_account",
-                    "name": "Cloud Planly Runner",
+                    "id": "env_planly_account_1",
+                    "name": "Cloud Planly Runner 1",
                     "token": env_token.strip(),
                     "team_id": env_team.strip(),
                     "channels": [],
                     "status": "connected"
                 }]
+                tok2 = os.environ.get("PLANLY_TOKEN_2", "").strip()
+                team2 = os.environ.get("PLANLY_TEAM_ID_2", "").strip()
+                if tok2 and team2:
+                    accounts.append({
+                        "id": "env_planly_account_2",
+                        "name": "Cloud Planly Runner 2",
+                        "token": tok2,
+                        "team_id": team2,
+                        "channels": [],
+                        "status": "connected"
+                    })
 
             for acc in accounts:
                 for ch in acc.get("channels", []):

@@ -299,6 +299,7 @@ def render_hybrid_commentary_video(
         "-i", str(full_voice_path),
         "-i", str(bg_music),
     ]
+    input_count = 2  # Track FFmpeg input index explicitly (0=voice, 1=music)
     af_parts = [
         "[0:a]volume=1.25,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,asplit=2[voice_sc][voice];",
         "[1:a]volume=0.12,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[music];",
@@ -309,8 +310,9 @@ def render_hybrid_commentary_video(
     # If src video has audio, mix background wild audio safely
     src_has_audio = has_audio_stream(src_video_path)
     if src_has_audio:
-        wild_idx = len(audio_inputs) // 2
+        wild_idx = input_count
         audio_inputs.extend(["-stream_loop", "-1", "-i", str(src_video_path)])
+        input_count += 1
         af_parts.append(
             f"[{wild_idx}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,"
             f"stereotools=mlev=0.12:slev=1.3:mpan=0,volume=0.14,apad=whole_dur={total_voice_dur:.2f}[wild_a];"
@@ -318,8 +320,9 @@ def render_hybrid_commentary_video(
         mix_ins.append("[wild_a]")
 
     if sfx_path and sfx_path.exists():
-        sfx_idx = len(audio_inputs) // 2
+        sfx_idx = input_count
         audio_inputs.extend(["-i", str(sfx_path)])
+        input_count += 1
         af_parts.append(
             f"[{sfx_idx}:a]volume=0.32,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,"
             f"apad=whole_dur={total_voice_dur:.2f}[sfx];"

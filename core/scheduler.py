@@ -13,6 +13,14 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from core.paths import DATA_DIR, OUTPUT_DIR
 from core.planly_client import PlanlyClient
+import sys
+
+# Configure UTF-8 output for Windows console
+for stream in (sys.stdout, sys.stderr):
+    try:
+        stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 HISTORY_FILE = DATA_DIR / "published_history.json"
 MEDIA_CACHE_FILE = DATA_DIR / "media_cache.json"
@@ -213,15 +221,16 @@ def schedule_channel_quota(
             vid = active_pool[vid_idx]
             vpath = Path(vid["path"])
 
-            # Upload video or reuse uploaded mediaId
+            # Upload video or reuse uploaded mediaId for this specific team
+            cache_key = f"{client.team_id}:{str(vpath)}"
             if not dry_run:
-                if str(vpath) not in media_cache:
+                if cache_key not in media_cache:
                     log(f"[Scheduler] Tải {vpath.name} ({vid.get('duration', 0):.1f}s) lên Planly...")
                     media_id = client.upload_video(vpath, log=log)
-                    media_cache[str(vpath)] = media_id
+                    media_cache[cache_key] = media_id
                     save_media_cache(media_cache)
                 else:
-                    media_id = media_cache[str(vpath)]
+                    media_id = media_cache[cache_key]
             else:
                 media_id = f"dry_run_media_{vpath.stem}"
 
