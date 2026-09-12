@@ -306,126 +306,126 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
             tag_name = "HÔM NAY" if day_offset == 0 else f"Day +{day_offset}"
             logger.info(f"--- Kiem tra lich ngay: {target_date.strftime('%d/%m/%Y')} ({tag_name}) ---")
 
-        # Sort channels so channels with fewest scheduled posts are served first
-        sorted_channels = sorted(
-            channels,
-            key=lambda c: schedule_counts.get(c["id"], {}).get(target_date_str, 0)
-        )
+            # Sort channels so channels with fewest scheduled posts are served first
+            sorted_channels = sorted(
+                channels,
+                key=lambda c: schedule_counts.get(c["id"], {}).get(target_date_str, 0)
+            )
 
-        for ch in sorted_channels:
-            if is_stop_requested():
-                break
-
-            ch_id = ch["id"]
-            ch_name = ch.get("name") or ch_id
-
-            # CRITICAL SAFETY LOCK: Protect active monetized channels from any automated post attempts
-            PROTECTED_CHANNELS = ["outdoorboyso", "outdoorboysc", "amelialynch1989", "1989"]
-            if any(p in str(ch_name).lower() for p in PROTECTED_CHANNELS):
-                logger.info(f"🛡️ [SAFETY LOCK] Kênh kiếm tiền '{ch_name}' đang được đóng băng bảo vệ an toàn (0 bài). Bỏ qua.")
-                continue
-
-            safe_ch_name = re.sub(r"[^\w]+", "_", str(ch_name)).strip("_")
-            current_scheduled = schedule_counts.get(ch_id, {}).get(target_date_str, 0)
-            needed = quota_per_day - current_scheduled
-
-            if needed <= 0:
-                logger.info(f"  Kenh '{ch_name}': Da du {current_scheduled}/{quota_per_day} video cho ngay {target_date_str}. Bo qua.")
-                continue
-
-            ch_idx = next((i for i, c in enumerate(channels) if c["id"] == ch_id), 0)
-            all_slots = build_channel_slots_for_date(target_date, channel_index=ch_idx, quota=quota_per_day)
-            if current_scheduled >= len(all_slots):
-                logger.info(f"  Kenh '{ch_name}': Khong con slot kha dung cho ngay {target_date_str} (da co {current_scheduled} video).")
-                continue
-
-            missing_slots = all_slots[current_scheduled : current_scheduled + needed]
-            if not missing_slots:
-                continue
-
-            logger.info(f"  ⚡ Kenh '{ch_name}': Dang co {current_scheduled}/{quota_per_day} video. Can tao them {len(missing_slots)} video tai lieu ky an moi...")
-
-            for slot_idx, slot_time in enumerate(missing_slots):
+            for ch in sorted_channels:
                 if is_stop_requested():
                     break
 
-                story = dict(get_next_crime_story())
-                story["channel_name"] = str(ch_name)
-                case_id = story.get("id", "crime_story")
-                case_name = story.get("case_name", "Unsolved Mystery")
+                ch_id = ch["id"]
+                ch_name = ch.get("name") or ch_id
 
-                clean_t = re.sub(r"[^\w]+", "_", case_id)[:25].strip("_")
-                stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-                out_file = OUTPUT_DIR / f"crime_{stamp}_{safe_ch_name}_{slot_idx+1}_{clean_t}.mp4"
+                # CRITICAL SAFETY LOCK: Protect active monetized channels from any automated post attempts
+                PROTECTED_CHANNELS = ["outdoorboyso", "outdoorboysc", "amelialynch1989", "1989"]
+                if any(p in str(ch_name).lower() for p in PROTECTED_CHANNELS):
+                    logger.info(f"🛡️ [SAFETY LOCK] Kênh kiếm tiền '{ch_name}' đang được đóng băng bảo vệ an toàn (0 bài). Bỏ qua.")
+                    continue
 
-                logger.info(f"    [{slot_idx+1}/{len(missing_slots)}] -> Dang san xuat ky an: '{case_name}' (>60s)...")
-                try:
-                    render_crime_story_video(
-                        story=story,
-                        out_file=out_file,
-                        cfg=cfg,
-                        log=logger.info
-                    )
+                safe_ch_name = re.sub(r"[^\w]+", "_", str(ch_name)).strip("_")
+                current_scheduled = schedule_counts.get(ch_id, {}).get(target_date_str, 0)
+                needed = quota_per_day - current_scheduled
 
-                    meta_file = out_file.with_suffix(".meta.json")
-                    if meta_file.exists():
-                        meta_info = json.loads(meta_file.read_text(encoding="utf-8"))
-                    else:
-                        meta_info = {"title": case_name, "hashtags": story.get("hashtags", ["#truecrime", "#mystery", "#crimetok"])}
+                if needed <= 0:
+                    logger.info(f"  Kenh '{ch_name}': Da du {current_scheduled}/{quota_per_day} video cho ngay {target_date_str}. Bo qua.")
+                    continue
 
-                    # Upload to Planly S3
-                    vpath_str = f"{client.team_id}:{str(out_file.resolve())}"
-                    if vpath_str not in media_cache:
-                        logger.info(f"    -> Dang tai video len Planly S3 Storage...")
-                        media_id = client.upload_video(out_file, log=logger.info)
-                        media_cache[vpath_str] = media_id
-                        save_media_cache(media_cache)
-                    else:
-                        media_id = media_cache[vpath_str]
+                ch_idx = next((i for i, c in enumerate(channels) if c["id"] == ch_id), 0)
+                all_slots = build_channel_slots_for_date(target_date, channel_index=ch_idx, quota=quota_per_day)
+                if current_scheduled >= len(all_slots):
+                    logger.info(f"  Kenh '{ch_name}': Khong con slot kha dung cho ngay {target_date_str} (da co {current_scheduled} video).")
+                    continue
 
-                    raw_tags = meta_info.get("hashtags", ["#truecrime", "#mystery", "#crimetok", "#fyp"])
-                    if isinstance(raw_tags, list):
-                        tags_str = " ".join(raw_tags)
-                    else:
-                        tags_str = str(raw_tags)
+                missing_slots = all_slots[current_scheduled : current_scheduled + needed]
+                if not missing_slots:
+                    continue
 
-                    caption = f"{meta_info.get('title', case_name)} 😱 What really happened? Share your theory below! 👇\n\n{tags_str}"
+                logger.info(f"  ⚡ Kenh '{ch_name}': Dang co {current_scheduled}/{quota_per_day} video. Can tao them {len(missing_slots)} video tai lieu ky an moi...")
 
-                    # Post entry on Planly with duet/stitch disabled
-                    post_entry = {
-                        "channel_id": ch_id,
-                        "media_id": media_id,
-                        "publish_on": slot_time,
-                        "caption": caption[:2000],
-                        "options": {
-                            "postType": 0,
-                            "disableDuet": True,
-                            "disableStitch": True,
-                            "disableComment": False
-                        }
-                    }
-                    client.schedule_posts([post_entry])
-                    mark_posted(out_file.name, ch_id, slot_time)
-                    total_scheduled_this_cycle += 1
+                for slot_idx, slot_time in enumerate(missing_slots):
+                    if is_stop_requested():
+                        break
 
-                    # Immediately delete local video and meta file to keep disk space at 0 MB
+                    story = dict(get_next_crime_story())
+                    story["channel_name"] = str(ch_name)
+                    case_id = story.get("id", "crime_story")
+                    case_name = story.get("case_name", "Unsolved Mystery")
+
+                    clean_t = re.sub(r"[^\w]+", "_", case_id)[:25].strip("_")
+                    stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    out_file = OUTPUT_DIR / f"crime_{stamp}_{safe_ch_name}_{slot_idx+1}_{clean_t}.mp4"
+
+                    logger.info(f"    [{slot_idx+1}/{len(missing_slots)}] -> Dang san xuat ky an: '{case_name}' (>60s)...")
                     try:
-                        if out_file.exists():
-                            out_file.unlink()
+                        render_crime_story_video(
+                            story=story,
+                            out_file=out_file,
+                            cfg=cfg,
+                            log=logger.info
+                        )
+
+                        meta_file = out_file.with_suffix(".meta.json")
                         if meta_file.exists():
-                            meta_file.unlink()
-                        logger.info(f"    🗑️ Giai phong bo nho: Da xoa file cuc bo {out_file.name} sau khi upload len Planly.")
-                    except Exception:
-                        pass
+                            meta_info = json.loads(meta_file.read_text(encoding="utf-8"))
+                        else:
+                            meta_info = {"title": case_name, "hashtags": story.get("hashtags", ["#truecrime", "#mystery", "#crimetok"])}
 
-                    # Update local count cache
-                    if ch_id not in schedule_counts:
-                        schedule_counts[ch_id] = {}
-                    schedule_counts[ch_id][target_date_str] = schedule_counts[ch_id].get(target_date_str, 0) + 1
+                        # Upload to Planly S3
+                        vpath_str = f"{client.team_id}:{str(out_file.resolve())}"
+                        if vpath_str not in media_cache:
+                            logger.info(f"    -> Dang tai video len Planly S3 Storage...")
+                            media_id = client.upload_video(out_file, log=logger.info)
+                            media_cache[vpath_str] = media_id
+                            save_media_cache(media_cache)
+                        else:
+                            media_id = media_cache[vpath_str]
 
-                    logger.info(f"    ✅ Da xep lich thanh cong luc {slot_time} tren kenh '{ch_name}'!")
-                except Exception as e:
-                    logger.error(f"    ❌ Loi tao video slot {slot_idx+1} cho kenh '{ch_name}': {e}", exc_info=True)
+                        raw_tags = meta_info.get("hashtags", ["#truecrime", "#mystery", "#crimetok", "#fyp"])
+                        if isinstance(raw_tags, list):
+                            tags_str = " ".join(raw_tags)
+                        else:
+                            tags_str = str(raw_tags)
+
+                        caption = f"{meta_info.get('title', case_name)} 😱 What really happened? Share your theory below! 👇\n\n{tags_str}"
+
+                        # Post entry on Planly with duet/stitch disabled
+                        post_entry = {
+                            "channel_id": ch_id,
+                            "media_id": media_id,
+                            "publish_on": slot_time,
+                            "caption": caption[:2000],
+                            "options": {
+                                "postType": 0,
+                                "disableDuet": True,
+                                "disableStitch": True,
+                                "disableComment": False
+                            }
+                        }
+                        client.schedule_posts([post_entry])
+                        mark_posted(out_file.name, ch_id, slot_time)
+                        total_scheduled_this_cycle += 1
+
+                        # Immediately delete local video and meta file to keep disk space at 0 MB
+                        try:
+                            if out_file.exists():
+                                out_file.unlink()
+                            if meta_file.exists():
+                                meta_file.unlink()
+                            logger.info(f"    🗑️ Giai phong bo nho: Da xoa file cuc bo {out_file.name} sau khi upload len Planly.")
+                        except Exception:
+                            pass
+
+                        # Update local count cache
+                        if ch_id not in schedule_counts:
+                            schedule_counts[ch_id] = {}
+                        schedule_counts[ch_id][target_date_str] = schedule_counts[ch_id].get(target_date_str, 0) + 1
+
+                        logger.info(f"    ✅ Da xep lich thanh cong luc {slot_time} tren kenh '{ch_name}'!")
+                    except Exception as e:
+                        logger.error(f"    ❌ Loi tao video slot {slot_idx+1} cho kenh '{ch_name}': {e}", exc_info=True)
 
     return total_scheduled_this_cycle
 
