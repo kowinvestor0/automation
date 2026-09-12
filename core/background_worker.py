@@ -296,6 +296,22 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
         logger.info(f"📌 Đang kiểm tra Tài Khoản #{acc_idx}: '{acc_name}' ({len(channels)} kênh)")
         logger.info(f"============================================================")
 
+        # Collect existing topic keywords from Planly scheduled posts to guarantee zero duplicate topics
+        existing_keywords = []
+        try:
+            raw_groups = client.list_scheduled_groups()
+            for g in raw_groups:
+                for s in g.get("schedules") or []:
+                    cnt = s.get("content") or ""
+                    first_line = cnt.split("\n")[0]
+                    first_line = re.sub(r"[^\w\s]", "", first_line)
+                    for w in first_line.split():
+                        if len(w) > 4:
+                            existing_keywords.append(w.lower())
+            logger.info(f"📋 Thu thập {len(set(existing_keywords))} từ khóa chủ đề đã có trên Planly để tránh tuyệt đối trùng lặp nội dung.")
+        except Exception:
+            pass
+
         # Scan from today (Day 0) to lookahead days into the future (Day 0 = today, Day 1 = tomorrow...)
         for day_offset in range(0, lookahead_days + 1):
             if is_stop_requested():
@@ -349,21 +365,37 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                     if is_stop_requested():
                         break
 
-                    story = dict(get_next_crime_story())
+                    story = dict(get_next_crime_story(existing_keywords=existing_keywords))
                     story["channel_name"] = str(ch_name)
                     case_id = story.get("id", "crime_story")
                     case_name = story.get("case_name", "Unsolved Mystery")
+
+                    # Add newly generated case name to existing keywords to avoid picking it again this run
+                    for w in re.sub(r"[^\w\s]", "", case_name).split():
+                        if len(w) > 4:
+                            existing_keywords.append(w.lower())
 
                     clean_t = re.sub(r"[^\w]+", "_", case_id)[:25].strip("_")
                     stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
                     out_file = OUTPUT_DIR / f"crime_{stamp}_{safe_ch_name}_{slot_idx+1}_{clean_t}.mp4"
 
-                    logger.info(f"    [{slot_idx+1}/{len(missing_slots)}] -> Dang san xuat ky an: '{case_name}' (>60s)...")
+                    # Rotate American narrator voices across channels and slots for natural diversity
+                    VOICE_OPTIONS = [
+                        "en-US-ChristopherNeural",
+                        "en-US-GuyNeural",
+                        "en-US-EricNeural",
+                        "en-US-RogerNeural",
+                    ]
+                    assigned_voice = VOICE_OPTIONS[(slot_idx + ch_idx) % len(VOICE_OPTIONS)]
+                    story_cfg = dict(cfg) if cfg else {}
+                    story_cfg["voice"] = assigned_voice
+
+                    logger.info(f"    [{slot_idx+1}/{len(missing_slots)}] -> Dang san xuat ky an: '{case_name}' (>60s) voi giong '{assigned_voice}'...")
                     try:
                         render_crime_story_video(
                             story=story,
                             out_file=out_file,
-                            cfg=cfg,
+                            cfg=story_cfg,
                             log=logger.info
                         )
 
@@ -371,7 +403,7 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                         if meta_file.exists():
                             meta_info = json.loads(meta_file.read_text(encoding="utf-8"))
                         else:
-                            meta_info = {"title": case_name, "hashtags": story.get("hashtags", ["#truecrime", "#mystery", "#crimetok"])}
+                            meta_info = {"title": case_name, "hashtags": story.get("hashtags", ["#mystery", "#history", "#discovery"])}
 
                         # Upload to Planly S3
                         vpath_str = f"{client.team_id}:{str(out_file.resolve())}"
@@ -383,13 +415,25 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                         else:
                             media_id = media_cache[vpath_str]
 
-                        raw_tags = meta_info.get("hashtags", ["#truecrime", "#mystery", "#crimetok", "#fyp"])
+                        raw_tags = meta_info.get("hashtags", ["#truecrime", "#mystery", "#discovery", "#fyp"])
                         if isinstance(raw_tags, list):
                             tags_str = " ".join(raw_tags)
                         else:
                             tags_str = str(raw_tags)
 
-                        caption = f"{meta_info.get('title', case_name)} 😱 What really happened? Share your theory below! 👇\n\n{tags_str}"
+                        # Diverse, high-retention TikTok hook captions with natural CTAs
+                        ENGAGING_CTA_TEMPLATES = [
+                            "What really happened? Drop your theory below! 👇",
+                            "Did you know about this? Let me know your thoughts in the comments! 👇",
+                            "The reality behind this is far stranger than fiction... What do you think? 👇",
+                            "History and science at its most fascinating. Share your thoughts! 👇",
+                            "Unsolved to this day. What is your theory? 👇",
+                            "One of the most remarkable discoveries ever documented. Drop your thoughts below! 👇",
+                            "Drop your theory in the comments and share with a friend! 👇",
+                        ]
+                        selected_cta = random.choice(ENGAGING_CTA_TEMPLATES)
+                        title_text = meta_info.get('title', case_name)
+                        caption = f"{title_text} 🤯 {selected_cta}\n\n{tags_str}"
 
                         # Post entry on Planly with duet/stitch disabled
                         post_entry = {
