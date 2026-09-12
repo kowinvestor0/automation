@@ -153,8 +153,11 @@ def render_crime_story_video(
             if ai_script.get("hashtags"):
                 story["hashtags"] = ai_script["hashtags"]
             log(f"[StoryEngine] Ap dung kich ban doc ban (100% unique) tu Gemini API cho kenh '{channel_tag}' ({len(scenes_data)} scenes)")
+        else:
+            raise RuntimeError(f"Gemini API khong the tao kich ban doc ban moi cho '{case_name}'. Tu choi dung kich ban cu de tranh trung lap!")
     except Exception as e:
-        log(f"[StoryEngine] Gemini enhancement skipped ({e}), using base database.")
+        log(f"[StoryEngine] Tu choi san xuat do khong co kich ban moi ({e}). Bo qua video nay de dam bao 100% khong trung lap.")
+        raise e
 
     log(f"[StoryEngine] Starting production for True Crime case: '{case_name}'...")
 
