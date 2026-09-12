@@ -255,6 +255,38 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
     media_cache = load_media_cache()
     total_scheduled_this_cycle = 0
 
+    # Global cross-account deduplication: Collect ALL keywords from existing scheduled posts & published history
+    existing_keywords = []
+    try:
+        if PUBLISHED_FILE.exists():
+            pub_data = json.loads(PUBLISHED_FILE.read_text(encoding="utf-8"))
+            for p in pub_data.get("posted_videos", []):
+                v_name = p.get("video", "")
+                for w in re.sub(r"[^\w\s]", "", v_name).split():
+                    if len(w) > 4:
+                        existing_keywords.append(w.lower())
+    except Exception:
+        pass
+
+    for acc in accounts:
+        try:
+            t_tok = acc.get("token", "").strip()
+            t_tid = acc.get("team_id", "").strip()
+            if t_tok and t_tid:
+                c = PlanlyClient(t_tok, t_tid)
+                for g in c.list_scheduled_groups():
+                    for s in g.get("schedules") or []:
+                        cnt = s.get("content") or ""
+                        first_line = cnt.split("\n")[0]
+                        first_line = re.sub(r"[^\w\s]", "", first_line)
+                        for w in first_line.split():
+                            if len(w) > 4:
+                                existing_keywords.append(w.lower())
+        except Exception:
+            pass
+
+    logger.info(f"📋 Global Deduplication Guard: Thu thap {len(set(existing_keywords))} tu khoa chu de de chan tuyet doi trung lap giua cac kenh.")
+
     for acc_idx, target_acc in enumerate(accounts, 1):
         if is_stop_requested():
             logger.info("Stop signal detected. Exiting worker cycle.")
@@ -295,22 +327,6 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
         logger.info(f"\n============================================================")
         logger.info(f"📌 Đang kiểm tra Tài Khoản #{acc_idx}: '{acc_name}' ({len(channels)} kênh)")
         logger.info(f"============================================================")
-
-        # Collect existing topic keywords from Planly scheduled posts to guarantee zero duplicate topics
-        existing_keywords = []
-        try:
-            raw_groups = client.list_scheduled_groups()
-            for g in raw_groups:
-                for s in g.get("schedules") or []:
-                    cnt = s.get("content") or ""
-                    first_line = cnt.split("\n")[0]
-                    first_line = re.sub(r"[^\w\s]", "", first_line)
-                    for w in first_line.split():
-                        if len(w) > 4:
-                            existing_keywords.append(w.lower())
-            logger.info(f"📋 Thu thập {len(set(existing_keywords))} từ khóa chủ đề đã có trên Planly để tránh tuyệt đối trùng lặp nội dung.")
-        except Exception:
-            pass
 
         # Scan from today (Day 0) to lookahead days into the future (Day 0 = today, Day 1 = tomorrow...)
         for day_offset in range(0, lookahead_days + 1):

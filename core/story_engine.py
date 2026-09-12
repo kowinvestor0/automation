@@ -152,7 +152,7 @@ def render_crime_story_video(
                 hook_banner = ai_script["hook_banner"]
             if ai_script.get("hashtags"):
                 story["hashtags"] = ai_script["hashtags"]
-            log(f"[StoryEngine] ✨ Áp dụng kịch bản độc bản (100% unique) từ Gemini API cho kênh '{channel_tag}' ({len(scenes_data)} scenes)")
+            log(f"[StoryEngine] Ap dung kich ban doc ban (100% unique) tu Gemini API cho kenh '{channel_tag}' ({len(scenes_data)} scenes)")
     except Exception as e:
         log(f"[StoryEngine] Gemini enhancement skipped ({e}), using base database.")
 

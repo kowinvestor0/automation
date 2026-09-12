@@ -9,7 +9,8 @@ import requests
 from core.config_manager import get_api_key
 
 BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.5-flash"
+FALLBACK_MODEL = "gemini-3.5-flash-lite"
 
 COMMENTARY_SCHEMA = {
     "type": "OBJECT",
@@ -199,31 +200,32 @@ def generate_unique_crime_script(
             f"Write a completely fresh, unique, 100% original investigative breakdown (10-12 scenes, 190-240 words, >60s spoken) "
             f"for this case from a fresh investigative angle. Ensure the hook banner is 3-5 punchy words in ALL CAPS."
         )
-        url = f"{BASE_URL}/models/{DEFAULT_MODEL}:generateContent?key={key}"
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "systemInstruction": {"parts": [{"text": CRIME_SYSTEM_INSTRUCTION}]},
-            "generationConfig": {
-                "responseMimeType": "application/json",
-                "responseSchema": CRIME_STORY_SCHEMA,
-                "thinkingConfig": {"thinkingBudget": 0},
-                "temperature": 0.85,
-            },
-        }
-        res = requests.post(url, json=payload, timeout=35)
-        if res.status_code == 200:
-            data = res.json()
-            text = data["candidates"][0]["content"]["parts"][0]["text"]
-            result = json.loads(text)
-            scenes = result.get("scenes", [])
-            total_words = sum(len(sc.get("text", "").split()) for sc in scenes)
-            if len(scenes) >= 8 and total_words >= 150:
-                log(f"[Gemini] ✨ Generated unique script: {len(scenes)} scenes, {total_words} words for '{case_name}' (channel: {channel_name})")
-                return result
+        for mod in [DEFAULT_MODEL, FALLBACK_MODEL]:
+            url = f"{BASE_URL}/models/{mod}:generateContent?key={key}"
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "systemInstruction": {"parts": [{"text": CRIME_SYSTEM_INSTRUCTION}]},
+                "generationConfig": {
+                    "responseMimeType": "application/json",
+                    "responseSchema": CRIME_STORY_SCHEMA,
+                    "thinkingConfig": {"thinkingBudget": 0},
+                    "temperature": 0.85,
+                },
+            }
+            res = requests.post(url, json=payload, timeout=35)
+            if res.status_code == 200:
+                data = res.json()
+                text = data["candidates"][0]["content"]["parts"][0]["text"]
+                result = json.loads(text)
+                scenes = result.get("scenes", [])
+                total_words = sum(len(sc.get("text", "").split()) for sc in scenes)
+                if len(scenes) >= 6 and total_words >= 130:
+                    log(f"[Gemini] Generated unique script ({mod}): {len(scenes)} scenes, {total_words} words for '{case_name}' (channel: {channel_name})")
+                    return result
+                else:
+                    log(f"[Gemini] Generated script too short ({total_words} words), trying fallback.")
             else:
-                log(f"[Gemini] Generated script too short ({total_words} words), using base database.")
-        else:
-            log(f"[Gemini] API returned status {res.status_code}: {res.text[:100]}")
+                log(f"[Gemini] Model {mod} returned status {res.status_code}, trying fallback.")
     except Exception as e:
         log(f"[Gemini] Script generation error ({e}), smoothly using base database.")
 
