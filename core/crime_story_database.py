@@ -170,9 +170,13 @@ def save_used_story_ids(used_ids: List[str]) -> None:
     USED_STORIES_FILE.write_text(json.dumps(used_ids, indent=2), encoding="utf-8")
 
 
-def generate_dynamic_crime_story(used_ids: List[str]) -> Optional[Dict[str, Any]]:
+def generate_dynamic_crime_story(
+    used_ids: List[str],
+    forbidden_keywords: Optional[List[str]] = None
+) -> Optional[Dict[str, Any]]:
     """Generates a completely new real documentary story via Gemini 3.5 Flash.
     Strictly complies with TikTok Guidelines: 100% G-rated / educational / high retention.
+    Actively avoids topics matching forbidden_keywords to guarantee zero repetition.
     """
     try:
         from core.config_manager import get_api_key
@@ -182,21 +186,32 @@ def generate_dynamic_crime_story(used_ids: List[str]) -> Optional[Dict[str, Any]
             return None
 
         categories = [
-            "Breathtaking Scientific Discovery / Space Exploration (NASA, James Webb, Deep Cosmos, Black Holes)",
-            "Deep Ocean Exploration & Unexplained Marine Phenomenon (Mariana Trench, Abyssal Plain, Strange Sounds)",
-            "Mega Engineering Marvel & Impossible Construction (Megastructure, Tunnel, Aerospace Records, Panama Canal)",
-            "Lost Ancient Civilization & Archaeological Excavation (Pyramids, Petra, Machu Picchu, Terracotta Army)",
-            "Extreme Weather & Bizarre Natural Phenomenon (Rogue Waves, Supervolcanoes, Auroras, Sailing Stones)",
-            "Famous Historical Non-Violent Enigma or Art Heist (Isabella Stewart Gardner, Amber Room, Antikythera)"
+            "Breathtaking Scientific Discovery & Deep Space Exploration (NASA, James Webb, Deep Cosmos, Black Holes, Exoplanets)",
+            "Deep Ocean Exploration & Unexplained Marine Phenomenon (Mariana Trench, Abyssal Plain, Hydrothermal Vents, Bioluminescence)",
+            "Mega Engineering Marvel & Impossible Construction Feats (Megastructures, Underground Tunnels, Transcontinental Rails, Panama Canal)",
+            "Lost Ancient Civilizations & Archaeological Discoveries (Pyramids of Giza, Petra, Machu Picchu, Terracotta Army, Gobekli Tepe)",
+            "Extreme Weather, Geological Oddities & Bizarre Natural Phenomena (Rogue Waves, Supervolcanoes, Sailing Stones, Giant Sinkholes)",
+            "Famous Non-Violent Historical Enigmas, Crypto-Mysteries & Lost Treasures (Oak Island, Beale Ciphers, Antikythera Mechanism, Amber Room)",
+            "Pioneering Aviation & Arctic/Polar Expedition Feats (Amundsen South Pole, Apollo Missions, Deep Sea Submersibles)",
+            "Prehistoric Earth & Paleontological Wonders (Fossil Discoveries, Megalodon, Woolly Mammoth Discovery, Ancient Giant Flora)",
+            "Ancient Architectural & Engineering Genius (Roman Aqueducts, Incan Masonry, Ancient Water Clocks, Nan Madol)",
+            "Bizarre Physics Phenomena & Laboratory Discoveries (Superfluidity, Particle Colliders, Quantum Entanglement Experiments)"
         ]
         chosen_cat = random.choice(categories)
+
+        # Build anti-duplication clause from forbidden keywords
+        forbidden_clause = ""
+        if forbidden_keywords:
+            clean_kw = list(set([k.strip() for k in forbidden_keywords if len(k.strip()) > 3]))[-30:]
+            if clean_kw:
+                forbidden_clause = f"\n4. AVOID REPETITION: Under no circumstances choose topics related to any of these recently used keywords: {', '.join(clean_kw)}."
 
         prompt = (
             f"Generate 1 high-retention viral documentary topic in the category: '{chosen_cat}'.\n"
             f"Requirements:\n"
             f"1. Must have a real, verified Wikipedia article with public domain historical photos.\n"
             f"2. STRICT TIKTOK COMMUNITY GUIDELINES: Absolutely NO graphic violence, gore, murders, serial killers, weapons, politics, or controversy. 100% safe for all audiences.\n"
-            f"3. High viral intrigue and educational fascination.\n"
+            f"3. High viral intrigue and educational fascination.{forbidden_clause}\n"
             f"Return JSON format:\n"
             f'{{\"id\": \"unique_id\", \"case_name\": \"Full Title\", \"hook_banner\": \"ALL CAPS 3-5 WORDS\", '
             f'\"wiki_query\": \"Exact Wikipedia Title\", '
@@ -204,15 +219,14 @@ def generate_dynamic_crime_story(used_ids: List[str]) -> Optional[Dict[str, Any]
             f'\"scenes\": [{{\"text\": \"Deep beneath the surface...\", \"visual_hint\": \"wiki\"}}], '
             f'\"hashtags\": [\"#science\", \"#discovery\", \"#mindblown\", \"#fyp\"]}}'
         )
-        models_to_try = ["gemini-3.5-flash", "gemini-3.5-flash-lite"]
+        models_to_try = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
         for mod in models_to_try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod}:generateContent?key={key}"
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
                     "responseMimeType": "application/json",
-                    "thinkingConfig": {"thinkingBudget": 0},
-                    "temperature": 0.9,
+                    "temperature": 0.95,
                 }
             }
             res = requests.post(url, json=payload, timeout=25)
@@ -238,9 +252,9 @@ def get_next_crime_story(existing_keywords: Optional[List[str]] = None) -> Dict[
     used = load_used_story_ids()
     keywords = [k.lower() for k in (existing_keywords or [])]
 
-    # 1. Primary: Try up to 3 times to generate a brand new unique dynamic story via Gemini
-    for _ in range(3):
-        dynamic_story = generate_dynamic_crime_story(used)
+    # 1. Primary: Try up to 5 times to generate a brand new unique dynamic story via Gemini
+    for _ in range(5):
+        dynamic_story = generate_dynamic_crime_story(used, forbidden_keywords=keywords)
         if dynamic_story:
             c_name = dynamic_story.get("case_name", "").lower()
             if not any(k in c_name for k in keywords if len(k) > 4):

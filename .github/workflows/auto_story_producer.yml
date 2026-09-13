@@ -23,6 +23,8 @@ jobs:
   produce-and-schedule:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Code
@@ -58,3 +60,12 @@ jobs:
           PYTHONIOENCODING: 'utf-8'
         run: |
           python core/background_worker.py --single-pass --quota "${{ github.event.inputs.quota || '6' }}" --lookahead "${{ github.event.inputs.lookahead || '7' }}"
+
+      - name: Save Updated History & Cache to Repo
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ || true
+          git commit -m "chore: Sync published and used story history [skip ci]" || echo "No changes to commit"
+          git push || echo "Git push skipped"

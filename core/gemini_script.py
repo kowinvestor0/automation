@@ -9,8 +9,8 @@ import requests
 from core.config_manager import get_api_key
 
 BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
-DEFAULT_MODEL = "gemini-3.5-flash"
-FALLBACK_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_MODEL = "gemini-3.7-flash"
+FALLBACK_MODEL = "gemini-3.6-flash"
 
 COMMENTARY_SCHEMA = {
     "type": "OBJECT",
@@ -200,7 +200,8 @@ def generate_unique_crime_script(
             f"Write a completely fresh, unique, 100% original investigative breakdown (10-12 scenes, 190-240 words, >60s spoken) "
             f"for this case from a fresh investigative angle. Ensure the hook banner is 3-5 punchy words in ALL CAPS."
         )
-        for mod in [DEFAULT_MODEL, FALLBACK_MODEL]:
+        models_to_try = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+        for mod in models_to_try:
             url = f"{BASE_URL}/models/{mod}:generateContent?key={key}"
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
@@ -208,7 +209,6 @@ def generate_unique_crime_script(
                 "generationConfig": {
                     "responseMimeType": "application/json",
                     "responseSchema": CRIME_STORY_SCHEMA,
-                    "thinkingConfig": {"thinkingBudget": 0},
                     "temperature": 0.85,
                 },
             }
