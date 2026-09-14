@@ -29,7 +29,7 @@ from core.account_manager import AccountManager
 from core.planly_client import PlanlyClient
 from core.config_manager import load_config
 from core.story_engine import render_crime_story_video
-from core.crime_story_database import get_next_crime_story, ICONIC_TRUE_CRIME_CASES
+from core.crime_story_database import get_next_crime_story, ICONIC_TRUE_CRIME_CASES, COMMON_EXCLUDED_WORDS
 from core.scheduler import (
     get_us_eastern_tz,
     US_VIRAL_PEAK_HOURS_ET,
@@ -263,8 +263,9 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
             for p in pub_data.get("posted_videos", []):
                 v_name = p.get("video", "")
                 for w in re.sub(r"[^\w\s]", "", v_name).split():
-                    if len(w) > 4:
-                        existing_keywords.append(w.lower())
+                    w_lower = w.lower()
+                    if len(w_lower) > 3 and w_lower not in COMMON_EXCLUDED_WORDS:
+                        existing_keywords.append(w_lower)
     except Exception:
         pass
 
@@ -276,12 +277,13 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                 c = PlanlyClient(t_tok, t_tid)
                 for g in c.list_scheduled_groups():
                     for s in g.get("schedules") or []:
-                        cnt = s.get("content") or ""
+                        cnt = s.get("content") or s.get("caption") or ""
                         first_line = cnt.split("\n")[0]
                         first_line = re.sub(r"[^\w\s]", "", first_line)
                         for w in first_line.split():
-                            if len(w) > 4:
-                                existing_keywords.append(w.lower())
+                            w_lower = w.lower()
+                            if len(w_lower) > 3 and w_lower not in COMMON_EXCLUDED_WORDS:
+                                existing_keywords.append(w_lower)
         except Exception:
             pass
 
@@ -388,8 +390,9 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
 
                     # Add newly generated case name to existing keywords to avoid picking it again this run
                     for w in re.sub(r"[^\w\s]", "", case_name).split():
-                        if len(w) > 4:
-                            existing_keywords.append(w.lower())
+                        w_lower = w.lower()
+                        if len(w_lower) > 3 and w_lower not in COMMON_EXCLUDED_WORDS:
+                            existing_keywords.append(w_lower)
 
                     clean_t = re.sub(r"[^\w]+", "_", case_id)[:25].strip("_")
                     stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")

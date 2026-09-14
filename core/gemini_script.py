@@ -200,6 +200,7 @@ def generate_unique_crime_script(
             f"Write a completely fresh, unique, 100% original investigative breakdown (10-12 scenes, 190-240 words, >60s spoken) "
             f"for this case from a fresh investigative angle. Ensure the hook banner is 3-5 punchy words in ALL CAPS."
         )
+        import time
         models_to_try = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
         for mod in models_to_try:
             url = f"{BASE_URL}/models/{mod}:generateContent?key={key}"
@@ -212,6 +213,7 @@ def generate_unique_crime_script(
                     "temperature": 0.85,
                 },
             }
+            time.sleep(1.5)
             res = requests.post(url, json=payload, timeout=35)
             if res.status_code == 200:
                 data = res.json()
@@ -224,6 +226,9 @@ def generate_unique_crime_script(
                     return result
                 else:
                     log(f"[Gemini] Generated script too short ({total_words} words), trying fallback.")
+            elif res.status_code == 429:
+                log(f"[Gemini] Model {mod} hit rate limit (429), backing off 3s...")
+                time.sleep(3.0)
             else:
                 log(f"[Gemini] Model {mod} returned status {res.status_code}, trying fallback.")
     except Exception as e:
