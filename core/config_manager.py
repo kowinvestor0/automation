@@ -11,6 +11,7 @@ from core.paths import CONFIG_FILE, ROOT_DIR
 DEFAULT_CONFIG: Dict[str, Any] = {
     "api_keys": {
         "gemini_api_key": "",
+        "openai_api_key": "",
         "pexels_api_key": "",
         "anthropic_api_key": "",
     },
@@ -20,6 +21,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
         "language": "en",                # "en" (US) or "vi" or "es"
         "voice": "en-US-ChristopherNeural",
         "voice_rate": "+10%",
+        "gemini_model": "gemini-3.1-flash-lite",
+        "openai_model": "gpt-4o-mini",
         "auto_stitch_multi_clips": True, # If single clip < 60s, stitch multiple clips
         "vocal_suppression": True,       # Suppress original speech, keep SFX/ambient
         "original_audio_volume": 0.15,   # Low ambient SFX level
@@ -30,6 +33,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     },
     "publishing": {
         "videos_per_channel_per_day": 3, # 3 or 6 videos/channel/day
+        "lookahead_days": 7,            # Build the calendar this many days ahead
         "mode": "same_time",             # "same_time" (Đăng cùng lúc) or "scheduled" (Lên lịch giờ vàng)
         "schedule_times": [
             "09:00", "12:00", "15:00", "18:00", "21:00", "23:00"

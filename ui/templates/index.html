@@ -572,6 +572,31 @@
         </div>
 
         <div>
+          <label class="block font-medium text-gray-700 mb-1">Gemini model:</label>
+          <select id="cfgGeminiModel" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (Khuyên dùng — nhanh, ổn định hạn mức)</option>
+            <option value="gemini-3.5-flash">Gemini 3.5 Flash — chất lượng cao, cân bằng</option>
+            <option value="gemini-3.8-flash">Gemini 3.8 Flash — thông minh nhất</option>
+            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite — tiết kiệm</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">OpenAI API Key (GPT dự phòng khi Gemini lỗi/hết hạn mức):</label>
+          <input type="password" id="cfgOpenAIKey" placeholder="sk-..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+          <span class="text-[10px] text-gray-400">Chỉ gọi GPT khi Gemini không trả được kết quả; cần API key OpenAI có thanh toán riêng.</span>
+        </div>
+
+        <div>
+          <label class="block font-medium text-gray-700 mb-1">GPT model dự phòng:</label>
+          <select id="cfgOpenAIModel" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
+            <option value="gpt-4o-mini">GPT-4o Mini (Khuyên dùng — nhanh, rẻ nhất)</option>
+            <option value="gpt-4o">GPT-4o — mạnh nhất, thông minh cao cấp</option>
+            <option value="o3-mini">o3-mini — suy luận chuyên sâu</option>
+          </select>
+        </div>
+
+        <div>
           <label class="block font-medium text-gray-700 mb-1">Anthropic API Key (AI Kịch bản backup):</label>
           <input type="password" id="cfgAnthropicKey" placeholder="sk-ant-api03-..." class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500">
         </div>
@@ -1253,6 +1278,9 @@
         const apiKeys = cfg.api_keys || {};
         const pub = cfg.publishing || {};
         document.getElementById('cfgGeminiKey').value = apiKeys.gemini_api_key || cfg.gemini_api_key || '';
+        document.getElementById('cfgGeminiModel').value = (cfg.generation || {}).gemini_model || 'gemini-3.1-flash-lite';
+        document.getElementById('cfgOpenAIKey').value = apiKeys.openai_api_key || cfg.openai_api_key || '';
+        document.getElementById('cfgOpenAIModel').value = (cfg.generation || {}).openai_model || 'gpt-4o-mini';
         document.getElementById('cfgPexelsKey').value = apiKeys.pexels_api_key || cfg.pexels_api_key || '';
         document.getElementById('cfgAnthropicKey').value = apiKeys.anthropic_api_key || '';
         document.getElementById('cfgVideosPerDay').value = pub.videos_per_channel_per_day || 3;
@@ -1278,6 +1306,9 @@
 
     async function saveSettings() {
       const gKey = document.getElementById('cfgGeminiKey').value.trim();
+      const gModel = document.getElementById('cfgGeminiModel').value;
+      const oKey = document.getElementById('cfgOpenAIKey').value.trim();
+      const oModel = document.getElementById('cfgOpenAIModel').value;
       const pKey = document.getElementById('cfgPexelsKey').value.trim();
       const aKey = document.getElementById('cfgAnthropicKey').value.trim();
       const vPerDay = parseInt(document.getElementById('cfgVideosPerDay').value || 3);
@@ -1291,11 +1322,13 @@
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            gemini_api_key: gKey,
-            pexels_api_key: pKey,
-            api_keys: {
               gemini_api_key: gKey,
+              openai_api_key: oKey,
               pexels_api_key: pKey,
+              api_keys: {
+                gemini_api_key: gKey,
+                openai_api_key: oKey,
+                pexels_api_key: pKey,
               anthropic_api_key: aKey
             },
             videos_per_channel_per_day: vPerDay,
@@ -1306,6 +1339,10 @@
               timezone_offset: tz,
               mode: mode,
               schedule_times: [schedTime]
+            },
+            generation: {
+              gemini_model: gModel,
+              openai_model: oModel
             }
           })
         });

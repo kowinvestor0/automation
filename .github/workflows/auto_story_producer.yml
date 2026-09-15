@@ -55,6 +55,7 @@ jobs:
           PLANLY_TEAM_ID_2: ${{ secrets.PLANLY_TEAM_ID_2 }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VIDEOS_PER_DAY: ${{ github.event.inputs.quota || '6' }}
           LOOKAHEAD_DAYS: ${{ github.event.inputs.lookahead || '7' }}
           PYTHONIOENCODING: 'utf-8'

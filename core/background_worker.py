@@ -44,6 +44,9 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 LOG_FILE = LOGS_DIR / "background_worker.log"
 LOCK_FILE = DATA_DIR / "worker.lock"
 STOP_SIGNAL_FILE = DATA_DIR / "worker.stop"
+# This is the ledger written immediately after Planly accepts a schedule.
+# It must be consulted before creating another subject.
+PUBLISHED_FILE = DATA_DIR / "published_history.json"
 
 # Crucial for pythonw.exe: redirect None stdout/stderr to files so print() and yt_dlp never crash
 import io
@@ -87,6 +90,19 @@ logging.basicConfig(
     handlers=log_handlers
 )
 logger = logging.getLogger("BackgroundWorker")
+
+
+def topic_label_from_history(video_name: str) -> str:
+    """Extract the subject identifier from this worker's rendered filename."""
+    stem = Path(str(video_name)).stem
+    match = re.match(r"^crime_\d{8}_\d{6}_.+?_\d+_(.+)$", stem)
+    return match.group(1) if match else stem
+
+
+def topic_label_from_caption(caption: str) -> str:
+    """Keep the title and discard the reusable CTA/hashtags from a Planly caption."""
+    first_line = str(caption).split("\n", 1)[0]
+    return first_line.split("🤯", 1)[0].strip()
 
 
 def is_stop_requested() -> bool:
@@ -255,17 +271,17 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
     media_cache = load_media_cache()
     total_scheduled_this_cycle = 0
 
-    # Global cross-account deduplication: Collect ALL keywords from existing scheduled posts & published history
-    existing_keywords = []
+    # Global cross-account deduplication: retain complete topic identities, not
+    # individual caption words.  The previous word-level guard blocked Gemini
+    # from producing almost every legitimate new subject.
+    existing_topics = []
     try:
         if PUBLISHED_FILE.exists():
             pub_data = json.loads(PUBLISHED_FILE.read_text(encoding="utf-8"))
             for p in pub_data.get("posted_videos", []):
-                v_name = p.get("video", "")
-                for w in re.sub(r"[^\w\s]", "", v_name).split():
-                    w_lower = w.lower()
-                    if len(w_lower) > 3 and w_lower not in COMMON_EXCLUDED_WORDS:
-                        existing_keywords.append(w_lower)
+                label = topic_label_from_history(p.get("video", ""))
+                if label:
+                    existing_topics.append(label)
     except Exception:
         pass
 
@@ -277,17 +293,14 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                 c = PlanlyClient(t_tok, t_tid)
                 for g in c.list_scheduled_groups():
                     for s in g.get("schedules") or []:
-                        cnt = s.get("content") or s.get("caption") or ""
-                        first_line = cnt.split("\n")[0]
-                        first_line = re.sub(r"[^\w\s]", "", first_line)
-                        for w in first_line.split():
-                            w_lower = w.lower()
-                            if len(w_lower) > 3 and w_lower not in COMMON_EXCLUDED_WORDS:
-                                existing_keywords.append(w_lower)
+                        label = topic_label_from_caption(s.get("content") or s.get("caption") or "")
+                        if label:
+                            existing_topics.append(label)
         except Exception:
             pass
 
-    logger.info(f"📋 Global Deduplication Guard: Thu thap {len(set(existing_keywords))} tu khoa chu de de chan tuyet doi trung lap giua cac kenh.")
+    existing_topics = list(dict.fromkeys(existing_topics))
+    logger.info(f"📋 Global Deduplication Guard: Thu thap {len(existing_topics)} chu de da dung de chan trung lap giua cac kenh.")
 
     for acc_idx, target_acc in enumerate(accounts, 1):
         if is_stop_requested():
@@ -383,16 +396,19 @@ def run_worker_cycle(lookahead_days: int = 3, quota_per_day: int = 6) -> int:
                     if is_stop_requested():
                         break
 
-                    story = dict(get_next_crime_story(existing_keywords=existing_keywords))
+                    try:
+                        story = dict(get_next_crime_story(existing_keywords=existing_topics))
+                    except RuntimeError as exc:
+                        # One unavailable subject provider must not abort the
+                        # remaining channels or the future days in this pass.
+                        logger.warning("    ⚠️ Bo qua slot %s cua kenh '%s': %s", slot_idx + 1, ch_name, exc)
+                        continue
                     story["channel_name"] = str(ch_name)
                     case_id = story.get("id", "crime_story")
                     case_name = story.get("case_name", "Unsolved Mystery")
 
-                    # Add newly generated case name to existing keywords to avoid picking it again this run
-                    for w in re.sub(r"[^\w\s]", "", case_name).split():
-                        w_lower = w.lower()
-                        if len(w_lower) > 3 and w_lower not in COMMON_EXCLUDED_WORDS:
-                            existing_keywords.append(w_lower)
+                    # Keep the full subject identity for the rest of this pass.
+                    existing_topics.append(story.get("wiki_query") or case_name)
 
                     clean_t = re.sub(r"[^\w]+", "_", case_id)[:25].strip("_")
                     stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -503,7 +519,10 @@ def main():
 
     cfg = load_config()
     configured_quota = args.quota or int(os.environ.get("VIDEOS_PER_DAY") or cfg.get("publishing", {}).get("videos_per_channel_per_day", 6))
-    lookahead_days = args.lookahead or int(os.environ.get("LOOKAHEAD_DAYS") or 7)
+    lookahead_days = args.lookahead or int(
+        os.environ.get("LOOKAHEAD_DAYS")
+        or cfg.get("publishing", {}).get("lookahead_days", 7)
+    )
 
     clear_stop_signal()
     if not args.single_pass:
@@ -541,8 +560,8 @@ def main():
                     logger.info(f"✅ Tat ca cac kenh da co du {current_quota} video/ngay cho {lookahead_days} ngay toi.")
             except Exception as cycle_err:
                 logger.error(f"⚠️ Loi trong chu ky worker: {cycle_err}", exc_info=True)
-                logger.info("🔄 Tu dong thu lai sau 30 giay...")
-                for _ in range(3):
+                logger.info("💤 Worker se cho 15 phut truoc khi thu lai; khong lap vo ich moi 30 giay.")
+                for _ in range(90):
                     if is_stop_requested():
                         break
                     time.sleep(10)

@@ -746,6 +746,8 @@ async def handle_sync_github_secrets(request: web.Request) -> web.Response:
         secrets["PEXELS_API_KEY"] = api_keys["pexels_api_key"]
     if api_keys.get("gemini_api_key"):
         secrets["GEMINI_API_KEY"] = api_keys["gemini_api_key"]
+    if api_keys.get("openai_api_key"):
+        secrets["OPENAI_API_KEY"] = api_keys["openai_api_key"]
 
     res = sync_secrets_to_github(secrets)
     append_log(res.get("message", "GitHub Secrets synced."))

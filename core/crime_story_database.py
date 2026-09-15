@@ -7,15 +7,20 @@ Zero static lists, zero duplicate topics, zero repetition across channels.
 from __future__ import annotations
 
 import json
+import logging
 import random
+import os
 import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from core.paths import DATA_DIR
-from core.config_manager import get_api_key
+from core.config_manager import get_api_key, load_config
+from core.openai_fallback import generate_json as generate_openai_json
 import requests
+
+logger = logging.getLogger(__name__)
 
 USED_STORIES_FILE = DATA_DIR / "used_crime_stories.json"
 BLACKLIST_FILE = DATA_DIR / "blacklisted_topics.json"
@@ -88,6 +93,63 @@ def load_all_blacklisted_keywords() -> List[str]:
     return list(keywords)
 
 
+def load_blacklisted_topics() -> List[str]:
+    """Load full historic titles; do not reduce them to generic individual words."""
+    if not BLACKLIST_FILE.exists():
+        return []
+    try:
+        data = json.loads(BLACKLIST_FILE.read_text(encoding="utf-8"))
+        return [str(topic) for topic in data.get("topics", []) if normalize_topic(str(topic))]
+    except Exception:
+        return []
+
+
+def normalize_topic(value: str) -> str:
+    """Create a stable, human-readable key for a story title or Wikipedia query."""
+    return re.sub(r"[^a-z0-9]+", " ", str(value).lower()).strip()
+
+
+def topic_tokens(value: str) -> set[str]:
+    """Keep only specific words; generic caption language must not block a topic."""
+    return {
+        word for word in normalize_topic(value).split()
+        if len(word) > 3 and word not in COMMON_EXCLUDED_WORDS
+    }
+
+
+def story_identity_keys(story: Dict[str, Any]) -> set[str]:
+    """Return the canonical identities that identify a topic, not its marketing copy."""
+    return {
+        key for key in (
+            normalize_topic(story.get("id", "")),
+            normalize_topic(story.get("wiki_query", "")),
+            normalize_topic(story.get("case_name", "")),
+        ) if key
+    }
+
+
+def is_duplicate_topic(story: Dict[str, Any], known_topics: List[str]) -> bool:
+    """Reject the same subject, without rejecting a new subject for sharing one word."""
+    candidate_keys = story_identity_keys(story)
+    candidate_tokens = set().union(*(topic_tokens(key) for key in candidate_keys)) if candidate_keys else set()
+
+    for known in known_topics:
+        known_key = normalize_topic(known)
+        if not known_key:
+            continue
+        if known_key in candidate_keys:
+            return True
+
+        known_tokens = topic_tokens(known_key)
+        overlap = candidate_tokens & known_tokens
+        # This catches aliases such as "Gobekli Tepe sanctuary" versus
+        # "The temple that rewrote human history", while a shared word alone
+        # (for example "ocean") is intentionally allowed.
+        if len(overlap) >= 2:
+            return True
+    return False
+
+
 def generate_infinite_dynamic_story(
     used_ids: List[str],
     forbidden_keywords: Optional[List[str]] = None
@@ -97,17 +159,15 @@ def generate_infinite_dynamic_story(
     Never repeats topics and guarantees zero duplication across channels.
     """
     key = get_api_key("gemini_api_key")
-    if not key or len(key) < 20:
-        return None
 
     niche_title, niche_desc = random.choice(INFINITE_NICHES)
     
-    # Filter forbidden keywords to concise list
-    banned_words = [k.strip() for k in (forbidden_keywords or []) if len(k.strip()) > 3 and k.strip() not in COMMON_EXCLUDED_WORDS]
+    # Give Gemini prior *topics*, not a polluted bag of caption words.
+    banned_words = [k.strip() for k in (forbidden_keywords or []) if normalize_topic(k)]
     banned_clause = ""
     if banned_words:
-        sample_banned = list(set(banned_words))[-25:]
-        banned_clause = f"\n3. AVOID REPETITION: Under no circumstances generate topics related to any of these recently used terms: {', '.join(sample_banned)}."
+        sample_banned = list(dict.fromkeys(banned_words))[-40:]
+        banned_clause = f"\n3. Do not reuse or retell any of these existing topics: {'; '.join(sample_banned)}."
 
     prompt = f"""You are an elite documentary researcher for a viral educational TikTok channel (>60s videos).
 Generate 1 completely unique, real, verified historical or scientific documentary topic in the niche: '{niche_title}' ({niche_desc}).
@@ -137,8 +197,19 @@ Return strictly valid JSON format:
   "hashtags": ["#science", "#discovery", "#documentary", "#mindblown", "#fyp"]
 }}"""
 
-    # gemini-3.5-flash-lite has highest availability and zero 429 errors
-    models_to_try = ["gemini-3.5-flash-lite", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-2.5-flash"]
+    preferred_model = os.environ.get("GEMINI_MODEL") or load_config().get("generation", {}).get("gemini_model", "gemini-3.1-flash-lite")
+    fallback_models = [
+        "gemini-3.1-flash-lite",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3-flash-preview",
+        "gemini-3.5-flash",
+        "gemini-3.8-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.7-flash",
+        "gemini-2.5-flash",
+    ]
+    models_to_try = (list(dict.fromkeys([preferred_model, *fallback_models]))
+                     if key and len(key) >= 20 else [])
     for mod in models_to_try:
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod}:generateContent?key={key}"
@@ -156,14 +227,26 @@ Return strictly valid JSON format:
                 cand = data["candidates"][0]["content"]["parts"][0]["text"]
                 story = json.loads(cand)
                 if story.get("case_name") and story.get("scenes"):
-                    if not story.get("id") or story["id"] in used_ids:
-                        story["id"] = f"dyn_{re.sub(r'[^a-zA-Z0-9]', '_', story['case_name']).lower()[:28]}"
+                    canonical = normalize_topic(story.get("wiki_query") or story["case_name"])
+                    # Never trust an arbitrary model-generated ID as the sole
+                    # duplicate guard; make it deterministic from the subject.
+                    story["id"] = f"dyn_{canonical.replace(' ', '_')[:80]}"
                     return story
             elif res.status_code == 429:
                 time.sleep(3.0)
-        except Exception:
-            pass
+            else:
+                logger.warning("Gemini model %s returned HTTP %s", mod, res.status_code)
+        except Exception as exc:
+            logger.warning("Gemini model %s failed: %s", mod, exc)
 
+    # Gemini is the primary provider.  GPT is used only when all Gemini models
+    # are unavailable, so the two APIs never compete or produce two posts.
+    story = generate_openai_json(prompt, purpose="documentary topic")
+    if story and story.get("case_name") and story.get("scenes"):
+        canonical = normalize_topic(story.get("wiki_query") or story["case_name"])
+        story["id"] = f"dyn_{canonical.replace(' ', '_')[:80]}"
+        logger.info("GPT generated a fallback documentary topic: %s", story["case_name"])
+        return story
     return None
 
 
@@ -173,38 +256,29 @@ def get_next_crime_story(existing_keywords: Optional[List[str]] = None) -> Dict[
     Never runs out, never repeats, and never recycles old cases.
     """
     used = load_used_story_ids()
-    historical_banned = load_all_blacklisted_keywords()
-    
-    # Combined forbidden keywords
-    all_forbidden = set(historical_banned)
-    for k in (existing_keywords or []):
-        clean_k = k.lower().strip()
-        if len(clean_k) > 3 and clean_k not in COMMON_EXCLUDED_WORDS:
-            all_forbidden.add(clean_k)
-    forbidden_list = list(all_forbidden)
+    # `existing_keywords` is retained as a backwards-compatible argument name,
+    # but callers now pass canonical topic labels/IDs rather than every word in
+    # a caption.  The old behaviour made Gemini reject almost every new title.
+    known_topics = list(dict.fromkeys([
+        *used,
+        *load_blacklisted_topics(),
+        *(existing_keywords or []),
+    ]))
+    hard_banned_entities = set(HISTORICAL_BANNED_ENTITIES)
 
-    # Infinite dynamic generation: Try up to 6 rounds across models
-    for attempt in range(6):
-        story = generate_infinite_dynamic_story(used_ids=used, forbidden_keywords=forbidden_list)
+    # Each attempt already tries all Gemini models, then GPT.  Keep the retry
+    # count bounded so a provider outage cannot stall scheduling for hours.
+    for attempt in range(4):
+        story = generate_infinite_dynamic_story(used_ids=used, forbidden_keywords=known_topics)
         if story:
-            c_name = story.get("case_name", "").lower()
-            words = [w for w in re.sub(r"[^\w\s]", "", c_name).split() if len(w) > 3 and w not in COMMON_EXCLUDED_WORDS]
-            # Check against forbidden entity words
-            if not any(w in forbidden_list for w in words):
+            candidate_words = topic_tokens(" ".join(story_identity_keys(story)))
+            if not (candidate_words & hard_banned_entities) and not is_duplicate_topic(story, known_topics):
                 used.append(story["id"])
                 save_used_story_ids(used)
                 return story
         time.sleep(2.0)
 
-    # If all dynamic generation attempts fail due to temporary network error, wait and try one final time
-    time.sleep(5.0)
-    story = generate_infinite_dynamic_story(used_ids=used, forbidden_keywords=forbidden_list)
-    if story:
-        used.append(story["id"])
-        save_used_story_ids(used)
-        return story
-
-    raise RuntimeError("Gemini API tam thoi khong phan hoi. Cho thu lai sau 30 giay de dam bao khong trung lap.")
+    raise RuntimeError("Ca Gemini va GPT deu chua tao duoc mot chu de moi hop le.")
 
 
 def get_case_by_id(case_id: str) -> Optional[Dict[str, Any]]:

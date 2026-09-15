@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from typing import Any, Dict, List, Optional
 import requests
 
-from core.config_manager import get_api_key
+from core.config_manager import get_api_key, load_config
+from core.openai_fallback import generate_json as generate_openai_json
 
 BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 DEFAULT_MODEL = "gemini-3.7-flash"
@@ -187,8 +189,6 @@ def generate_unique_crime_script(
     Guarantees every video has unique audio, text, and structure to prevent unoriginal content strikes.
     """
     key = get_api_key("gemini_api_key")
-    if not key or len(key) < 20:
-        return None
 
     try:
         base_text = " ".join([sc.get("text", "") for sc in base_scenes])
@@ -201,7 +201,19 @@ def generate_unique_crime_script(
             f"for this case from a fresh investigative angle. Ensure the hook banner is 3-5 punchy words in ALL CAPS."
         )
         import time
-        models_to_try = ["gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+        preferred_model = os.environ.get("GEMINI_MODEL") or load_config().get("generation", {}).get("gemini_model", "gemini-3.1-flash-lite")
+        fallback_models = [
+            "gemini-3.1-flash-lite",
+            "gemini-3.1-flash-lite-preview",
+            "gemini-3-flash-preview",
+            "gemini-3.5-flash",
+            "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.7-flash",
+            "gemini-2.5-flash",
+        ]
+        models_to_try = (list(dict.fromkeys([preferred_model, *fallback_models]))
+                         if key and len(key) >= 20 else [])
         for mod in models_to_try:
             url = f"{BASE_URL}/models/{mod}:generateContent?key={key}"
             payload = {
@@ -234,5 +246,22 @@ def generate_unique_crime_script(
     except Exception as e:
         log(f"[Gemini] Script generation error ({e}), smoothly using base database.")
 
+    # Gemini remains primary.  GPT is a single fallback request only after all
+    # Gemini model attempts have failed or been rate-limited.
+    fallback_prompt = (
+        f"Case Name: {case_name}\n"
+        f"Subject / Wiki: {wiki_query}\n"
+        f"Channel: {channel_name or 'American Documentary'}\n"
+        f"Original Case Overview: {' '.join(sc.get('text', '') for sc in base_scenes)[:1200]}\n\n"
+        "Write a completely fresh, factual documentary breakdown in JSON with a `scenes` array of 10-12 "
+        "objects containing `text` and `visual_hint`, plus `hook_banner`. Use 190-240 words and no graphic, "
+        "violent, political, or unsafe content."
+    )
+    result = generate_openai_json(fallback_prompt, purpose="video script")
+    if result:
+        scenes = result.get("scenes", [])
+        total_words = sum(len(sc.get("text", "").split()) for sc in scenes)
+        if len(scenes) >= 6 and total_words >= 130:
+            log(f"[GPT] Generated fallback script: {len(scenes)} scenes, {total_words} words for '{case_name}'")
+            return result
     return None
-
