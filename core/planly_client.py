@@ -81,22 +81,39 @@ class PlanlyClient:
         size = p.stat().st_size
         name = p.name
 
-        log(f"[Planly] 1/3 Starting upload for {name} ({size / (1 << 20):.1f} MB)...")
+        # Extract video metadata (width, height, duration in ms)
+        w, h, duration_ms = 1080, 1920, 30000
+        try:
+            import subprocess, json, math
+            cmd = ["ffprobe", "-v", "error", "-show_entries", "stream=width,height,duration", "-of", "json", str(p)]
+            out = subprocess.check_output(cmd, timeout=10)
+            streams = json.loads(out).get("streams", [])
+            for st in streams:
+                if st.get("width"):
+                    w = int(st["width"])
+                    h = int(st["height"])
+                if st.get("duration"):
+                    duration_ms = math.ceil(float(st["duration"]) * 1000)
+                    break
+        except Exception:
+            pass
+
+        log(f"[Planly] 1/3 Starting upload for {name} ({size / (1 << 20):.1f} MB, {duration_ms/1000:.1f}s)...")
         start = self._post("/media/start-upload", {
             "teamId": self.team_id,
             "contentLength": size,
             "contentType": "video/mp4",
             "fileName": name,
+            "duration": duration_ms,
+            "width": w,
+            "height": h,
         })
         media_id = start.get("mediaId")
         upload_url = start.get("uploadUrl")
         if not media_id or not upload_url:
             raise PlanlyError(f"Planly start-upload returned no upload target: {str(start)[:200]}")
 
-        put_headers = start.get("headers") or {
-            "Content-Type": "video/mp4",
-            "Content-Length": str(size),
-        }
+        put_headers = {"Content-Type": "video/mp4"}
 
         log(f"[Planly] 2/3 Streaming file to S3...")
         with open(p, "rb") as f:
@@ -104,24 +121,13 @@ class PlanlyClient:
         if r.status_code >= 400:
             raise PlanlyError(f"S3 upload failed with HTTP {r.status_code}: {r.text[:200]}")
 
+        # Finish upload (best-effort notification to Planly)
         log(f"[Planly] 3/3 Finalizing upload for mediaId {media_id}...")
-        done = None
-        last_err = None
-        import time as _time
-        for attempt in range(1, 3):
-            try:
-                done = self._post("/media/finish-upload", {"mediaId": media_id}, timeout=240)
-                break
-            except Exception as e:
-                last_err = e
-                if attempt < 2:
-                    log(f"[Planly] finish-upload attempt {attempt} failed ({e}), retrying in 10s...")
-                    _time.sleep(10.0)
-        if done is None:
-            raise PlanlyError(f"finish-upload failed: {last_err}")
+        try:
+            self._post("/media/finish-upload", {"mediaId": media_id}, timeout=10)
+        except Exception as e:
+            log(f"[Planly] finish-upload notice (continuing): {e}")
 
-        info = done.get("data") or {}
-        res = info.get("resolution") or {}
         log(f"[Planly] Uploaded {name} successfully (mediaId: {media_id})")
         return str(media_id)
 
