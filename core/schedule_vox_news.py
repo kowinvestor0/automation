@@ -143,34 +143,46 @@ def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2) -> in
                     news_title = current_news.get("title", "Breaking News")
                     logger.info(f"  [{total_scheduled+1}/{max_videos}] Bien tap kịch ban Vox cho: '{news_title[:55]}'...")
 
-                    # Generate Vox explainer script via Gemini
-                    try:
-                        vox_data = generate_vox_news_script(current_news)
-                    except Exception as e:
-                        logger.warning(f"  Loi tao kịch ban: {e}, bo qua.")
-                        continue
+                    # Check if there are already rendered vox videos waiting to be uploaded
+                    existing_vox = sorted([f for f in OUTPUT_DIR.glob("vox_*.mp4") if f.name != "vox_breaking_news_demo.mp4" and f.stat().st_size > 1_000_000])
+                    if existing_vox:
+                        out_video = existing_vox[0]
+                        logger.info(f"  ⚡ Phat hien video da render san: {out_video.name} ({out_video.stat().st_size / (1<<20):.1f} MB), su dung ngay!")
+                        headline = out_video.stem.replace("vox_", "").split("_", 4)[-1].replace("_", " ").upper()
+                        vox_data = {
+                            "title": headline,
+                            "hashtags": ["#breakingnews", "#science", "#tech", "#vox", "#fyp"],
+                            "discussion_question": "What do you think about this breakthrough? Let me know below!"
+                        }
+                    else:
+                        # Generate Vox explainer script via Gemini
+                        try:
+                            vox_data = generate_vox_news_script(current_news)
+                        except Exception as e:
+                            logger.warning(f"  Loi tao kịch ban: {e}, bo qua.")
+                            continue
 
-                    headline = vox_data.get("title", news_title)
-                    mark_topic_used(news_title)
+                        headline = vox_data.get("title", news_title)
+                        mark_topic_used(news_title)
 
-                    # Voice rotation
-                    chosen_voice = VOICE_ROTATION[(total_scheduled + ch_idx) % len(VOICE_ROTATION)]
+                        # Voice rotation
+                        chosen_voice = VOICE_ROTATION[(total_scheduled + ch_idx) % len(VOICE_ROTATION)]
 
-                    # File output path
-                    stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    safe_head = re.sub(r"[^\w]+", "_", headline)[:22].strip("_")
-                    out_video = OUTPUT_DIR / f"vox_{stamp}_{ch_name}_{slot_idx+1}_{safe_head}.mp4"
+                        # File output path
+                        stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        safe_head = re.sub(r"[^\w]+", "_", headline)[:22].strip("_")
+                        out_video = OUTPUT_DIR / f"vox_{stamp}_{ch_name}_{slot_idx+1}_{safe_head}.mp4"
 
-                    logger.info(f"  🎬 Render video Vox 9:16 ({chosen_voice})...")
-                    try:
-                        generate_vox_explainer_video(
-                            story_data=vox_data,
-                            out_video_path=out_video,
-                            voice_name=chosen_voice
-                        )
-                    except Exception as exc:
-                        logger.error(f"  Loi render video: {exc}")
-                        continue
+                        logger.info(f"  🎬 Render video Vox 9:16 ({chosen_voice})...")
+                        try:
+                            generate_vox_explainer_video(
+                                story_data=vox_data,
+                                out_video_path=out_video,
+                                voice_name=chosen_voice
+                            )
+                        except Exception as exc:
+                            logger.error(f"  Loi render video: {exc}")
+                            continue
 
                     # Upload to Planly S3
                     vpath_str = f"{client.team_id}:{str(out_video.resolve())}"

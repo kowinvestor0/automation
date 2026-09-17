@@ -29,10 +29,10 @@ class PlanlyClient:
             "Content-Type": "application/json",
         }
 
-    def _post(self, endpoint: str, body: Dict[str, Any]) -> Dict[str, Any]:
+    def _post(self, endpoint: str, body: Dict[str, Any], timeout: int = TIMEOUT) -> Dict[str, Any]:
         url = f"{BASE_URL}{endpoint}"
         try:
-            r = requests.post(url, headers=self.headers, json=body, timeout=TIMEOUT)
+            r = requests.post(url, headers=self.headers, json=body, timeout=timeout)
         except Exception as e:
             raise PlanlyError(f"Network error calling {endpoint}: {e}")
 
@@ -105,7 +105,21 @@ class PlanlyClient:
             raise PlanlyError(f"S3 upload failed with HTTP {r.status_code}: {r.text[:200]}")
 
         log(f"[Planly] 3/3 Finalizing upload for mediaId {media_id}...")
-        done = self._post("/media/finish-upload", {"mediaId": media_id})
+        done = None
+        last_err = None
+        import time as _time
+        for attempt in range(1, 3):
+            try:
+                done = self._post("/media/finish-upload", {"mediaId": media_id}, timeout=240)
+                break
+            except Exception as e:
+                last_err = e
+                if attempt < 2:
+                    log(f"[Planly] finish-upload attempt {attempt} failed ({e}), retrying in 10s...")
+                    _time.sleep(10.0)
+        if done is None:
+            raise PlanlyError(f"finish-upload failed: {last_err}")
+
         info = done.get("data") or {}
         res = info.get("resolution") or {}
         log(f"[Planly] Uploaded {name} successfully (mediaId: {media_id})")

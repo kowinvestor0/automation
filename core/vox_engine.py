@@ -730,8 +730,9 @@ def generate_vox_explainer_video(
         ),
         "-map", "[v_sub]",
         "-map", "[a_final]",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+        "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "192k",
+        "-movflags", "+faststart",
         "-t", f"{total_duration}",
         str(out_video_path)
     ]
