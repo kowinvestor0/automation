@@ -99,49 +99,78 @@ def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2) -> in
 
         scheduled_counts = get_channel_scheduled_counts_by_date(client)
 
-        for ch_idx, ch in enumerate(channels, 1):
+        # Date-first, Round-Robin scheduling across all active channels
+        for t_date in target_dates:
             if total_scheduled >= max_videos:
                 break
 
-            ch_id = ch.get("id")
-            ch_name = ch.get("name")
-            if not ch_id or not ch_name:
-                continue
+            date_str = t_date.strftime("%Y-%m-%d")
+            logger.info(f"📅 =================== Xep lich cho ngay: {date_str} ===================")
 
-            for t_date in target_dates:
-                if total_scheduled >= max_videos:
-                    break
+            # Build channel needs queue for this date
+            channel_needs = []
+            for ch_idx, ch in enumerate(channels, 1):
+                ch_id = ch.get("id")
+                ch_name = ch.get("name")
+                if not ch_id or not ch_name:
+                    continue
 
-                date_str = t_date.strftime("%Y-%m-%d")
                 curr_count = scheduled_counts.get(ch_id, {}).get(date_str, 0)
                 needed = max(0, 6 - curr_count)
-
                 if needed <= 0:
                     continue
 
                 slots = build_channel_slots_for_date(t_date, ch_idx, quota=6)
                 missing_slots = slots[curr_count:6]
+                if missing_slots:
+                    channel_needs.append({
+                        "ch_idx": ch_idx,
+                        "ch_id": ch_id,
+                        "ch_name": ch_name,
+                        "missing_slots": missing_slots,
+                        "date_str": date_str
+                    })
+                    logger.info(f"  🎯 Kenh @{ch_name:24} (hien co {curr_count}/6) -> can them {len(missing_slots)} video.")
 
-                if not missing_slots:
-                    continue
+            if not channel_needs:
+                logger.info(f"  ✨ Tat ca cac kenh da DU 6/6 bai cho ngay {date_str}!")
+                continue
 
-                logger.info(f"🎯 Kenh @{ch_name} ngay {date_str}: hien co {curr_count}/6, can them {len(missing_slots)} video.")
+            max_missing = max([len(cn["missing_slots"]) for cn in channel_needs], default=0)
 
-                for slot_idx, slot_time in enumerate(missing_slots):
+            # Round robin: Give 1 video to each channel, then 2nd video, etc.
+            for step in range(max_missing):
+                if total_scheduled >= max_videos:
+                    break
+
+                for cn in channel_needs:
                     if total_scheduled >= max_videos:
                         break
+
+                    if step >= len(cn["missing_slots"]):
+                        continue
+
+                    slot_time = cn["missing_slots"][step]
+                    ch_name = cn["ch_name"]
+                    ch_id = cn["ch_id"]
+                    ch_idx = cn["ch_idx"]
 
                     # Pick next fresh news story
                     if story_cursor >= len(fresh_stories):
                         # Re-fetch or wrap around with evergreen
-                        fresh_stories = fetch_diverse_viral_stories(count=20)
+                        fresh_stories = fetch_diverse_viral_stories(count=30)
+                        fresh_stories = [s for s in fresh_stories if not is_topic_used(s.get("title", ""))]
                         story_cursor = 0
 
-                    current_news = fresh_stories[story_cursor]
+                    if not fresh_stories:
+                        fresh_stories = fetch_diverse_viral_stories(count=30)
+                        story_cursor = 0
+
+                    current_news = fresh_stories[story_cursor % len(fresh_stories)]
                     story_cursor += 1
 
                     news_title = current_news.get("title", "Breaking News")
-                    logger.info(f"  [{total_scheduled+1}/{max_videos}] Bien tap kịch ban Vox cho: '{news_title[:55]}'...")
+                    logger.info(f"👉 [{total_scheduled+1}/{max_videos}] Kenh @{ch_name} (Slot {step+1}): '{news_title[:55]}'...")
 
                     # Check if there are already rendered vox videos waiting to be uploaded
                     existing_vox = sorted([f for f in OUTPUT_DIR.glob("vox_*.mp4") if f.name != "vox_breaking_news_demo.mp4" and f.stat().st_size > 1_000_000])
@@ -171,7 +200,7 @@ def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2) -> in
                         # File output path
                         stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
                         safe_head = re.sub(r"[^\w]+", "_", headline)[:22].strip("_")
-                        out_video = OUTPUT_DIR / f"vox_{stamp}_{ch_name}_{slot_idx+1}_{safe_head}.mp4"
+                        out_video = OUTPUT_DIR / f"vox_{stamp}_{ch_name}_{step+1}_{safe_head}.mp4"
 
                         logger.info(f"  🎬 Render video Vox 9:16 ({chosen_voice})...")
                         try:
@@ -228,7 +257,7 @@ def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2) -> in
 
                         # Update in-memory count
                         scheduled_counts.setdefault(ch_id, {})[date_str] = scheduled_counts.get(ch_id, {}).get(date_str, 0) + 1
-                        time.sleep(2.0)
+                        time.sleep(1.5)
 
                     except Exception as e:
                         logger.error(f"  Loi khi len lich len Planly: {e}")
