@@ -43,7 +43,6 @@ PROTECTED_CHANNELS = {
     "amelialynch1989",
     "outdoorboyso",
     "outdoorboysc",
-    "outdoorboysoo",
 }
 
 VOICE_ROTATION = [
@@ -54,7 +53,7 @@ VOICE_ROTATION = [
 ]
 
 
-def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2) -> int:
+def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2, channel_filter: Optional[str] = None) -> int:
     """Produces and schedules Vox-style breaking news videos to fill upcoming Planly slots."""
     mgr = AccountManager()
     accounts = mgr.load_all()
@@ -99,8 +98,16 @@ def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2) -> in
             client = PlanlyClient(token, team_id)
             channels = [
                 c for c in target_acc.get("channels", [])
-                if str(c.get("name", "")).lower() not in PROTECTED_CHANNELS
+                if str(c.get("name", "")).lower().lstrip("@") not in PROTECTED_CHANNELS
+                and "amelia" not in str(c.get("name", "")).lower()
             ]
+
+            if channel_filter:
+                clean_filter = channel_filter.lower().lstrip("@")
+                channels = [
+                    c for c in channels
+                    if clean_filter in str(c.get("name", "")).lower()
+                ]
 
             if not channels:
                 continue
@@ -282,6 +289,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Schedule Vox News videos to Planly")
     parser.add_argument("--count", type=int, default=6, help="Maximum number of videos to schedule in this run")
     parser.add_argument("--days", type=int, default=2, help="Number of lookahead days")
+    parser.add_argument("--channel", type=str, default=None, help="Filter to specific channel (e.g. outdoorboysoo)")
     args = parser.parse_args()
 
-    schedule_vox_news_batch(max_videos=args.count, lookahead_days=args.days)
+    schedule_vox_news_batch(max_videos=args.count, lookahead_days=args.days, channel_filter=args.channel)
