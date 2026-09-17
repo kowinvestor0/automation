@@ -183,6 +183,8 @@ def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2) -> in
                             "hashtags": ["#breakingnews", "#science", "#tech", "#vox", "#fyp"],
                             "discussion_question": "What do you think about this breakthrough? Let me know below!"
                         }
+                        mark_topic_used(news_title)
+                        mark_topic_used(headline)
                     else:
                         # Generate Vox explainer script via Gemini
                         try:
