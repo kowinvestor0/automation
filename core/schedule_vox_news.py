@@ -39,11 +39,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 
-PROTECTED_CHANNELS = {
-    "amelialynch1989",
-    "outdoorboyso",
-    "outdoorboysc",
-}
+PROTECTED_CHANNELS: Set[str] = set()
 
 VOICE_ROTATION = [
     "en-US-AndrewNeural",
@@ -96,11 +92,7 @@ def schedule_vox_news_batch(max_videos: int = 10, lookahead_days: int = 2, chann
                 continue
 
             client = PlanlyClient(token, team_id)
-            channels = [
-                c for c in target_acc.get("channels", [])
-                if str(c.get("name", "")).lower().lstrip("@") not in PROTECTED_CHANNELS
-                and "amelia" not in str(c.get("name", "")).lower()
-            ]
+            channels = list(target_acc.get("channels", []))
 
             if channel_filter:
                 clean_filter = channel_filter.lower().lstrip("@")
